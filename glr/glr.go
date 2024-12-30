@@ -97,9 +97,11 @@ func (p *GLRParser) Parse(input string) ([]*ParseNode, error) {
 				continue
 			}
 
+			state := stack.stateStack[len(stack.stateStack)-1]
+			fmt.Println("  reducing stack", "i", i, "state", state)
+
 			// Process all possible reductions first
 			for {
-				state := stack.stateStack[len(stack.stateStack)-1]
 				dotActions := p.states[state].Actions["."]
 				if len(dotActions) == 0 {
 					break
@@ -158,14 +160,14 @@ func (p *GLRParser) Parse(input string) ([]*ParseNode, error) {
 				}
 			}
 
-			state := stack.stateStack[len(stack.stateStack)-1]
+			state = stack.stateStack[len(stack.stateStack)-1]
 			var actions []StateAction
 			if isEOF {
 				actions = p.states[state].Actions["$end"]
 			} else {
 				actions = p.states[state].Actions[symbol]
 			}
-			fmt.Println("  processing stack", "i", i, "state", state, "actions", actions)
+			fmt.Println("  other actions with stack", "i", i, "state", state, "actions", actions)
 
 			// Handle no actions - try error recovery
 			if len(actions) == 0 {
@@ -202,53 +204,6 @@ func (p *GLRParser) Parse(input string) ([]*ParseNode, error) {
 						stateStack: append(append([]int{}, stack.stateStack...), action.Target),
 						nodeStack:  append(append([]*ParseNode{}, stack.nodeStack...), node),
 						pos:        stack.pos + 1,
-					}
-					newStacks = append(newStacks, newStack)
-
-				case Reduce:
-					rule := p.rules[action.Target]
-					rhsLen := len(rule.RHS)
-
-					// Skip invalid reductions
-					if rhsLen > len(stack.nodeStack) {
-						continue
-					}
-
-					// Get children for reduction
-					var children []*ParseNode
-					if rhsLen > 0 {
-						children = stack.nodeStack[len(stack.nodeStack)-rhsLen:]
-					}
-
-					// Create reduced node
-					node := &ParseNode{
-						symbol:   rule.Nonterminal,
-						children: children,
-					}
-					// Set node positions
-					if len(children) > 0 {
-						node.startPos = children[0].startPos
-						node.endPos = children[len(children)-1].endPos
-					} else {
-						node.startPos = stack.pos
-						node.endPos = stack.pos
-					}
-					fmt.Println("    reduced", "node", fmt.Sprintf("%#v", node))
-
-					// Create new stack after reduction
-					newStateStack := append([]int{}, stack.stateStack[:len(stack.stateStack)-rhsLen]...)
-					newNodeStack := append([]*ParseNode{}, stack.nodeStack[:len(stack.nodeStack)-rhsLen]...)
-
-					// Get goto state
-					gotoState := p.states[newStateStack[len(newStateStack)-1]].Gotos[rule.Nonterminal]
-					fmt.Println("    getting goto state", "state", state, "gotoState", gotoState)
-					newStateStack = append(newStateStack, gotoState)
-					newNodeStack = append(newNodeStack, node)
-
-					newStack := &ParseStack{
-						stateStack: newStateStack,
-						nodeStack:  newNodeStack,
-						pos:        stack.pos,
 					}
 					newStacks = append(newStacks, newStack)
 
