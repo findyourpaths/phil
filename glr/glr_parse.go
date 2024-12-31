@@ -8,9 +8,9 @@ import (
 )
 
 // Debug flags
-// var glrDebug = true
+var glrDebug = true
 
-var glrDebug = false
+// var glrDebug = false
 
 // SetDebug toggles debug logging
 func SetDebug(enabled bool) {
@@ -161,6 +161,9 @@ func Parse(rls []*Rule, sts []*ParseState, l Lexer) ([]*ParseNode, error) {
 			numTerms: 1,
 		}
 		pos++
+		if sym == "" {
+			break
+		}
 
 		if !parseSymbol(rls, sts, s, term) {
 			continue // Skip invalid tokens
@@ -398,12 +401,20 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 }
 
 func parseNodesEqual(n1, n2 *ParseNode) bool {
-	return n1.symbol == n2.symbol &&
-		n1.value == n2.value &&
-		len(n1.children) == len(n2.children) &&
-		n1.startPos == n2.startPos &&
-		n1.endPos == n2.endPos &&
-		n1.numTerms == n2.numTerms
+	if n1.symbol != n2.symbol ||
+		n1.value != n2.value ||
+		len(n1.children) != len(n2.children) ||
+		n1.startPos != n2.startPos ||
+		n1.endPos != n2.endPos ||
+		n1.numTerms != n2.numTerms {
+		return false
+	}
+	for i, n1C := range n1.children {
+		if !parseNodesEqual(n1C, n2.children[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func getStackNode(ps []*StackNode, state int) *StackNode {

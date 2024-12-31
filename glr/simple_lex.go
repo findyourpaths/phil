@@ -2,6 +2,7 @@ package glr
 
 import (
 	"errors"
+	"fmt"
 
 	"go/scanner"
 	"go/token"
@@ -25,8 +26,12 @@ func NewSimpleLexer(input string) *simpleLexer {
 
 func (l *simpleLexer) NextToken(pos int) (string, any, bool) {
 	val := l.Lex(l.lval)
-	tok := yyTokname(val)
-	return l.lval.token, tok, val >= 0
+	sym := l.lval.token
+	if val >= 57343 {
+		sym = yyToknames[val-57343]
+	}
+	fmt.Printf("sym: %q, l.lval.token: %q, val: %d\n", sym, l.lval.token, val)
+	return sym, l.lval.token, val >= 0
 }
 
 func (l *simpleLexer) Error(msg string) {
@@ -51,17 +56,17 @@ func (l *simpleLexer) Lex(lval *yySymType) int {
 		if tok == token.IDENT {
 			lval.token = lit
 			switch lit {
-			case "A":
+			case "a":
 				return A
-			case "B":
+			case "b":
 				return B
-			case "C":
+			case "c":
 				return C
-			case "D":
+			case "d":
 				return D
-			case "X":
+			case "x":
 				return X
-			case "Y":
+			case "y":
 				return Y
 			}
 		}

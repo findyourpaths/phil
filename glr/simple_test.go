@@ -12,81 +12,81 @@ func TestGLRParser(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		input    string
-		wantRule string
-		wantErr  bool
+		name       string
+		input      string
+		wantSymbol string
+		wantErr    bool
 	}{
 		{
-			name:     "Simple ABC",
-			input:    "A B C",
-			wantRule: "ABC",
-			wantErr:  false,
+			name:       "Simple ABC",
+			input:      "a b c",
+			wantSymbol: "ABC",
+			wantErr:    false,
 		},
 		{
-			name:     "Simple BCD",
-			input:    "B C D",
-			wantRule: "BCD",
-			wantErr:  false,
+			name:       "Simple BCD",
+			input:      "b c d",
+			wantSymbol: "BCD",
+			wantErr:    false,
 		},
 		{
-			name:     "Short BCD",
-			input:    "B C",
-			wantRule: "BCD",
-			wantErr:  false,
+			name:       "Short BCD",
+			input:      "b c",
+			wantSymbol: "BCD",
+			wantErr:    false,
 		},
 		{
-			name:     "Simple ABCD",
-			input:    "A B C D",
-			wantRule: "ABCD",
-			wantErr:  false,
+			name:       "Simple ABCD",
+			input:      "a b c d",
+			wantSymbol: "ABCD",
+			wantErr:    false,
 		},
 		{
-			name:     "ABC with extra A",
-			input:    "A A B C",
-			wantRule: "ABC",
-			wantErr:  false,
+			name:       "ABC with extra A",
+			input:      "a a b c",
+			wantSymbol: "ABC",
+			wantErr:    false,
 		},
 		{
-			name:     "ABC with noise",
-			input:    "A B X C",
-			wantRule: "ABC",
-			wantErr:  false,
+			name:       "ABC with noise",
+			input:      "a b x c",
+			wantSymbol: "ABC",
+			wantErr:    false,
 		},
 		{
-			name:     "Long BCD with noise",
-			input:    "X B Y C D",
-			wantRule: "BCD",
-			wantErr:  false,
+			name:       "Long BCD with noise",
+			input:      "x b y c d",
+			wantSymbol: "BCD",
+			wantErr:    false,
 		},
 		{
-			name:     "Long BCD with noise after",
-			input:    "X B Y C D Y",
-			wantRule: "BCD",
-			wantErr:  false,
+			name:       "Long BCD with noise after",
+			input:      "x b y c d y",
+			wantSymbol: "BCD",
+			wantErr:    false,
 		},
 		{
-			name:     "Short BCD with noise",
-			input:    "X B Y C",
-			wantRule: "BCD",
-			wantErr:  false,
+			name:       "Short BCD with noise",
+			input:      "x b y c",
+			wantSymbol: "BCD",
+			wantErr:    false,
 		},
 		{
-			name:     "Short BCD with noise after",
-			input:    "X B Y C Y",
-			wantRule: "BCD",
-			wantErr:  false,
+			name:       "Short BCD with noise after",
+			input:      "x b y c y",
+			wantSymbol: "BCD",
+			wantErr:    false,
 		},
 		{
-			name:     "ABCD with noise",
-			input:    "X A Y B C D X",
-			wantRule: "ABCD",
-			wantErr:  false,
+			name:       "ABCD with noise",
+			input:      "x a y b c d x",
+			wantSymbol: "ABCD",
+			wantErr:    false,
 		},
 		{
-			name:  "Invalid input",
-			input: "X Y",
-			// wantErr: true,
+			name:    "Invalid input",
+			input:   "x y",
+			wantErr: false,
 		},
 	}
 
@@ -100,14 +100,14 @@ func TestGLRParser(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if len(results) == 0 && tt.wantRule == "" {
+			if len(results) == 0 && tt.wantSymbol == "" {
 				return
 			}
 
 			// Get the root node (last node in result)
 			root := results[0].children[0]
-			if root.symbol != tt.wantRule {
-				t.Errorf("Parse() got rule = %v, want %v", root.symbol, tt.wantRule)
+			if root.symbol != tt.wantSymbol {
+				t.Errorf("Parse() got rule = %v, want %v", root.symbol, tt.wantSymbol)
 			}
 
 			// Verify the parse tree structure

@@ -41,7 +41,8 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 	}
 	defer file.Close()
 
-	var rs []*Rule
+	// Rules are numbered starting at 1.
+	rs := []*Rule{nil}
 	scanner := bufio.NewScanner(file)
 
 	inRules := false
@@ -84,7 +85,8 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 				Nonterminal: strings.TrimSpace(nontermMatch[1]),
 			}
 			expectingRHS = true
-			debugln("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
+			// debugln("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
+
 			// Handle case where RHS is on same line as colon
 			// rhsPart := strings.TrimSpace(parts[1])
 			// if rhsPart != "" && !strings.HasPrefix(rhsPart, "{") {
@@ -99,7 +101,7 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 			// 	}
 			// }
 		} else if strings.Contains(line, "|") {
-			debugln("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
+			// debugln("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Alternative production for current rule
 			if currentRule.Nonterminal == "" {
 				return nil, fmt.Errorf("alternative production without rule at line %d: %s", lineNum, line)
@@ -113,7 +115,7 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 			})
 			expectingRHS = false
 		} else {
-			debugln("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
+			// debugln("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Regular production
 			if currentRule.Nonterminal == "" {
 				return nil, fmt.Errorf("production without rule at line %d: %s", lineNum, line)
@@ -135,9 +137,20 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 		return nil, fmt.Errorf("no valid rules found in grammar file")
 	}
 
+	// Print rules.
 	for i, rule := range rs {
 		debugln("i", i, "rule", fmt.Sprintf("%#v", rule))
 	}
+
+	// // Print rules in YACC format.
+	// for _, rule := range rs {
+	// 	debugf("%s:\n", rule.Nonterminal)
+	// 	prefix := ""
+	// 	if rule.RHS != nil {
+	// 		debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
+	// 	}
+	// }
+
 	return rs, nil
 }
 
@@ -160,7 +173,6 @@ func parseRHS(line string) []string {
 			rhs = append(rhs, strings.TrimSpace(token))
 		}
 	}
-	debugln("in parseRHS()", "rhs", rhs)
 	return rhs
 }
 
@@ -240,7 +252,7 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 			}
 			rs[currentState].Actions[symbol] = append(rs[currentState].Actions[symbol], StateAction{
 				Action: "reduce",
-				Rule:   rule - 1,
+				Rule:   rule,
 			})
 		case "goto":
 			target, err := parseNumber(fields[2])
@@ -273,14 +285,6 @@ func LoadGrammarRulesAndStates(grammarFile string, statesFile string) ([]*Rule, 
 	rules, err := LoadGrammarRules(grammarFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error loading grammar rules: %v", err)
-	}
-
-	for _, rule := range rules {
-		debugf("%s:\n", rule.Nonterminal)
-		prefix := ""
-		if rule.RHS != nil {
-			debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
-		}
 	}
 
 	states, err := LoadStates(statesFile)

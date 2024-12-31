@@ -26,15 +26,15 @@ root:
 ;
 
 ABCD:
-  A B C D {$$ = &node{val: "ABCD", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}, {val: "D"}}}}
+  A B C D {$$ = nil}
 ;
 
 ABC:
-  A B C {$$ = &node{val: "ABC", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}}}}
+  A B C {$$ = nil}
 ;
 
 BCD:
-  B C OptD {$$ = &node{val: "BCD", children: []*node{{val: "B"}, {val: "C"}, {val: "D"}}}}
+  B C OptD {$$ = nil}
 ;
 
 OptD:

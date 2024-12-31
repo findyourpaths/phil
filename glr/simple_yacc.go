@@ -433,17 +433,17 @@ yydefault:
 	case 4:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.node = &node{val: "ABCD", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}, {val: "D"}}}
+			yyVAL.node = nil
 		}
 	case 5:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.node = &node{val: "ABC", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}}}
+			yyVAL.node = nil
 		}
 	case 6:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.node = &node{val: "BCD", children: []*node{{val: "B"}, {val: "C"}, {val: "D"}}}
+			yyVAL.node = nil
 		}
 	}
 	goto yystack /* stack new state and value */
