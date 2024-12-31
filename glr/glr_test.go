@@ -6,7 +6,7 @@ import (
 )
 
 func TestGLRParser(t *testing.T) {
-	rules, states, err := loadGrammarRulesAndStates("simple_yacc.y", "simple_yacc.states.txt")
+	rules, states, err := LoadGrammarRulesAndStates("simple_yacc.y", "simple_yacc.states.txt")
 	if err != nil {
 		t.Fatalf("Failed to load rules and states: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestGLRParser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := Parse(rules, states, tt.input)
+			results, err := Parse(rules, states, NewSimpleLexer(tt.input))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -20,21 +20,21 @@ type node struct {
 %%
 
 root:
-    ABCD
-    | ABC
-    | BCD
-    ;
+  ABCD
+| ABC
+| BCD
+;
 
 ABCD:
-    A B C D {$$ = &node{val: "ABCD", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}, {val: "D"}}}}
-    ;
+  A B C D {$$ = &node{val: "ABCD", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}, {val: "D"}}}}
+;
 
 ABC:
-    A B C {$$ = &node{val: "ABC", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}}}}
-    ;
+  A B C {$$ = &node{val: "ABC", children: []*node{{val: "A"}, {val: "B"}, {val: "C"}}}}
+;
 
 BCD:
-    B C D {$$ = &node{val: "BCD", children: []*node{{val: "B"}, {val: "C"}, {val: "D"}}}}
-    ;
+  B C D {$$ = &node{val: "BCD", children: []*node{{val: "B"}, {val: "C"}, {val: "D"}}}}
+;
 
 %%

@@ -2,6 +2,8 @@ package glr
 
 import (
 	"fmt"
+	"go/scanner"
+	"go/token"
 	"sort"
 )
 
@@ -118,11 +120,25 @@ type GLRState struct {
 	debug            bool
 }
 
+type Lexer interface {
+	NextToken(int) (string, any, bool)
+	Error(string)
+}
+
+func NewLexerScanner(l Lexer, input string) scanner.Scanner {
+	inputBs := []byte(input)
+	var s scanner.Scanner
+	fset := token.NewFileSet()                          // positions are relative to fset
+	file := fset.AddFile("", fset.Base(), len(inputBs)) // register input "file"
+	errHandler := func(pos token.Position, msg string) { l.Error(fmt.Sprintf("error at position %v: %v", pos, msg)) }
+	s.Init(file, inputBs, errHandler, 0) //, scanner.ScanComments)
+	return s
+}
+
 // Parse implements GLR parsing algorithm
-func Parse(rls []Rule, sts []ParseState, input string) ([]*ParseNode, error) {
+func Parse(rls []*Rule, sts []*ParseState, l Lexer) ([]*ParseNode, error) {
 	debugf("\nstarting GLR parse\n")
 
-	lexer := newLexer(input)
 	s := &GLRState{
 		ruleNodes: make(map[string]*ParseNode),
 		debug:     false,
@@ -133,29 +149,24 @@ func Parse(rls []Rule, sts []ParseState, input string) ([]*ParseNode, error) {
 	s.activeParsers = []*StackNode{firstParser}
 	debugf("initialized with start state 0\n")
 
-	lval := &yySymType{}
-	var token *ParseNode
 	pos := 0
-
 	for {
-		// Get next token
-		tokenType := lexer.Lex(lval)
-
 		// Create parse node for token
-		token = &ParseNode{
-			symbol:   lval.token,
-			value:    tokenType,
+		sym, val, hasMore := l.NextToken(pos)
+		term := &ParseNode{
+			symbol:   sym,
+			value:    val,
 			startPos: pos,
 			endPos:   pos + 1,
 			numTerms: 1,
 		}
 		pos++
 
-		if !parseSymbol(rls, sts, s, token) {
+		if !parseSymbol(rls, sts, s, term) {
 			continue // Skip invalid tokens
 		}
 
-		if tokenType < 0 {
+		if !hasMore {
 			break
 		}
 	}
@@ -182,11 +193,11 @@ func Parse(rls []Rule, sts []ParseState, input string) ([]*ParseNode, error) {
 	return results, nil
 }
 
-func parseSymbol(rls []Rule, sts []ParseState, s *GLRState, tok *ParseNode) bool {
-	debugf(fmt.Sprintf("\nparsing lookahead symbol: %q with value: %#v\n", tok.symbol, tok.value))
+func parseSymbol(rls []*Rule, sts []*ParseState, s *GLRState, term *ParseNode) bool {
+	debugf(fmt.Sprintf("\nparsing term: %#v\n", term))
 	printAllParsers(s, nil)
 
-	s.lookahead = tok
+	s.lookahead = term
 	s.initialParsers = s.activeParsers
 	s.parsersToAct = s.activeParsers
 	s.parsersToShift = nil
@@ -205,7 +216,7 @@ func parseSymbol(rls []Rule, sts []ParseState, s *GLRState, tok *ParseNode) bool
 	}
 
 	// Perform shifts if any available
-	if len(s.parsersToShift) == 0 && (len(s.acceptingParsers) == 0 || tok.symbol != "$end") {
+	if len(s.parsersToShift) == 0 && (len(s.acceptingParsers) == 0 || term.symbol != "$end") {
 		// No valid actions found
 		debugf("  accepting with no valid actions found\n")
 		s.acceptingParsers = append(s.acceptingParsers, s.initialParsers...)
@@ -215,7 +226,7 @@ func parseSymbol(rls []Rule, sts []ParseState, s *GLRState, tok *ParseNode) bool
 	return true
 }
 
-func actor(rls []Rule, sts []ParseState, s *GLRState, p *StackNode) {
+func actor(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode) {
 	as := append(sts[p.state].Actions[s.lookahead.symbol], sts[p.state].Actions["."]...)
 	debugf("found %d actions for p.state: %d, s.lookahead.symbol: %q\n", len(as), p.state, s.lookahead.symbol)
 	for i, a := range as {
@@ -239,7 +250,7 @@ func actor(rls []Rule, sts []ParseState, s *GLRState, p *StackNode) {
 	}
 }
 
-func doReductions(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
+func doReductions(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode, r *Rule, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
 	if length == 0 {
 		if linkSeen {
 			reducer(rls, sts, s, p, r, kids)
@@ -253,7 +264,7 @@ func doReductions(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rul
 	}
 }
 
-func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, kids []*ParseNode) {
+func reducer(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode, r *Rule, kids []*ParseNode) {
 	printAllParsers(s, p)
 
 	gotoState, ok := sts[p.state].Gotos[r.Nonterminal]
@@ -263,7 +274,7 @@ func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, ki
 
 	ruleNode := getRuleNode(s, r, kids)
 	stackNode := getStackNode(s.activeParsers, gotoState)
-	fmt.Println("  gotoState", gotoState, "stackNode", stackNode)
+	debugln("  gotoState", gotoState, "stackNode", stackNode)
 	printNodeTree(ruleNode, "  ")
 
 	if stackNode == nil {
@@ -324,7 +335,7 @@ func shifter(s *GLRState) []*StackNode {
 	return newParsers
 }
 
-func getRuleNode(s *GLRState, rl Rule, kids []*ParseNode) *ParseNode {
+func getRuleNode(s *GLRState, rl *Rule, kids []*ParseNode) *ParseNode {
 	key := fmt.Sprintf("%s:%v", rl.Nonterminal, kids)
 	if node, exists := s.ruleNodes[key]; exists {
 		return node
