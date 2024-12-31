@@ -6,69 +6,79 @@ import (
 )
 
 // Debug flags
-var glrDebug = true
-var glrVerbose = true
+// var glrDebug = true
+
+var glrDebug = false
 
 // SetDebug toggles debug logging
 func SetDebug(enabled bool) {
 	glrDebug = enabled
 }
 
-// SetVerbose toggles verbose logging
-func SetVerbose(enabled bool) {
-	glrVerbose = enabled
-}
-
-// debugLog prints debug messages if debug is enabled
-func debugLog(format string, args ...interface{}) {
+// debugf prints debug messages if debug is enabled
+func debugf(format string, args ...interface{}) {
 	if glrDebug {
 		fmt.Printf(format, args...)
 	}
 }
 
-// verboseLog prints verbose messages if verbose is enabled
-func verboseLog(format string, args ...interface{}) {
-	if glrVerbose {
-		fmt.Printf(format, args...)
+// debugf prints debug messages if debug is enabled
+func debugln(args ...interface{}) {
+	if glrDebug {
+		fmt.Println(args...)
 	}
 }
 
 func printNodeTree(n *ParseNode, spaces string) {
-	fmt.Printf("%s%d: [%d, %d]: symbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, n.symbol, n.value)
+	debugf("%s%d: [%d, %d]: symbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, n.symbol, n.value)
 	for _, child := range n.children {
 		printNodeTree(child, spaces+"  ")
 	}
 }
 
-// outputParserName returns a string description of a parser
-func outputParserName(p *StackNode) string {
-	return fmt.Sprintf("parser with state %d", p.state)
+// printActiveParser prints all active parsers
+func printAllParsers(s *GLRState, p *StackNode) {
+	if p != nil {
+		debugf("  current parser with state: %v\n", p.state)
+		printParser(p, "  ", nil)
+	} else {
+		debugf("  no current parser\n")
+	}
+	printParsers("active parsers", s.activeParsers, nil)
+	printParsers("parsers to act", s.parsersToAct, nil)
+	printParsers("parsers to shift", s.parsersToShift, s.statesToShiftTo)
+	printParsers("accepting parser", s.acceptingParsers, nil)
 }
 
-// printParser prints the parser state and backlinks recursively
-func printParser(p *StackNode, parsersAfter string) {
-	if len(p.backlinks) > 0 {
-		for _, backlink := range p.backlinks {
-			backStackNode := backlink.stackNode
-			if p.state == backStackNode.state {
-				fmt.Printf("* %d %s\n", p.state, parsersAfter)
-			} else {
-				printParser(backStackNode, fmt.Sprintf("- %s - %d %s",
-					backlink.node.symbol, p.state, parsersAfter))
-			}
+func printParsers(label string, ps []*StackNode, states []int) {
+	debugf("  %d %s with states: %v\n", len(ps), label, mapStates(ps))
+	for i, p := range ps {
+		var state *int
+		if states != nil {
+			state = &(states[i])
 		}
-	} else {
-		fmt.Printf("%d %s\n", p.state, parsersAfter)
+		printParser(p, "  ", state)
 	}
 }
 
-// printActiveParser prints all active parsers
-func printActiveParsers(ps []*StackNode) {
-	debugLog("%d active parsers with states: %v\n",
-		len(ps), mapStates(ps))
-	for _, parser := range ps {
-		printParser(parser, "")
-		debugLog("\n")
+// printParser prints the parser state and backlinks recursively
+func printParser(p *StackNode, parsersAfter string, state *int) {
+	shift := ""
+	if state != nil {
+		shift = fmt.Sprintf("-> %d", *state)
+	}
+
+	if len(p.backlinks) == 0 {
+		debugf("    %d %s%s\n", p.state, parsersAfter, shift)
+		return
+	}
+	for _, backlink := range p.backlinks {
+		backStackNode := backlink.stackNode
+		if p.state == backStackNode.state {
+			debugf("* %d %s%s\n", p.state, parsersAfter, shift)
+		} else {
+			printParser(backStackNode, fmt.Sprintf("- %s - %d %s%s", backlink.node.symbol, p.state, parsersAfter, shift), nil)
+		}
 	}
 }
 
@@ -99,7 +109,8 @@ type GLRState struct {
 	activeParsers    []*StackNode
 	initialParsers   []*StackNode
 	parsersToAct     []*StackNode
-	parsersToShift   [][2]interface{}
+	parsersToShift   []*StackNode
+	statesToShiftTo  []int
 	acceptingParsers []*StackNode
 	ruleNodes        map[string]*ParseNode
 	symbolNodes      []*ParseNode
@@ -109,7 +120,7 @@ type GLRState struct {
 
 // Parse implements GLR parsing algorithm
 func Parse(rls []Rule, sts []ParseState, input string) ([]*ParseNode, error) {
-	debugLog("\nstarting GLR parse\n")
+	debugf("\nstarting GLR parse\n")
 
 	lexer := newLexer(input)
 	s := &GLRState{
@@ -120,7 +131,7 @@ func Parse(rls []Rule, sts []ParseState, input string) ([]*ParseNode, error) {
 	// Initialize with start state
 	firstParser := &StackNode{state: 0, backlinks: nil}
 	s.activeParsers = []*StackNode{firstParser}
-	debugLog("initialized with start state 0\n")
+	debugf("initialized with start state 0\n")
 
 	lval := &yySymType{}
 	var token *ParseNode
@@ -165,38 +176,38 @@ func Parse(rls []Rule, sts []ParseState, input string) ([]*ParseNode, error) {
 	})
 
 	for i, result := range results {
-		fmt.Printf("result[%d]\n", i)
+		debugf("result[%d]\n", i)
 		printNodeTree(result, "")
 	}
 	return results, nil
 }
 
 func parseSymbol(rls []Rule, sts []ParseState, s *GLRState, tok *ParseNode) bool {
-	debugLog(fmt.Sprintf("parsing lookahead symbol: %q with value: %#v\n", tok.symbol, tok.value))
-
-	if glrDebug {
-		printActiveParsers(s.activeParsers)
-	}
+	debugf(fmt.Sprintf("\nparsing lookahead symbol: %q with value: %#v\n", tok.symbol, tok.value))
+	printAllParsers(s, nil)
 
 	s.lookahead = tok
 	s.initialParsers = s.activeParsers
 	s.parsersToAct = s.activeParsers
 	s.parsersToShift = nil
+	s.statesToShiftTo = nil
 	s.ruleNodes = make(map[string]*ParseNode)
 	s.symbolNodes = nil
 
 	// Process all parsers
 	for len(s.parsersToAct) > 0 {
+		debugf("processing parsers\n")
 		p := s.parsersToAct[0]
 		s.parsersToAct = s.parsersToAct[1:]
 		s.activeParser = p
+		printAllParsers(s, p)
 		actor(rls, sts, s, p)
 	}
 
 	// Perform shifts if any available
 	if len(s.parsersToShift) == 0 && (len(s.acceptingParsers) == 0 || tok.symbol != "$end") {
 		// No valid actions found
-		fmt.Printf("accepting with no valid actions found\n")
+		debugf("  accepting with no valid actions found\n")
 		s.acceptingParsers = append(s.acceptingParsers, s.initialParsers...)
 		return false
 	}
@@ -206,21 +217,23 @@ func parseSymbol(rls []Rule, sts []ParseState, s *GLRState, tok *ParseNode) bool
 
 func actor(rls []Rule, sts []ParseState, s *GLRState, p *StackNode) {
 	as := append(sts[p.state].Actions[s.lookahead.symbol], sts[p.state].Actions["."]...)
+	debugf("found %d actions for p.state: %d, s.lookahead.symbol: %q\n", len(as), p.state, s.lookahead.symbol)
 	for i, a := range as {
-		fmt.Printf("looking at action for p.state: %d, s.lookahead.symbol: %q, actions[%d]: %#v\n", p.state, s.lookahead.symbol, i, a)
+		debugf("  looking at action for p.state: %d, s.lookahead.symbol: %q, actions[%d]: %#v\n", p.state, s.lookahead.symbol, i, a)
 
 		switch a.Action {
 		case "shift":
-			fmt.Printf("shifting to state: %d\n", a.State)
-			s.parsersToShift = append(s.parsersToShift, [2]interface{}{p, a.State})
+			debugf("  shifting to state: %d\n", a.State)
+			s.parsersToShift = append(s.parsersToShift, p)
+			s.statesToShiftTo = append(s.statesToShiftTo, a.State)
 
 		case "reduce":
 			r := rls[a.Rule]
-			fmt.Printf("reducing with rule: %#v\n", r)
+			debugf("  reducing with rule: %#v\n", r)
 			doReductions(rls, sts, s, p, r, len(r.RHS), nil, nil, true)
 
 		case "accept":
-			fmt.Printf("accepting\n")
+			debugf("  accepting\n")
 			s.acceptingParsers = append(s.acceptingParsers, p)
 		}
 	}
@@ -241,7 +254,7 @@ func doReductions(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rul
 }
 
 func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, kids []*ParseNode) {
-	printParser(p, "")
+	printAllParsers(s, p)
 
 	gotoState, ok := sts[p.state].Gotos[r.Nonterminal]
 	if !ok {
@@ -249,8 +262,9 @@ func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, ki
 	}
 
 	ruleNode := getRuleNode(s, r, kids)
-	printNodeTree(ruleNode, "")
 	stackNode := getStackNode(s.activeParsers, gotoState)
+	fmt.Println("  gotoState", gotoState, "stackNode", stackNode)
+	printNodeTree(ruleNode, "  ")
 
 	if stackNode == nil {
 		// Create new parser state
@@ -291,14 +305,11 @@ func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, ki
 }
 
 func shifter(s *GLRState) []*StackNode {
-	fmt.Printf("shifter(s)\n")
 	var newParsers []*StackNode
 
-	for _, pair := range s.parsersToShift {
-		parser := pair[0].(*StackNode)
-		newState := pair[1].(int)
-
-		newLink := &StackLink{stackNode: parser, node: s.lookahead}
+	for i, p := range s.parsersToShift {
+		newState := s.statesToShiftTo[i]
+		newLink := &StackLink{stackNode: p, node: s.lookahead}
 		stackNode := getStackNode(newParsers, newState)
 
 		if stackNode != nil {
@@ -345,7 +356,8 @@ func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
 }
 
 func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
-	if old == new {
+	debugf("adding alternative with old.symbol: %q, new.symbol: %q, old == new: %t\n", old.symbol, new.symbol, old == new)
+	if parseNodesEqual(old, new) {
 		return old
 	}
 
@@ -372,6 +384,15 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 	return ambiguous
 }
 
+func parseNodesEqual(n1, n2 *ParseNode) bool {
+	return n1.symbol == n2.symbol &&
+		n1.value == n2.value &&
+		len(n1.children) == len(n2.children) &&
+		n1.startPos == n2.startPos &&
+		n1.endPos == n2.endPos &&
+		n1.numTerms == n2.numTerms
+}
+
 func getStackNode(ps []*StackNode, state int) *StackNode {
 	for _, parser := range ps {
 		if parser.state == state {
@@ -389,3 +410,37 @@ func contains(slice []*StackNode, item *StackNode) bool {
 	}
 	return false
 }
+
+// func parseTreeEqual(n1, n2 *ParseNode) {
+// 	visited := make(map[*ParseNode]bool)
+// 	parseTreeEqualHelper(n1, n2, visited)
+// }
+
+// func parseTreeEqualHelper(n1, n2 *ParseNode, visited map[*ParseNode]bool) {
+// 	if (n1 == nil && n2 == nil) || (visited[n1] && visited[n2]) {
+// 		return
+// 	}
+// 	visited[n1] = true
+// 	visited[n2] = true
+
+// 	// Verify node positions are consistent
+// 	if len(node.children) > 0 {
+// 		firstChild := node.children[0]
+// 		lastChild := node.children[len(node.children)-1]
+
+// 		if node.startPos != firstChild.startPos {
+// 			t.Errorf("Node start position inconsistent: node=%d, firstChild=%d",
+// 				node.startPos, firstChild.startPos)
+// 		}
+
+// 		if node.endPos != lastChild.endPos {
+// 			t.Errorf("Node end position inconsistent: node=%d, lastChild=%d",
+// 				node.endPos, lastChild.endPos)
+// 		}
+// 	}
+
+// 	// Recursively verify children
+// 	for _, child := range node.children {
+// 		verifyParseTreeHelper(t, child, visited)
+// 	}
+// }

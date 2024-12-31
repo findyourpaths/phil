@@ -77,7 +77,7 @@ func loadGrammarRules(grammarFile string) ([]Rule, error) {
 			currentRule = Rule{
 				Nonterminal: strings.TrimSpace(nontermMatch[1]),
 			}
-			fmt.Println("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
+			debugln("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Handle case where RHS is on same line as colon
 			// rhsPart := strings.TrimSpace(parts[1])
 			// if rhsPart != "" && !strings.HasPrefix(rhsPart, "{") {
@@ -92,7 +92,7 @@ func loadGrammarRules(grammarFile string) ([]Rule, error) {
 			// 	}
 			// }
 		} else if strings.Contains(line, "|") {
-			fmt.Println("line contains |", "currentRule.NonTerminal", currentRule.Nonterminal)
+			debugln("line contains |", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Alternative production for current rule
 			if currentRule.Nonterminal == "" {
 				return nil, fmt.Errorf("alternative production without rule at line %d: %s", lineNum, line)
@@ -132,7 +132,7 @@ func loadGrammarRules(grammarFile string) ([]Rule, error) {
 	}
 
 	for i, rule := range rules {
-		fmt.Println("i", i, "rule", fmt.Sprintf("%#v", rule))
+		debugln("i", i, "rule", fmt.Sprintf("%#v", rule))
 	}
 	return rules, nil
 }
@@ -156,7 +156,7 @@ func parseRHS(line string) []string {
 			rhs = append(rhs, strings.TrimSpace(token))
 		}
 	}
-	fmt.Println("in parseRHS()", "rhs", rhs)
+	debugln("in parseRHS()", "rhs", rhs)
 	return rhs
 }
 
@@ -260,7 +260,7 @@ func loadStates(statesFile string) ([]ParseState, error) {
 	}
 
 	for i, state := range states {
-		fmt.Println("i", i, "state", fmt.Sprintf("%#v", state))
+		debugln("i", i, "state", fmt.Sprintf("%#v", state))
 	}
 	return states, nil
 }
@@ -272,10 +272,10 @@ func loadGrammarRulesAndStates(grammarFile string, statesFile string) ([]Rule, [
 	}
 
 	for _, rule := range rules {
-		fmt.Printf("%s:\n", rule.Nonterminal)
+		debugf("%s:\n", rule.Nonterminal)
 		prefix := ""
 		if rule.RHS != nil {
-			fmt.Printf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
+			debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
 		}
 	}
 
