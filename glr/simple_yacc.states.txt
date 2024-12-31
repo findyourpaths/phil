@@ -46,63 +46,93 @@ state 5
 
 state 6
 	BCD:  B.C OptD 
+	BCD:  B.C WrapD 
+	BCD:  B.WrapC D 
 
 	C  shift 8
 	.  error
 
+	WrapC  goto 9
 
 state 7
 	ABCD:  A B.C D 
 	ABC:  A B.C 
 
-	C  shift 9
+	C  shift 10
 	.  error
 
 
+8: shift/reduce conflict (shift 13(0), red'n 9(0)) on D
 state 8
 	BCD:  B C.OptD 
-	OptD: .    (7)
+	BCD:  B C.WrapD 
+	WrapC:  C.    (9)
+	OptD: .    (10)
 
-	D  shift 11
-	.  reduce 7 (src line 40)
+	D  shift 13
+	.  reduce 10 (src line 46)
 
-	OptD  goto 10
+	OptD  goto 11
+	WrapD  goto 12
 
 state 9
-	ABCD:  A B C.D 
-	ABC:  A B C.    (5)
+	BCD:  B WrapC.D 
 
-	D  shift 12
-	.  reduce 5 (src line 32)
+	D  shift 14
+	.  error
 
 
 state 10
+	ABCD:  A B C.D 
+	ABC:  A B C.    (5)
+
+	D  shift 15
+	.  reduce 5 (src line 32)
+
+
+state 11
 	BCD:  B C OptD.    (6)
 
 	.  reduce 6 (src line 36)
 
 
-state 11
-	OptD:  D.    (8)
-
-	.  reduce 8 (src line 42)
-
-
 state 12
+	BCD:  B C WrapD.    (7)
+
+	.  reduce 7 (src line 38)
+
+
+ 13: reduce/reduce conflict  (red'ns 11 and 12) on $end
+state 13
+	OptD:  D.    (11)
+	WrapD:  D.    (12)
+
+	.  reduce 11 (src line 48)
+
+
+state 14
+	BCD:  B WrapC D.    (8)
+
+	.  reduce 8 (src line 39)
+
+
+state 15
 	ABCD:  A B C D.    (4)
 
 	.  reduce 4 (src line 28)
 
+Rule not reduced: WrapC:  C 
+Rule not reduced: WrapD:  D 
 
-10 terminals, 6 nonterminals
-9 grammar rules, 13/16000 states
-0 shift/reduce, 0 reduce/reduce conflicts reported
-55 working sets used
-memory: parser 4/240000
+10 terminals, 8 nonterminals
+13 grammar rules, 16/16000 states
+1 shift/reduce, 1 reduce/reduce conflicts reported
+57 working sets used
+memory: parser 6/240000
 0 extra closures
-7 shift entries, 1 exceptions
-5 goto entries
+8 shift entries, 1 exceptions
+7 goto entries
 0 entries saved by goto default
-Optimizer space used: output 12/240000
-12 table entries, 0 zero
+Optimizer space used: output 15/240000
+15 table entries, 0 zero
 maximum spread: 7, maximum offset: 7

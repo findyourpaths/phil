@@ -2,7 +2,6 @@ package glr
 
 import (
 	"errors"
-	"fmt"
 
 	"go/scanner"
 	"go/token"
@@ -30,7 +29,7 @@ func (l *simpleLexer) NextToken(pos int) (string, any, bool) {
 	if val >= 57343 {
 		sym = yyToknames[val-57343]
 	}
-	fmt.Printf("sym: %q, l.lval.token: %q, val: %d\n", sym, l.lval.token, val)
+	debugf("sym: %q, l.lval.token: %q, val: %d\n", sym, l.lval.token, val)
 	return sym, l.lval.token, val >= 0
 }
 

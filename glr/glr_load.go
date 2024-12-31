@@ -32,6 +32,7 @@ type ParseNode struct {
 	startPos int
 	endPos   int
 	numTerms int
+	isAlt    bool
 }
 
 func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
@@ -139,17 +140,23 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 
 	// Print rules.
 	for i, rule := range rs {
+		if rule == nil {
+			continue
+		}
 		debugln("i", i, "rule", fmt.Sprintf("%#v", rule))
 	}
 
-	// // Print rules in YACC format.
-	// for _, rule := range rs {
-	// 	debugf("%s:\n", rule.Nonterminal)
-	// 	prefix := ""
-	// 	if rule.RHS != nil {
-	// 		debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
-	// 	}
-	// }
+	// Print rules in YACC format.
+	for _, rule := range rs {
+		if rule == nil {
+			continue
+		}
+		debugf("%s:\n", rule.Nonterminal)
+		prefix := ""
+		if rule.RHS != nil {
+			debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
+		}
+	}
 
 	return rs, nil
 }
@@ -188,12 +195,34 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
 
+	srConflictRE := regexp.MustCompile(`^\d+: shift\/reduce conflict \(shift \d+\(\d+\), red'n (\d+)\(\d+\)\) on \S+$`)
+	rrConflictRE := regexp.MustCompile(`^\s*\d+: reduce\/reduce conflict  \(red'ns \d+ and (\d+)\) on \S+$`)
+
+	actions := map[string][]StateAction{}
+
 	for scanner.Scan() {
 		lineNum++
 		line := strings.TrimSpace(scanner.Text())
 
 		if line == "" || strings.HasPrefix(line, "//") {
 			continue
+		}
+
+		match := srConflictRE.FindStringSubmatch(line)
+		if len(match) == 0 {
+			match = rrConflictRE.FindStringSubmatch(line)
+		}
+
+		if len(match) > 1 {
+			rule, err := parseTarget(match[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid conflict target at line %d: %q", lineNum, line)
+			}
+			debugln("conflict reduce rule", rule)
+			actions["."] = append(actions["."], StateAction{
+				Action: "reduce",
+				Rule:   rule,
+			})
 		}
 
 		if strings.HasPrefix(line, "state ") {
@@ -206,10 +235,11 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 			// Ensure states slice has enough capacity
 			for len(rs) <= currentState {
 				rs = append(rs, &ParseState{
-					Actions: make(map[string][]StateAction),
+					Actions: actions,
 					Gotos:   make(map[string]int),
 				})
 			}
+			actions = map[string][]StateAction{}
 			continue
 		}
 
@@ -228,40 +258,40 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 			continue
 		}
 
-		symbol := fields[0]
-		actionType := fields[1]
+		sym := fields[0]
+		action := fields[1]
 
-		switch actionType {
+		switch action {
 		case "shift":
 			// Handle lines like "A shift entries, B exceptions"
 			if strings.Contains(line, "entries") {
 				continue
 			}
-			state, err := parseNumber(fields[2])
+			state, err := parseTarget(fields[2])
 			if err != nil {
-				return nil, fmt.Errorf("invalid shift target at line %d: %s", lineNum, line)
+				return nil, fmt.Errorf("invalid shift target at line %d: %q", lineNum, line)
 			}
-			rs[currentState].Actions[symbol] = append(rs[currentState].Actions[symbol], StateAction{
+			rs[currentState].Actions[sym] = append(rs[currentState].Actions[sym], StateAction{
 				Action: "shift",
 				State:  state,
 			})
 		case "reduce":
-			rule, err := parseNumber(fields[2])
+			rule, err := parseTarget(fields[2])
 			if err != nil {
-				return nil, fmt.Errorf("invalid shift target at line %d: %s", lineNum, line)
+				return nil, fmt.Errorf("invalid reduce target at line %d: %q", lineNum, line)
 			}
-			rs[currentState].Actions[symbol] = append(rs[currentState].Actions[symbol], StateAction{
+			rs[currentState].Actions[sym] = append(rs[currentState].Actions[sym], StateAction{
 				Action: "reduce",
 				Rule:   rule,
 			})
 		case "goto":
-			target, err := parseNumber(fields[2])
+			target, err := parseTarget(fields[2])
 			if err != nil {
-				return nil, fmt.Errorf("invalid goto target at line %d: %s", lineNum, line)
+				return nil, fmt.Errorf("invalid goto target at line %d: %q", lineNum, line)
 			}
-			rs[currentState].Gotos[symbol] = target
+			rs[currentState].Gotos[sym] = target
 		case "accept":
-			rs[currentState].Actions[symbol] = append(rs[currentState].Actions[symbol], StateAction{
+			rs[currentState].Actions[sym] = append(rs[currentState].Actions[sym], StateAction{
 				Action: "accept",
 			})
 		}
@@ -306,7 +336,7 @@ func LoadGrammarRulesAndStates(grammarFile string, statesFile string) ([]*Rule, 
 	return rules, states, nil
 }
 
-func parseNumber(s string) (int, error) {
+func parseTarget(s string) (int, error) {
 	num, err := strconv.Atoi(s)
 	if err != nil {
 		return 0, err

@@ -8,9 +8,9 @@ import (
 )
 
 // Debug flags
-var glrDebug = true
+// var glrDebug = true
 
-// var glrDebug = false
+var glrDebug = false
 
 // SetDebug toggles debug logging
 func SetDebug(enabled bool) {
@@ -32,7 +32,11 @@ func debugln(args ...interface{}) {
 }
 
 func printNodeTree(n *ParseNode, spaces string) {
-	debugf("%s%d: [%d, %d]: symbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, n.symbol, n.value)
+	alt := ""
+	if n.isAlt {
+		alt = "ALT "
+	}
+	debugf("%s%d: [%d, %d]: %ssymbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, alt, n.symbol, n.value)
 	for _, child := range n.children {
 		printNodeTree(child, spaces+"  ")
 	}
@@ -189,6 +193,7 @@ func Parse(rls []*Rule, sts []*ParseState, l Lexer) ([]*ParseNode, error) {
 		return results[i].numTerms > results[j].numTerms
 	})
 
+	debugf("results\n")
 	for i, result := range results {
 		debugf("result[%d]\n", i)
 		printNodeTree(result, "")
@@ -339,6 +344,7 @@ func shifter(s *GLRState) []*StackNode {
 }
 
 func getRuleNode(s *GLRState, rl *Rule, kids []*ParseNode) *ParseNode {
+	debugf("getRuleNode(s, rl %#v, len(kids): %d)\n", rl, len(kids))
 	key := fmt.Sprintf("%s:%v", rl.Nonterminal, kids)
 	if node, exists := s.ruleNodes[key]; exists {
 		return node
@@ -372,23 +378,23 @@ func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
 }
 
 func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
-	debugf("adding alternative with old.symbol: %q, new.symbol: %q, old == new: %t\n", old.symbol, new.symbol, old == new)
+	debugf("adding alternative with old.symbol: %q, old.isAlt: %t, new.symbol: %q, new.isAlt: %t, old == new: %t\n", old.symbol, old.isAlt, new.symbol, new.isAlt, old == new)
 	if parseNodesEqual(old, new) {
 		return old
 	}
 
-	// Create or update ambiguous node
-	var ambiguous *ParseNode
-	if old.symbol != new.symbol || old.startPos != new.startPos || old.endPos != new.endPos {
+	if old.isAlt {
+		old.children = append(old.children, new)
 		return old
 	}
 
-	ambiguous = &ParseNode{
+	ambiguous := &ParseNode{
 		symbol:   old.symbol,
-		children: append([]*ParseNode{old}, new),
+		children: []*ParseNode{old, new},
 		startPos: old.startPos,
 		endPos:   old.endPos,
 		numTerms: max(old.numTerms, new.numTerms),
+		isAlt:    true,
 	}
 
 	// Update references

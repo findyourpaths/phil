@@ -35,11 +35,21 @@ ABC:
 
 BCD:
   B C OptD {$$ = nil}
+| B C WrapD {$$ = nil}
+| B WrapC D {$$ = nil}
+;
+
+WrapC:
+  C
 ;
 
 OptD:
 
 | D
+;
+
+WrapD:
+  D
 ;
 
 %%
