@@ -8,9 +8,9 @@ import (
 )
 
 // Debug flags
-// var glrDebug = true
+var glrDebug = true
 
-var glrDebug = false
+// var glrDebug = false
 
 // SetDebug toggles debug logging
 func SetDebug(enabled bool) {
@@ -36,8 +36,8 @@ func printNodeTree(n *ParseNode, spaces string) {
 	if n.isAlt {
 		alt = "ALT "
 	}
-	debugf("%s%d: [%d, %d]: %ssymbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, alt, n.symbol, n.value)
-	for _, child := range n.children {
+	debugf("%s%d: [%d, %d]: %ssymbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, alt, n.Symbol, n.value)
+	for _, child := range n.Children {
 		printNodeTree(child, spaces+"  ")
 	}
 }
@@ -83,7 +83,7 @@ func printParser(p *StackNode, parsersAfter string, state *int) {
 		if p.state == backStackNode.state {
 			debugf("* %d %s%s\n", p.state, parsersAfter, shift)
 		} else {
-			printParser(backStackNode, fmt.Sprintf("- %s - %d %s%s", backlink.node.symbol, p.state, parsersAfter, shift), nil)
+			printParser(backStackNode, fmt.Sprintf("- %s - %d %s%s", backlink.node.Symbol, p.state, parsersAfter, shift), nil)
 		}
 	}
 }
@@ -158,7 +158,7 @@ func Parse(rls []*Rule, sts []*ParseState, l Lexer) ([]*ParseNode, error) {
 		// Create parse node for token
 		sym, val, hasMore := l.NextToken(pos)
 		term := &ParseNode{
-			symbol:   sym,
+			Symbol:   sym,
 			value:    val,
 			startPos: pos,
 			endPos:   pos + 1,
@@ -224,7 +224,7 @@ func parseSymbol(rls []*Rule, sts []*ParseState, s *GLRState, term *ParseNode) b
 	}
 
 	// Perform shifts if any available
-	if len(s.parsersToShift) == 0 && (len(s.acceptingParsers) == 0 || term.symbol != "$end") {
+	if len(s.parsersToShift) == 0 && (len(s.acceptingParsers) == 0 || term.Symbol != "$end") {
 		// No valid actions found
 		debugf("  accepting with no valid actions found\n")
 		s.acceptingParsers = append(s.acceptingParsers, s.initialParsers...)
@@ -235,10 +235,10 @@ func parseSymbol(rls []*Rule, sts []*ParseState, s *GLRState, term *ParseNode) b
 }
 
 func actor(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode) {
-	as := append(sts[p.state].Actions[s.lookahead.symbol], sts[p.state].Actions["."]...)
-	debugf("found %d actions for p.state: %d, s.lookahead.symbol: %q\n", len(as), p.state, s.lookahead.symbol)
+	as := append(sts[p.state].Actions[s.lookahead.Symbol], sts[p.state].Actions["."]...)
+	debugf("found %d actions for p.state: %d, s.lookahead.symbol: %q\n", len(as), p.state, s.lookahead.Symbol)
 	for i, a := range as {
-		debugf("  looking at action for p.state: %d, s.lookahead.symbol: %q, actions[%d]: %#v\n", p.state, s.lookahead.symbol, i, a)
+		debugf("  looking at action for p.state: %d, s.lookahead.symbol: %q, actions[%d]: %#v\n", p.state, s.lookahead.Symbol, i, a)
 
 		switch a.Action {
 		case "shift":
@@ -312,7 +312,7 @@ func reducer(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode, r *Rule,
 	// Process additional reductions
 	for _, otherParser := range s.activeParsers {
 		if !contains(s.parsersToAct, otherParser) {
-			actions := sts[otherParser.state].Actions[s.lookahead.symbol]
+			actions := sts[otherParser.state].Actions[s.lookahead.Symbol]
 			for _, action := range actions {
 				if action.Action == "reduce" {
 					otherRule := rls[action.Rule]
@@ -355,8 +355,8 @@ func getRuleNode(s *GLRState, rl *Rule, kids []*ParseNode) *ParseNode {
 		numTerms += kid.numTerms
 	}
 	node := &ParseNode{
-		symbol:   rl.Nonterminal,
-		children: kids,
+		Symbol:   rl.Nonterminal,
+		Children: kids,
 		numTerms: numTerms,
 	}
 	if len(kids) > 0 {
@@ -369,7 +369,7 @@ func getRuleNode(s *GLRState, rl *Rule, kids []*ParseNode) *ParseNode {
 
 func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
 	for _, node := range s.symbolNodes {
-		if node.symbol == n.symbol && node.startPos == n.startPos && node.endPos == n.endPos {
+		if node.Symbol == n.Symbol && node.startPos == n.startPos && node.endPos == n.endPos {
 			return node
 		}
 	}
@@ -378,19 +378,19 @@ func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
 }
 
 func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
-	debugf("adding alternative with old.symbol: %q, old.isAlt: %t, new.symbol: %q, new.isAlt: %t, old == new: %t\n", old.symbol, old.isAlt, new.symbol, new.isAlt, old == new)
+	debugf("adding alternative with old.symbol: %q, old.isAlt: %t, new.symbol: %q, new.isAlt: %t, old == new: %t\n", old.Symbol, old.isAlt, new.Symbol, new.isAlt, old == new)
 	if parseNodesEqual(old, new) {
 		return old
 	}
 
 	if old.isAlt {
-		old.children = append(old.children, new)
+		old.Children = append(old.Children, new)
 		return old
 	}
 
 	ambiguous := &ParseNode{
-		symbol:   old.symbol,
-		children: []*ParseNode{old, new},
+		Symbol:   old.Symbol,
+		Children: []*ParseNode{old, new},
 		startPos: old.startPos,
 		endPos:   old.endPos,
 		numTerms: max(old.numTerms, new.numTerms),
@@ -407,16 +407,16 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 }
 
 func parseNodesEqual(n1, n2 *ParseNode) bool {
-	if n1.symbol != n2.symbol ||
+	if n1.Symbol != n2.Symbol ||
 		n1.value != n2.value ||
-		len(n1.children) != len(n2.children) ||
+		len(n1.Children) != len(n2.Children) ||
 		n1.startPos != n2.startPos ||
 		n1.endPos != n2.endPos ||
 		n1.numTerms != n2.numTerms {
 		return false
 	}
-	for i, n1C := range n1.children {
-		if !parseNodesEqual(n1C, n2.children[i]) {
+	for i, n1C := range n1.Children {
+		if !parseNodesEqual(n1C, n2.Children[i]) {
 			return false
 		}
 	}

@@ -105,9 +105,9 @@ func TestGLRParser(t *testing.T) {
 			}
 
 			// Get the root node (last node in result)
-			root := results[0].children[0]
-			if root.symbol != tt.wantSymbol {
-				t.Errorf("Parse() got rule = %v, want %v", root.symbol, tt.wantSymbol)
+			root := results[0].Children[0]
+			if root.Symbol != tt.wantSymbol {
+				t.Errorf("Parse() got rule = %v, want %v", root.Symbol, tt.wantSymbol)
 			}
 
 			// Verify the parse tree structure
@@ -128,9 +128,9 @@ func verifyParseTreeHelper(t *testing.T, node *ParseNode, visited map[*ParseNode
 	visited[node] = true
 
 	// Verify node positions are consistent
-	if len(node.children) > 0 {
-		firstChild := node.children[0]
-		lastChild := node.children[len(node.children)-1]
+	if len(node.Children) > 0 {
+		firstChild := node.Children[0]
+		lastChild := node.Children[len(node.Children)-1]
 
 		if node.startPos != firstChild.startPos {
 			t.Errorf("Node start position inconsistent: node=%d, firstChild=%d",
@@ -144,7 +144,7 @@ func verifyParseTreeHelper(t *testing.T, node *ParseNode, visited map[*ParseNode
 	}
 
 	// Recursively verify children
-	for _, child := range node.children {
+	for _, child := range node.Children {
 		verifyParseTreeHelper(t, child, visited)
 	}
 }

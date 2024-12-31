@@ -26,9 +26,10 @@ type StateAction struct {
 }
 
 type ParseNode struct {
-	symbol   string
+	Symbol   string
+	Children []*ParseNode
+
 	value    interface{}
-	children []*ParseNode
 	startPos int
 	endPos   int
 	numTerms int
@@ -146,17 +147,17 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 		debugln("i", i, "rule", fmt.Sprintf("%#v", rule))
 	}
 
-	// Print rules in YACC format.
-	for _, rule := range rs {
-		if rule == nil {
-			continue
-		}
-		debugf("%s:\n", rule.Nonterminal)
-		prefix := ""
-		if rule.RHS != nil {
-			debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
-		}
-	}
+	// // Print rules in YACC format.
+	// for _, rule := range rs {
+	// 	if rule == nil {
+	// 		continue
+	// 	}
+	// 	debugf("%s:\n", rule.Nonterminal)
+	// 	prefix := ""
+	// 	if rule.RHS != nil {
+	// 		debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
+	// 	}
+	// }
 
 	return rs, nil
 }
