@@ -348,9 +348,11 @@ func getRuleNode(s *GLRState, rl *Rule, kids []*ParseNode) *ParseNode {
 	node := &ParseNode{
 		symbol:   rl.Nonterminal,
 		children: kids,
-		startPos: kids[0].startPos,
-		endPos:   kids[len(kids)-1].endPos,
 		numTerms: numTerms,
+	}
+	if len(kids) > 0 {
+		node.startPos = kids[0].startPos
+		node.endPos = kids[len(kids)-1].endPos
 	}
 	s.ruleNodes[key] = node
 	return node

@@ -34,7 +34,12 @@ ABC:
 ;
 
 BCD:
-  B C D {$$ = &node{val: "BCD", children: []*node{{val: "B"}, {val: "C"}, {val: "D"}}}}
+  B C OptD {$$ = &node{val: "BCD", children: []*node{{val: "B"}, {val: "C"}, {val: "D"}}}}
+;
+
+OptD:
+
+| D
 ;
 
 %%

@@ -4,8 +4,8 @@ go_library(
     name = "glr",
     srcs = [
         "generate.go",
-        "glr.go",
         "glr_load.go",
+        "glr_parse.go",
         "simple_lex.go",
         "simple_yacc.go",
     ],
@@ -15,6 +15,6 @@ go_library(
 
 go_test(
     name = "glr_test",
-    srcs = ["glr_test.go"],
+    srcs = ["simple_test.go"],
     embed = [":glr"],
 )

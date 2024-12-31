@@ -30,6 +30,12 @@ func TestGLRParser(t *testing.T) {
 			wantErr:  false,
 		},
 		{
+			name:     "Short BCD",
+			input:    "B C",
+			wantRule: "BCD",
+			wantErr:  false,
+		},
+		{
 			name:     "Simple ABCD",
 			input:    "A B C D",
 			wantRule: "ABCD",
@@ -48,8 +54,26 @@ func TestGLRParser(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:     "BCD with noise",
+			name:     "Long BCD with noise",
 			input:    "X B Y C D",
+			wantRule: "BCD",
+			wantErr:  false,
+		},
+		{
+			name:     "Long BCD with noise after",
+			input:    "X B Y C D Y",
+			wantRule: "BCD",
+			wantErr:  false,
+		},
+		{
+			name:     "Short BCD with noise",
+			input:    "X B Y C",
+			wantRule: "BCD",
+			wantErr:  false,
+		},
+		{
+			name:     "Short BCD with noise after",
+			input:    "X B Y C Y",
 			wantRule: "BCD",
 			wantErr:  false,
 		},
