@@ -2,254 +2,398 @@ package glr
 
 import (
 	"fmt"
+	"sort"
 )
 
-// GLRParser represents a Generalized LR parser
-type GLRParser struct {
-	rules  []Rule
-	states []ParseState
+// Debug flags
+var glrDebug = true
+var glrVerbose = true
+
+// SetDebug toggles debug logging
+func SetDebug(enabled bool) {
+	glrDebug = enabled
 }
 
-// ParseStack represents a parsing configuration
-type ParseStack struct {
-	stateStack []int
-	nodeStack  []*ParseNode
-	pos        int // Current position in input
+// SetVerbose toggles verbose logging
+func SetVerbose(enabled bool) {
+	glrVerbose = enabled
 }
 
-// stackKey uniquely identifies a parser configuration
-type stackKey struct {
-	state int
-	pos   int
-}
-
-// NewGLRParser creates a new GLR parser with the given rules and states
-func NewGLRParser(rules []Rule, states []ParseState) (*GLRParser, error) {
-	if len(rules) == 0 {
-		return nil, fmt.Errorf("no grammar rules provided")
+// debugLog prints debug messages if debug is enabled
+func debugLog(format string, args ...interface{}) {
+	if glrDebug {
+		fmt.Printf(format, args...)
 	}
-	if len(states) == 0 {
-		return nil, fmt.Errorf("no parser states provided")
-	}
-	return &GLRParser{
-		rules:  rules,
-		states: states,
-	}, nil
 }
 
-// mergeStacks combines equivalent stacks to prevent exponential growth
-func mergeStacks(stacks []*ParseStack) []*ParseStack {
-	stackMap := make(map[stackKey]*ParseStack)
+// verboseLog prints verbose messages if verbose is enabled
+func verboseLog(format string, args ...interface{}) {
+	if glrVerbose {
+		fmt.Printf(format, args...)
+	}
+}
 
-	for _, stack := range stacks {
-		if len(stack.stateStack) == 0 {
-			continue
-		}
+func printNodeTree(n *ParseNode, spaces string) {
+	fmt.Printf("%s%d: [%d, %d]: symbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, n.symbol, n.value)
+	for _, child := range n.children {
+		printNodeTree(child, spaces+"  ")
+	}
+}
 
-		key := stackKey{
-			state: stack.stateStack[len(stack.stateStack)-1],
-			pos:   stack.pos,
-		}
+// outputParserName returns a string description of a parser
+func outputParserName(p *StackNode) string {
+	return fmt.Sprintf("parser with state %d", p.state)
+}
 
-		if existing, ok := stackMap[key]; ok {
-			// Merge parse trees if they represent the same derivation
-			if len(stack.nodeStack) == len(existing.nodeStack) {
-				continue // Keep existing stack
+// printParser prints the parser state and backlinks recursively
+func printParser(p *StackNode, parsersAfter string) {
+	if len(p.backlinks) > 0 {
+		for _, backlink := range p.backlinks {
+			backStackNode := backlink.stackNode
+			if p.state == backStackNode.state {
+				fmt.Printf("* %d %s\n", p.state, parsersAfter)
+			} else {
+				printParser(backStackNode, fmt.Sprintf("- %s - %d %s",
+					backlink.node.symbol, p.state, parsersAfter))
 			}
 		}
-		stackMap[key] = stack
+	} else {
+		fmt.Printf("%d %s\n", p.state, parsersAfter)
 	}
-
-	merged := make([]*ParseStack, 0, len(stackMap))
-	for _, stack := range stackMap {
-		merged = append(merged, stack)
-	}
-	return merged
 }
 
-// Parse parses the input string and returns the parse tree nodes
-func (p *GLRParser) Parse(input string) ([]*ParseNode, error) {
+// printActiveParser prints all active parsers
+func printActiveParsers(ps []*StackNode) {
+	debugLog("%d active parsers with states: %v\n",
+		len(ps), mapStates(ps))
+	for _, parser := range ps {
+		printParser(parser, "")
+		debugLog("\n")
+	}
+}
+
+// mapStates returns a slice of parser states
+func mapStates(ps []*StackNode) []int {
+	states := make([]int, len(ps))
+	for i, p := range ps {
+		states[i] = p.state
+	}
+	return states
+}
+
+// StackNode represents a node in the GLR parsing stack
+type StackNode struct {
+	state     int
+	backlinks []*StackLink
+}
+
+// StackLink represents a link between stack nodes
+type StackLink struct {
+	stackNode *StackNode
+	node      *ParseNode
+}
+
+// GLRState maintains the state of GLR parsing
+type GLRState struct {
+	activeParser     *StackNode
+	activeParsers    []*StackNode
+	initialParsers   []*StackNode
+	parsersToAct     []*StackNode
+	parsersToShift   [][2]interface{}
+	acceptingParsers []*StackNode
+	ruleNodes        map[string]*ParseNode
+	symbolNodes      []*ParseNode
+	lookahead        *ParseNode
+	debug            bool
+}
+
+// Parse implements GLR parsing algorithm
+func Parse(rls []Rule, sts []ParseState, input string) ([]*ParseNode, error) {
+	debugLog("\nstarting GLR parse\n")
+
 	lexer := newLexer(input)
-	var lval yySymType
+	s := &GLRState{
+		ruleNodes: make(map[string]*ParseNode),
+		debug:     false,
+	}
 
 	// Initialize with start state
-	stacks := []*ParseStack{{
-		stateStack: []int{0},
-		nodeStack:  []*ParseNode{},
-		pos:        0,
-	}}
+	firstParser := &StackNode{state: 0, backlinks: nil}
+	s.activeParsers = []*StackNode{firstParser}
+	debugLog("initialized with start state 0\n")
 
-	// Track successful parses
-	var successfulParses []*ParseNode
+	lval := &yySymType{}
+	var token *ParseNode
+	pos := 0
 
 	for {
 		// Get next token
-		token := lexer.Lex(&lval)
-		symbol := lexer.TokenVal
-		isEOF := token < 0
-		fmt.Println("token", token, "symbol", symbol, "isEOF", isEOF)
+		tokenType := lexer.Lex(lval)
 
-		var newStacks []*ParseStack
+		// Create parse node for token
+		token = &ParseNode{
+			symbol:   lval.token,
+			value:    tokenType,
+			startPos: pos,
+			endPos:   pos + 1,
+			numTerms: 1,
+		}
+		pos++
 
-		// Process each stack configuration
-		for i, stack := range stacks {
-			if len(stack.stateStack) == 0 {
-				continue
-			}
-
-			state := stack.stateStack[len(stack.stateStack)-1]
-			fmt.Println("  reducing stack", "i", i, "state", state)
-
-			// Process all possible reductions first
-			for {
-				dotActions := p.states[state].Actions["."]
-				if len(dotActions) == 0 {
-					break
-				}
-
-				var madeReduction bool
-				for _, action := range dotActions {
-					if action.Action != Reduce {
-						continue
-					}
-					rule := p.rules[action.Target]
-					rhsLen := len(rule.RHS)
-
-					// Skip invalid reductions
-					if rhsLen > len(stack.nodeStack) {
-						continue
-					}
-
-					// Get children for reduction
-					var children []*ParseNode
-					if rhsLen > 0 {
-						children = stack.nodeStack[len(stack.nodeStack)-rhsLen:]
-					}
-
-					// Create reduced node
-					node := &ParseNode{
-						symbol:   rule.Nonterminal,
-						children: children,
-					}
-					if len(children) > 0 {
-						node.startPos = children[0].startPos
-						node.endPos = children[len(children)-1].endPos
-					} else {
-						node.startPos = stack.pos
-						node.endPos = stack.pos
-					}
-					fmt.Println("    reduced", "node", fmt.Sprintf("%#v", node))
-
-					// Create new stack after reduction
-					newStateStack := append([]int{}, stack.stateStack[:len(stack.stateStack)-rhsLen]...)
-					newNodeStack := append([]*ParseNode{}, stack.nodeStack[:len(stack.nodeStack)-rhsLen]...)
-
-					// Get goto state
-					gotoState := p.states[newStateStack[len(newStateStack)-1]].Gotos[rule.Nonterminal]
-					newStateStack = append(newStateStack, gotoState)
-					newNodeStack = append(newNodeStack, node)
-
-					// Update current stack
-					stack.stateStack = newStateStack
-					stack.nodeStack = newNodeStack
-					state = gotoState
-					madeReduction = true
-				}
-				if !madeReduction {
-					break
-				}
-			}
-
-			state = stack.stateStack[len(stack.stateStack)-1]
-			var actions []StateAction
-			if isEOF {
-				actions = p.states[state].Actions["$end"]
-			} else {
-				actions = p.states[state].Actions[symbol]
-			}
-			fmt.Println("  other actions with stack", "i", i, "state", state, "actions", actions)
-
-			// Handle no actions - try error recovery
-			if len(actions) == 0 {
-				// Skip erroneous token and continue with same stack
-				if !isEOF {
-					newStacks = append(newStacks, &ParseStack{
-						stateStack: append([]int{}, stack.stateStack...),
-						nodeStack:  append([]*ParseNode{}, stack.nodeStack...),
-						pos:        stack.pos,
-					})
-				}
-				continue
-			}
-
-			// Process all possible actions
-			for _, action := range actions {
-				switch action.Action {
-				case Shift:
-					if isEOF {
-						continue
-					}
-
-					// Create shifted token node
-					node := &ParseNode{
-						symbol:   symbol,
-						value:    lval.token,
-						startPos: stack.pos,
-						endPos:   stack.pos + 1,
-					}
-					fmt.Println("    shifted", "node", fmt.Sprintf("%#v", node))
-
-					// Create new stack after shift
-					newStack := &ParseStack{
-						stateStack: append(append([]int{}, stack.stateStack...), action.Target),
-						nodeStack:  append(append([]*ParseNode{}, stack.nodeStack...), node),
-						pos:        stack.pos + 1,
-					}
-					newStacks = append(newStacks, newStack)
-
-				case Accept:
-					fmt.Println("    accepting", "len(stack.nodeStack)", len(stack.nodeStack))
-					if len(stack.nodeStack) > 0 {
-						successfulParses = append(successfulParses, stack.nodeStack[len(stack.nodeStack)-1])
-					}
-				}
-			}
+		if !parseSymbol(rls, sts, s, token) {
+			continue // Skip invalid tokens
 		}
 
-		if isEOF {
+		if tokenType < 0 {
 			break
 		}
+	}
 
-		// Merge similar stacks to control growth
-		if len(newStacks) > 0 {
-			stacks = mergeStacks(newStacks)
+	// Handle end of input
+	if len(s.acceptingParsers) == 0 {
+		return nil, fmt.Errorf("parsing failed")
+	}
+
+	var results []*ParseNode
+	for _, parser := range s.acceptingParsers {
+		if len(parser.backlinks) > 0 {
+			results = append(results, parser.backlinks[0].node)
+		}
+	}
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].numTerms > results[j].numTerms
+	})
+
+	for i, result := range results {
+		fmt.Printf("result[%d]\n", i)
+		printNodeTree(result, "")
+	}
+	return results, nil
+}
+
+func parseSymbol(rls []Rule, sts []ParseState, s *GLRState, tok *ParseNode) bool {
+	debugLog(fmt.Sprintf("parsing lookahead symbol: %q with value: %#v\n", tok.symbol, tok.value))
+
+	if glrDebug {
+		printActiveParsers(s.activeParsers)
+	}
+
+	s.lookahead = tok
+	s.initialParsers = s.activeParsers
+	s.parsersToAct = s.activeParsers
+	s.parsersToShift = nil
+	s.ruleNodes = make(map[string]*ParseNode)
+	s.symbolNodes = nil
+
+	// Process all parsers
+	for len(s.parsersToAct) > 0 {
+		parser := s.parsersToAct[0]
+		s.parsersToAct = s.parsersToAct[1:]
+		s.activeParser = parser
+
+		if !actor(rls, sts, s, parser) {
+			continue
 		}
 	}
 
-	for i, stack := range stacks {
-		fmt.Println("stack", "i", i, "pos", stack.pos)
-		for j, state := range stack.stateStack {
-			if j < len(stack.nodeStack) {
-				fmt.Println("  j", j, "state", state, "node", fmt.Sprintf("%#v", stack.nodeStack[j]))
-			} else {
-				fmt.Println("  j", j, "state", state)
+	// Perform shifts if any available
+	if len(s.parsersToShift) > 0 || (len(s.acceptingParsers) > 0 && tok.symbol == "$end") {
+		s.activeParsers = shifter(s)
+		return true
+	}
+
+	// No valid actions found
+	s.acceptingParsers = append(s.acceptingParsers, s.initialParsers...)
+	return false
+}
+
+func actor(rls []Rule, sts []ParseState, s *GLRState, p *StackNode) bool {
+	// fmt.Printf("in actor(), k, s.lookahead.symbol: %q\n", s.lookahead.symbol)
+	// fmt.Printf("in actor(), k, states[parser.state].Actions: %#v\n", states[parser.state].Actions)
+	actions := append(sts[p.state].Actions[s.lookahead.symbol], sts[p.state].Actions["."]...)
+	for i, action := range actions {
+		fmt.Printf("in actor(), for s.lookahead.symbol: %q, actions[%d]: %#v\n", s.lookahead.symbol, i, action)
+	}
+
+	for _, action := range actions {
+		switch action.Action {
+		case "shift":
+			s.parsersToShift = append(s.parsersToShift, [2]interface{}{p, action.State})
+
+		case "reduce":
+			rule := rls[action.Rule]
+			doReductions(rls, sts, s, p, rule, len(rule.RHS), nil, nil, true)
+
+		case "accept":
+			s.acceptingParsers = append(s.acceptingParsers, p)
+		}
+	}
+
+	return true
+}
+
+func doReductions(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
+	// fmt.Printf("doReductions(rules, states, s, parser, r: %#v, length: %d, kids, linkToSee, linkSeen)\n", r, length)
+	// printParser(parser, "")
+
+	if length == 0 {
+		if linkSeen {
+			reducer(rls, sts, s, p, r, kids)
+		}
+		return
+	}
+
+	for _, link := range p.backlinks {
+		newLinkSeen := linkSeen || link == linkToSee
+		doReductions(rls, sts, s, link.stackNode, r, length-1, append([]*ParseNode{link.node}, kids...), linkToSee, newLinkSeen)
+	}
+}
+
+func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, kids []*ParseNode) {
+	fmt.Printf("reducer(rules, states, s, parser, r: %#v, kidsSeen)\n", r)
+	printParser(p, "")
+
+	gotoState, ok := sts[p.state].Gotos[r.Nonterminal]
+	if !ok {
+		return
+	}
+
+	ruleNode := getRuleNode(s, r, kids)
+	stackNode := getStackNode(s.activeParsers, gotoState)
+
+	if stackNode != nil {
+		// Check for existing path
+		for _, link := range stackNode.backlinks {
+			if link.stackNode == p {
+				link.node = addAlternative(s, link.node, ruleNode)
+				return
 			}
 		}
-	}
 
-	// Return most complete successful parse
-	if len(successfulParses) > 0 {
-		var bestParse *ParseNode
-		maxEnd := -1
-		for _, parse := range successfulParses {
-			if parse.endPos > maxEnd {
-				maxEnd = parse.endPos
-				bestParse = parse
+		// Add new path
+		nonterminal := getSymbolNode(s, ruleNode)
+		newLink := &StackLink{stackNode: p, node: nonterminal}
+		stackNode.backlinks = append(stackNode.backlinks, newLink)
+
+		// Process additional reductions
+		for _, otherParser := range s.activeParsers {
+			if !contains(s.parsersToAct, otherParser) {
+				actions := sts[otherParser.state].Actions[s.lookahead.symbol]
+				for _, action := range actions {
+					if action.Action == "reduce" {
+						otherRule := rls[action.Rule]
+						doReductions(rls, sts, s, otherParser, otherRule, len(otherRule.RHS), nil, newLink, false)
+					}
+				}
 			}
 		}
-		fmt.Println("bestParse", fmt.Sprintf("%#v", bestParse))
-		return []*ParseNode{bestParse.children[0]}, nil
+	} else {
+		// Create new parser state
+		nonterminal := getSymbolNode(s, ruleNode)
+		stackNode = &StackNode{
+			state:     gotoState,
+			backlinks: []*StackLink{{stackNode: p, node: nonterminal}}}
+		s.activeParsers = append(s.activeParsers, stackNode)
+		s.parsersToAct = append(s.parsersToAct, stackNode)
+	}
+}
+
+func shifter(s *GLRState) []*StackNode {
+	fmt.Printf("shifter(s)\n")
+	var newParsers []*StackNode
+
+	for _, pair := range s.parsersToShift {
+		parser := pair[0].(*StackNode)
+		newState := pair[1].(int)
+
+		newLink := &StackLink{stackNode: parser, node: s.lookahead}
+		stackNode := getStackNode(newParsers, newState)
+
+		if stackNode != nil {
+			stackNode.backlinks = append(stackNode.backlinks, newLink)
+		} else {
+			stackNode = &StackNode{state: newState, backlinks: []*StackLink{newLink}}
+			newParsers = append(newParsers, stackNode)
+		}
 	}
 
-	return nil, fmt.Errorf("failed to parse input")
+	return newParsers
+}
+
+func getRuleNode(s *GLRState, rl Rule, kids []*ParseNode) *ParseNode {
+	key := fmt.Sprintf("%s:%v", rl.Nonterminal, kids)
+	if node, exists := s.ruleNodes[key]; exists {
+		return node
+	}
+
+	numTerms := 0
+	for _, kid := range kids {
+		numTerms += kid.numTerms
+	}
+	node := &ParseNode{
+		symbol:   rl.Nonterminal,
+		children: kids,
+		startPos: kids[0].startPos,
+		endPos:   kids[len(kids)-1].endPos,
+		numTerms: numTerms,
+	}
+	s.ruleNodes[key] = node
+	return node
+}
+
+func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
+	for _, node := range s.symbolNodes {
+		if node.symbol == n.symbol && node.startPos == n.startPos && node.endPos == n.endPos {
+			return node
+		}
+	}
+	s.symbolNodes = append(s.symbolNodes, n)
+	return n
+}
+
+func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
+	if old == new {
+		return old
+	}
+
+	// Create or update ambiguous node
+	var ambiguous *ParseNode
+	if old.symbol == new.symbol && old.startPos == new.startPos && old.endPos == new.endPos {
+		ambiguous = &ParseNode{
+			symbol:   old.symbol,
+			children: append([]*ParseNode{old}, new),
+			startPos: old.startPos,
+			endPos:   old.endPos,
+			numTerms: max(old.numTerms, new.numTerms),
+		}
+	} else {
+		return old
+	}
+
+	// Update references
+	for i, node := range s.symbolNodes {
+		if node == old {
+			s.symbolNodes[i] = ambiguous
+		}
+	}
+
+	return ambiguous
+}
+
+func getStackNode(ps []*StackNode, state int) *StackNode {
+	for _, parser := range ps {
+		if parser.state == state {
+			return parser
+		}
+	}
+	return nil
+}
+
+func contains(slice []*StackNode, item *StackNode) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }

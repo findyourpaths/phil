@@ -9,24 +9,9 @@ import (
 	"strings"
 )
 
-type Action int
-
-const (
-	Shift Action = iota
-	Reduce
-	Accept
-	Error
-)
-
-type RuleAction struct {
-	NonTerminal string
-	RHS         []string
-}
-
 type Rule struct {
 	Nonterminal string
 	RHS         []string
-	Action      RuleAction
 }
 
 type ParseState struct {
@@ -35,8 +20,9 @@ type ParseState struct {
 }
 
 type StateAction struct {
-	Action Action
-	Target int // State to shift to or rule number to reduce by
+	Action string
+	State  int
+	Rule   int
 }
 
 type ParseNode struct {
@@ -45,6 +31,7 @@ type ParseNode struct {
 	children []*ParseNode
 	startPos int
 	endPos   int
+	numTerms int
 }
 
 func loadGrammarRules(grammarFile string) ([]Rule, error) {
@@ -117,7 +104,6 @@ func loadGrammarRules(grammarFile string) ([]Rule, error) {
 				rule := Rule{
 					Nonterminal: currentRule.Nonterminal,
 					RHS:         rhs,
-					Action:      createRuleAction(currentRule.Nonterminal, rhs),
 				}
 				rules = append(rules, rule)
 			}
@@ -131,7 +117,6 @@ func loadGrammarRules(grammarFile string) ([]Rule, error) {
 				rule := Rule{
 					Nonterminal: currentRule.Nonterminal,
 					RHS:         rhs,
-					Action:      createRuleAction(currentRule.Nonterminal, rhs),
 				}
 				rules = append(rules, rule)
 			}
@@ -173,14 +158,6 @@ func parseRHS(line string) []string {
 	}
 	fmt.Println("in parseRHS()", "rhs", rhs)
 	return rhs
-}
-
-func createRuleAction(nonTerminal string, rhs []string) RuleAction {
-	fmt.Println("in createRuleAction()", "nonTerminal", nonTerminal, "rhs", rhs)
-	return RuleAction{
-		NonTerminal: nonTerminal,
-		RHS:         rhs,
-	}
 }
 
 func loadStates(statesFile string) ([]ParseState, error) {
@@ -244,22 +221,22 @@ func loadStates(statesFile string) ([]ParseState, error) {
 			if strings.Contains(line, "entries") {
 				continue
 			}
-			target, err := parseNumber(fields[2])
+			state, err := parseNumber(fields[2])
 			if err != nil {
 				return nil, fmt.Errorf("invalid shift target at line %d: %s", lineNum, line)
 			}
 			states[currentState].Actions[symbol] = append(states[currentState].Actions[symbol], StateAction{
-				Action: Shift,
-				Target: target,
+				Action: "shift",
+				State:  state,
 			})
 		case "reduce":
-			target, err := parseNumber(fields[2])
+			rule, err := parseNumber(fields[2])
 			if err != nil {
 				return nil, fmt.Errorf("invalid shift target at line %d: %s", lineNum, line)
 			}
 			states[currentState].Actions[symbol] = append(states[currentState].Actions[symbol], StateAction{
-				Action: Reduce,
-				Target: target - 1,
+				Action: "reduce",
+				Rule:   rule - 1,
 			})
 		case "goto":
 			target, err := parseNumber(fields[2])
@@ -269,7 +246,7 @@ func loadStates(statesFile string) ([]ParseState, error) {
 			states[currentState].Gotos[symbol] = target
 		case "accept":
 			states[currentState].Actions[symbol] = append(states[currentState].Actions[symbol], StateAction{
-				Action: Accept,
+				Action: "accept",
 			})
 		}
 	}
@@ -311,8 +288,8 @@ func loadGrammarRulesAndStates(grammarFile string, statesFile string) ([]Rule, [
 	for stateNum, state := range states {
 		for _, actions := range state.Actions {
 			for _, action := range actions {
-				if action.Action == Reduce && action.Target >= len(rules) {
-					return nil, nil, fmt.Errorf("state %d references invalid rule number %d", stateNum, action.Target)
+				if action.Action == "reduce" && action.Rule >= len(rules) {
+					return nil, nil, fmt.Errorf("state %d references invalid rule number %d", stateNum, action.Rule)
 				}
 			}
 		}

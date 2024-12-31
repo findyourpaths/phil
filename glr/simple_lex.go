@@ -56,6 +56,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 			continue
 		}
 		if tok == token.EOF {
+			lval.token = "$end"
 			l.TokenVal = "$end"
 			return -1
 		}
