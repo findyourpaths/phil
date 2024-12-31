@@ -187,55 +187,46 @@ func parseSymbol(rls []Rule, sts []ParseState, s *GLRState, tok *ParseNode) bool
 
 	// Process all parsers
 	for len(s.parsersToAct) > 0 {
-		parser := s.parsersToAct[0]
+		p := s.parsersToAct[0]
 		s.parsersToAct = s.parsersToAct[1:]
-		s.activeParser = parser
-
-		if !actor(rls, sts, s, parser) {
-			continue
-		}
+		s.activeParser = p
+		actor(rls, sts, s, p)
 	}
 
 	// Perform shifts if any available
-	if len(s.parsersToShift) > 0 || (len(s.acceptingParsers) > 0 && tok.symbol == "$end") {
-		s.activeParsers = shifter(s)
-		return true
+	if len(s.parsersToShift) == 0 && (len(s.acceptingParsers) == 0 || tok.symbol != "$end") {
+		// No valid actions found
+		fmt.Printf("accepting with no valid actions found\n")
+		s.acceptingParsers = append(s.acceptingParsers, s.initialParsers...)
+		return false
 	}
-
-	// No valid actions found
-	s.acceptingParsers = append(s.acceptingParsers, s.initialParsers...)
-	return false
-}
-
-func actor(rls []Rule, sts []ParseState, s *GLRState, p *StackNode) bool {
-	// fmt.Printf("in actor(), k, s.lookahead.symbol: %q\n", s.lookahead.symbol)
-	// fmt.Printf("in actor(), k, states[parser.state].Actions: %#v\n", states[parser.state].Actions)
-	actions := append(sts[p.state].Actions[s.lookahead.symbol], sts[p.state].Actions["."]...)
-	for i, action := range actions {
-		fmt.Printf("in actor(), for s.lookahead.symbol: %q, actions[%d]: %#v\n", s.lookahead.symbol, i, action)
-	}
-
-	for _, action := range actions {
-		switch action.Action {
-		case "shift":
-			s.parsersToShift = append(s.parsersToShift, [2]interface{}{p, action.State})
-
-		case "reduce":
-			rule := rls[action.Rule]
-			doReductions(rls, sts, s, p, rule, len(rule.RHS), nil, nil, true)
-
-		case "accept":
-			s.acceptingParsers = append(s.acceptingParsers, p)
-		}
-	}
-
+	s.activeParsers = shifter(s)
 	return true
 }
 
-func doReductions(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
-	// fmt.Printf("doReductions(rules, states, s, parser, r: %#v, length: %d, kids, linkToSee, linkSeen)\n", r, length)
-	// printParser(parser, "")
+func actor(rls []Rule, sts []ParseState, s *GLRState, p *StackNode) {
+	as := append(sts[p.state].Actions[s.lookahead.symbol], sts[p.state].Actions["."]...)
+	for i, a := range as {
+		fmt.Printf("looking at action for p.state: %d, s.lookahead.symbol: %q, actions[%d]: %#v\n", p.state, s.lookahead.symbol, i, a)
 
+		switch a.Action {
+		case "shift":
+			fmt.Printf("shifting to state: %d\n", a.State)
+			s.parsersToShift = append(s.parsersToShift, [2]interface{}{p, a.State})
+
+		case "reduce":
+			r := rls[a.Rule]
+			fmt.Printf("reducing with rule: %#v\n", r)
+			doReductions(rls, sts, s, p, r, len(r.RHS), nil, nil, true)
+
+		case "accept":
+			fmt.Printf("accepting\n")
+			s.acceptingParsers = append(s.acceptingParsers, p)
+		}
+	}
+}
+
+func doReductions(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
 	if length == 0 {
 		if linkSeen {
 			reducer(rls, sts, s, p, r, kids)
@@ -250,7 +241,6 @@ func doReductions(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rul
 }
 
 func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, kids []*ParseNode) {
-	fmt.Printf("reducer(rules, states, s, parser, r: %#v, kidsSeen)\n", r)
 	printParser(p, "")
 
 	gotoState, ok := sts[p.state].Gotos[r.Nonterminal]
@@ -259,35 +249,10 @@ func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, ki
 	}
 
 	ruleNode := getRuleNode(s, r, kids)
+	printNodeTree(ruleNode, "")
 	stackNode := getStackNode(s.activeParsers, gotoState)
 
-	if stackNode != nil {
-		// Check for existing path
-		for _, link := range stackNode.backlinks {
-			if link.stackNode == p {
-				link.node = addAlternative(s, link.node, ruleNode)
-				return
-			}
-		}
-
-		// Add new path
-		nonterminal := getSymbolNode(s, ruleNode)
-		newLink := &StackLink{stackNode: p, node: nonterminal}
-		stackNode.backlinks = append(stackNode.backlinks, newLink)
-
-		// Process additional reductions
-		for _, otherParser := range s.activeParsers {
-			if !contains(s.parsersToAct, otherParser) {
-				actions := sts[otherParser.state].Actions[s.lookahead.symbol]
-				for _, action := range actions {
-					if action.Action == "reduce" {
-						otherRule := rls[action.Rule]
-						doReductions(rls, sts, s, otherParser, otherRule, len(otherRule.RHS), nil, newLink, false)
-					}
-				}
-			}
-		}
-	} else {
+	if stackNode == nil {
 		// Create new parser state
 		nonterminal := getSymbolNode(s, ruleNode)
 		stackNode = &StackNode{
@@ -295,6 +260,33 @@ func reducer(rls []Rule, sts []ParseState, s *GLRState, p *StackNode, r Rule, ki
 			backlinks: []*StackLink{{stackNode: p, node: nonterminal}}}
 		s.activeParsers = append(s.activeParsers, stackNode)
 		s.parsersToAct = append(s.parsersToAct, stackNode)
+		return
+	}
+
+	// Check for existing path
+	for _, link := range stackNode.backlinks {
+		if link.stackNode == p {
+			link.node = addAlternative(s, link.node, ruleNode)
+			return
+		}
+	}
+
+	// Add new path
+	nonterminal := getSymbolNode(s, ruleNode)
+	newLink := &StackLink{stackNode: p, node: nonterminal}
+	stackNode.backlinks = append(stackNode.backlinks, newLink)
+
+	// Process additional reductions
+	for _, otherParser := range s.activeParsers {
+		if !contains(s.parsersToAct, otherParser) {
+			actions := sts[otherParser.state].Actions[s.lookahead.symbol]
+			for _, action := range actions {
+				if action.Action == "reduce" {
+					otherRule := rls[action.Rule]
+					doReductions(rls, sts, s, otherParser, otherRule, len(otherRule.RHS), nil, newLink, false)
+				}
+			}
+		}
 	}
 }
 
@@ -311,10 +303,11 @@ func shifter(s *GLRState) []*StackNode {
 
 		if stackNode != nil {
 			stackNode.backlinks = append(stackNode.backlinks, newLink)
-		} else {
-			stackNode = &StackNode{state: newState, backlinks: []*StackLink{newLink}}
-			newParsers = append(newParsers, stackNode)
+			continue
 		}
+
+		stackNode = &StackNode{state: newState, backlinks: []*StackLink{newLink}}
+		newParsers = append(newParsers, stackNode)
 	}
 
 	return newParsers
@@ -358,16 +351,16 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 
 	// Create or update ambiguous node
 	var ambiguous *ParseNode
-	if old.symbol == new.symbol && old.startPos == new.startPos && old.endPos == new.endPos {
-		ambiguous = &ParseNode{
-			symbol:   old.symbol,
-			children: append([]*ParseNode{old}, new),
-			startPos: old.startPos,
-			endPos:   old.endPos,
-			numTerms: max(old.numTerms, new.numTerms),
-		}
-	} else {
+	if old.symbol != new.symbol || old.startPos != new.startPos || old.endPos != new.endPos {
 		return old
+	}
+
+	ambiguous = &ParseNode{
+		symbol:   old.symbol,
+		children: append([]*ParseNode{old}, new),
+		startPos: old.startPos,
+		endPos:   old.endPos,
+		numTerms: max(old.numTerms, new.numTerms),
 	}
 
 	// Update references
@@ -376,7 +369,6 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 			s.symbolNodes[i] = ambiguous
 		}
 	}
-
 	return ambiguous
 }
 
