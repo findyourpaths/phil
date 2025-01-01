@@ -31,6 +31,41 @@ func debugln(args ...interface{}) {
 	}
 }
 
+type Rules struct {
+	Items []Rule
+}
+
+type Rule struct {
+	Nonterminal string
+	RHS         []string
+}
+
+type ParseStates struct {
+	Items []ParseState
+}
+
+type ParseState struct {
+	Actions map[string][]Action
+	Gotos   map[string]int
+}
+
+type Action struct {
+	Type  string
+	State int
+	Rule  int
+}
+
+type ParseNode struct {
+	Symbol   string
+	Children []*ParseNode
+
+	value    interface{}
+	startPos int
+	endPos   int
+	numTerms int
+	isAlt    bool
+}
+
 func printNodeTree(n *ParseNode, spaces string) {
 	alt := ""
 	if n.isAlt {
@@ -140,7 +175,7 @@ func NewLexerScanner(l Lexer, input string) scanner.Scanner {
 }
 
 // Parse implements GLR parsing algorithm
-func Parse(rls []*Rule, sts []*ParseState, l Lexer) ([]*ParseNode, error) {
+func Parse(rls *Rules, sts *ParseStates, l Lexer) ([]*ParseNode, error) {
 	debugf("\nstarting GLR parse\n")
 
 	s := &GLRState{
@@ -201,7 +236,7 @@ func Parse(rls []*Rule, sts []*ParseState, l Lexer) ([]*ParseNode, error) {
 	return results, nil
 }
 
-func parseSymbol(rls []*Rule, sts []*ParseState, s *GLRState, term *ParseNode) bool {
+func parseSymbol(rls *Rules, sts *ParseStates, s *GLRState, term *ParseNode) bool {
 	debugf(fmt.Sprintf("\nparsing term: %#v\n", term))
 	printAllParsers(s, nil)
 
@@ -234,20 +269,20 @@ func parseSymbol(rls []*Rule, sts []*ParseState, s *GLRState, term *ParseNode) b
 	return true
 }
 
-func actor(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode) {
-	as := append(sts[p.state].Actions[s.lookahead.Symbol], sts[p.state].Actions["."]...)
+func actor(rls *Rules, sts *ParseStates, s *GLRState, p *StackNode) {
+	as := append(sts.Items[p.state].Actions[s.lookahead.Symbol], sts.Items[p.state].Actions["."]...)
 	debugf("found %d actions for p.state: %d, s.lookahead.symbol: %q\n", len(as), p.state, s.lookahead.Symbol)
 	for i, a := range as {
 		debugf("  looking at action for p.state: %d, s.lookahead.symbol: %q, actions[%d]: %#v\n", p.state, s.lookahead.Symbol, i, a)
 
-		switch a.Action {
+		switch a.Type {
 		case "shift":
 			debugf("  shifting to state: %d\n", a.State)
 			s.parsersToShift = append(s.parsersToShift, p)
 			s.statesToShiftTo = append(s.statesToShiftTo, a.State)
 
 		case "reduce":
-			r := rls[a.Rule]
+			r := &(rls.Items[a.Rule])
 			debugf("  reducing with rule: %#v\n", r)
 			doReductions(rls, sts, s, p, r, len(r.RHS), nil, nil, true)
 
@@ -258,7 +293,7 @@ func actor(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode) {
 	}
 }
 
-func doReductions(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode, r *Rule, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
+func doReductions(rls *Rules, sts *ParseStates, s *GLRState, p *StackNode, r *Rule, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
 	if length == 0 {
 		if linkSeen {
 			reducer(rls, sts, s, p, r, kids)
@@ -272,11 +307,12 @@ func doReductions(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode, r *
 	}
 }
 
-func reducer(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode, r *Rule, kids []*ParseNode) {
+func reducer(rls *Rules, sts *ParseStates, s *GLRState, p *StackNode, r *Rule, kids []*ParseNode) {
 	printAllParsers(s, p)
 
-	gotoState, ok := sts[p.state].Gotos[r.Nonterminal]
+	gotoState, ok := sts.Items[p.state].Gotos[r.Nonterminal]
 	if !ok {
+		debugf("sts[%v].Gotos[%q]: %v, %t\n", p.state, r.Nonterminal, gotoState, ok)
 		return
 	}
 
@@ -312,10 +348,10 @@ func reducer(rls []*Rule, sts []*ParseState, s *GLRState, p *StackNode, r *Rule,
 	// Process additional reductions
 	for _, otherParser := range s.activeParsers {
 		if !contains(s.parsersToAct, otherParser) {
-			actions := sts[otherParser.state].Actions[s.lookahead.Symbol]
+			actions := sts.Items[otherParser.state].Actions[s.lookahead.Symbol]
 			for _, action := range actions {
-				if action.Action == "reduce" {
-					otherRule := rls[action.Rule]
+				if action.Type == "reduce" {
+					otherRule := &(rls.Items[action.Rule])
 					doReductions(rls, sts, s, otherParser, otherRule, len(otherRule.RHS), nil, newLink, false)
 				}
 			}

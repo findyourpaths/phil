@@ -1,62 +1,96 @@
-package glr
+package main
 
 import (
 	"bufio"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/findyourpaths/phil/glr"
 )
 
-type Rule struct {
-	Nonterminal string
-	RHS         []string
+func main() {
+	grammarPath := os.Args[1]
+	statesPath := os.Args[2]
+
+	pkg, rules, err := readGrammarRules(grammarPath)
+	if err != nil {
+		panic(fmt.Sprintf("error reading grammar rules: %v", err))
+	}
+
+	states, err := readStates(statesPath)
+	if err != nil {
+		panic(fmt.Sprintf("error reading states: %v", err))
+	}
+
+	// Validate that rule references in states are valid
+	for stateNum, state := range states.Items {
+		for _, actions := range state.Actions {
+			for _, action := range actions {
+				if action.Type == "reduce" && action.Rule >= len(rules.Items) {
+					panic(fmt.Sprintf("state %d references invalid rule number %d", stateNum, action.Rule))
+				}
+			}
+		}
+	}
+
+	r := fmt.Sprintf("package %s\n\nvar %sRules = &Rules{Items:[]Rule{", pkg, pkg)
+	for _, rule := range rules.Items {
+		r += fmt.Sprintf("\n  %#v,", rule)
+	}
+	r += "\n}}\n\n"
+	r = strings.Replace(r, "glr.Rule", "Rule", -1)
+
+	r += fmt.Sprintf("var %sStates = &ParseStates{Items:[]ParseState{", pkg)
+	for _, state := range states.Items {
+		r += fmt.Sprintf("\n  %#v,", state)
+	}
+	r += "\n}}\n\n"
+	r = strings.Replace(r, "glr.ParseState", "ParseState", -1)
+	r = strings.Replace(r, "glr.Action", "Action", -1)
+
+	outPath := strings.TrimSuffix(grammarPath, "_yacc.y") + "_glr.go"
+	f, err := os.Create(outPath)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(r)
+	if err != nil {
+		panic(err)
+	}
 }
 
-type ParseState struct {
-	Actions map[string][]StateAction
-	Gotos   map[string]int
-}
-
-type StateAction struct {
-	Action string
-	State  int
-	Rule   int
-}
-
-type ParseNode struct {
-	Symbol   string
-	Children []*ParseNode
-
-	value    interface{}
-	startPos int
-	endPos   int
-	numTerms int
-	isAlt    bool
-}
-
-func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
+func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 	file, err := os.Open(grammarFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open grammar file: %v", err)
+		return "", nil, fmt.Errorf("failed to open grammar file: %v", err)
 	}
 	defer file.Close()
 
 	// Rules are numbered starting at 1.
-	rs := []*Rule{nil}
+	rs := &glr.Rules{Items: []glr.Rule{{}}}
 	scanner := bufio.NewScanner(file)
 
 	inRules := false
-	currentRule := &Rule{}
+	currentRule := &glr.Rule{}
 	expectingRHS := false
 
 	nontermRE := regexp.MustCompile(`^(.*):$`)
 
+	pkg := ""
 	lineNum := 0
 	for scanner.Scan() {
 		lineNum++
 		line := strings.TrimSpace(scanner.Text())
+
+		if strings.HasPrefix(line, "package") && pkg == "" {
+			pkg = strings.Fields(line)[1]
+		}
 
 		// Start of rules section
 		if line == "%%" {
@@ -83,11 +117,11 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 			// Skip empty lines only if there's no current rule.
 			continue
 		} else if nontermMatch := nontermRE.FindStringSubmatch(line); len(nontermMatch) > 1 {
-			currentRule = &Rule{
+			currentRule = &glr.Rule{
 				Nonterminal: strings.TrimSpace(nontermMatch[1]),
 			}
 			expectingRHS = true
-			// debugln("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
+			// slog.Debug("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
 
 			// Handle case where RHS is on same line as colon
 			// rhsPart := strings.TrimSpace(parts[1])
@@ -103,27 +137,27 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 			// 	}
 			// }
 		} else if strings.Contains(line, "|") {
-			// debugln("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
+			// slog.Debug("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Alternative production for current rule
 			if currentRule.Nonterminal == "" {
-				return nil, fmt.Errorf("alternative production without rule at line %d: %s", lineNum, line)
+				return "", nil, fmt.Errorf("alternative production without rule at line %d: %s", lineNum, line)
 			}
 			parts := strings.SplitN(line, "|", 2)
 			rhsPart := strings.TrimSpace(parts[1])
 			rhs := parseRHS(rhsPart)
-			rs = append(rs, &Rule{
+			rs.Items = append(rs.Items, glr.Rule{
 				Nonterminal: currentRule.Nonterminal,
 				RHS:         rhs,
 			})
 			expectingRHS = false
 		} else {
-			// debugln("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
+			// slog.Debug("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Regular production
 			if currentRule.Nonterminal == "" {
-				return nil, fmt.Errorf("production without rule at line %d: %s", lineNum, line)
+				return "", nil, fmt.Errorf("production without rule at line %d: %s", lineNum, line)
 			}
 			rhs := parseRHS(line)
-			rs = append(rs, &Rule{
+			rs.Items = append(rs.Items, glr.Rule{
 				Nonterminal: currentRule.Nonterminal,
 				RHS:         rhs,
 			})
@@ -132,19 +166,19 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading grammar file: %v", err)
+		return "", nil, fmt.Errorf("error reading grammar file: %v", err)
 	}
 
-	if len(rs) == 0 {
-		return nil, fmt.Errorf("no valid rules found in grammar file")
+	if len(rs.Items) == 0 {
+		return "", nil, fmt.Errorf("no valid rules found in grammar file")
 	}
 
 	// Print rules.
-	for i, rule := range rs {
-		if rule == nil {
+	for i, rule := range rs.Items {
+		if rule.Nonterminal == "" {
 			continue
 		}
-		debugln("i", i, "rule", fmt.Sprintf("%#v", rule))
+		slog.Debug("i", i, "rule", fmt.Sprintf("%#v", rule))
 	}
 
 	// // Print rules in YACC format.
@@ -159,7 +193,7 @@ func LoadGrammarRules(grammarFile string) ([]*Rule, error) {
 	// 	}
 	// }
 
-	return rs, nil
+	return pkg, rs, nil
 }
 
 func parseRHS(line string) []string {
@@ -184,14 +218,14 @@ func parseRHS(line string) []string {
 	return rhs
 }
 
-func LoadStates(statesFile string) ([]*ParseState, error) {
+func readStates(statesFile string) (*glr.ParseStates, error) {
 	file, err := os.Open(statesFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open states file: %v", err)
 	}
 	defer file.Close()
 
-	var rs []*ParseState
+	rs := &glr.ParseStates{}
 	currentState := -1
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
@@ -199,7 +233,7 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 	srConflictRE := regexp.MustCompile(`^\d+: shift\/reduce conflict \(shift \d+\(\d+\), red'n (\d+)\(\d+\)\) on \S+$`)
 	rrConflictRE := regexp.MustCompile(`^\s*\d+: reduce\/reduce conflict  \(red'ns \d+ and (\d+)\) on \S+$`)
 
-	actions := map[string][]StateAction{}
+	actions := map[string][]glr.Action{}
 
 	for scanner.Scan() {
 		lineNum++
@@ -219,10 +253,10 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 			if err != nil {
 				return nil, fmt.Errorf("invalid conflict target at line %d: %q", lineNum, line)
 			}
-			debugln("conflict reduce rule", rule)
-			actions["."] = append(actions["."], StateAction{
-				Action: "reduce",
-				Rule:   rule,
+			slog.Debug("conflict reduce rule", rule)
+			actions["."] = append(actions["."], glr.Action{
+				Type: "reduce",
+				Rule: rule,
 			})
 		}
 
@@ -234,13 +268,13 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 			}
 			currentState = newState
 			// Ensure states slice has enough capacity
-			for len(rs) <= currentState {
-				rs = append(rs, &ParseState{
+			for len(rs.Items) <= currentState {
+				rs.Items = append(rs.Items, glr.ParseState{
 					Actions: actions,
 					Gotos:   make(map[string]int),
 				})
 			}
-			actions = map[string][]StateAction{}
+			actions = map[string][]glr.Action{}
 			continue
 		}
 
@@ -272,28 +306,28 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 			if err != nil {
 				return nil, fmt.Errorf("invalid shift target at line %d: %q", lineNum, line)
 			}
-			rs[currentState].Actions[sym] = append(rs[currentState].Actions[sym], StateAction{
-				Action: "shift",
-				State:  state,
+			rs.Items[currentState].Actions[sym] = append(rs.Items[currentState].Actions[sym], glr.Action{
+				Type:  "shift",
+				State: state,
 			})
 		case "reduce":
 			rule, err := parseTarget(fields[2])
 			if err != nil {
 				return nil, fmt.Errorf("invalid reduce target at line %d: %q", lineNum, line)
 			}
-			rs[currentState].Actions[sym] = append(rs[currentState].Actions[sym], StateAction{
-				Action: "reduce",
-				Rule:   rule,
+			rs.Items[currentState].Actions[sym] = append(rs.Items[currentState].Actions[sym], glr.Action{
+				Type: "reduce",
+				Rule: rule,
 			})
 		case "goto":
 			target, err := parseTarget(fields[2])
 			if err != nil {
 				return nil, fmt.Errorf("invalid goto target at line %d: %q", lineNum, line)
 			}
-			rs[currentState].Gotos[sym] = target
+			rs.Items[currentState].Gotos[sym] = target
 		case "accept":
-			rs[currentState].Actions[sym] = append(rs[currentState].Actions[sym], StateAction{
-				Action: "accept",
+			rs.Items[currentState].Actions[sym] = append(rs.Items[currentState].Actions[sym], glr.Action{
+				Type: "accept",
 			})
 		}
 	}
@@ -302,39 +336,14 @@ func LoadStates(statesFile string) ([]*ParseState, error) {
 		return nil, fmt.Errorf("error reading states file: %v", err)
 	}
 
-	if len(rs) == 0 {
+	if len(rs.Items) == 0 {
 		return nil, fmt.Errorf("no valid states found in states file")
 	}
 
-	for i, state := range rs {
-		debugln("i", i, "state", fmt.Sprintf("%#v", state))
+	for i, state := range rs.Items {
+		slog.Debug("i", i, "state", fmt.Sprintf("%#v", state))
 	}
 	return rs, nil
-}
-
-func LoadGrammarRulesAndStates(grammarFile string, statesFile string) ([]*Rule, []*ParseState, error) {
-	rules, err := LoadGrammarRules(grammarFile)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error loading grammar rules: %v", err)
-	}
-
-	states, err := LoadStates(statesFile)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error loading states: %v", err)
-	}
-
-	// Validate that rule references in states are valid
-	for stateNum, state := range states {
-		for _, actions := range state.Actions {
-			for _, action := range actions {
-				if action.Action == "reduce" && action.Rule >= len(rules) {
-					return nil, nil, fmt.Errorf("state %d references invalid rule number %d", stateNum, action.Rule)
-				}
-			}
-		}
-	}
-
-	return rules, states, nil
 }
 
 func parseTarget(s string) (int, error) {
