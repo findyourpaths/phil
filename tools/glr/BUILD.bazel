@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "glr_lib",
+    srcs = ["glr_generate.go"],
+    importpath = "github.com/findyourpaths/phil/tools/glr",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "glr",
+    embed = [":glr_lib"],
+    visibility = ["//visibility:public"],
+)

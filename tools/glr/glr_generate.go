@@ -13,8 +13,12 @@ import (
 )
 
 func main() {
-	grammarPath := os.Args[1]
-	statesPath := os.Args[2]
+	glrPkg := "glr."
+	if os.Args[1] == "--in-glr-pkg" {
+		glrPkg = ""
+	}
+	grammarPath := os.Args[len(os.Args)-2]
+	statesPath := os.Args[len(os.Args)-1]
 
 	pkg, rules, err := readGrammarRules(grammarPath)
 	if err != nil {
@@ -37,20 +41,28 @@ func main() {
 		}
 	}
 
-	r := fmt.Sprintf("package %s\n\nvar %sRules = &Rules{Items:[]Rule{", pkg, pkg)
+	r := fmt.Sprintf("package %s\n\n", pkg)
+	if glrPkg != "" {
+		r += "import \"github.com/findyourpaths/phil/glr\"\n\n"
+	}
+	r += fmt.Sprintf("var %sRules = &%sRules{Items:[]%sRule{", pkg, glrPkg, glrPkg)
 	for _, rule := range rules.Items {
 		r += fmt.Sprintf("\n  %#v,", rule)
 	}
 	r += "\n}}\n\n"
-	r = strings.Replace(r, "glr.Rule", "Rule", -1)
+	if glrPkg == "" {
+		r = strings.Replace(r, "glr.Rule", "Rule", -1)
+	}
 
-	r += fmt.Sprintf("var %sStates = &ParseStates{Items:[]ParseState{", pkg)
+	r += fmt.Sprintf("var %sStates = &%sParseStates{Items:[]%sParseState{", pkg, glrPkg, glrPkg)
 	for _, state := range states.Items {
 		r += fmt.Sprintf("\n  %#v,", state)
 	}
 	r += "\n}}\n\n"
-	r = strings.Replace(r, "glr.ParseState", "ParseState", -1)
-	r = strings.Replace(r, "glr.Action", "Action", -1)
+	if glrPkg == "" {
+		r = strings.Replace(r, "glr.ParseState", "ParseState", -1)
+		r = strings.Replace(r, "glr.Action", "Action", -1)
+	}
 
 	outPath := strings.TrimSuffix(grammarPath, "_yacc.y") + "_glr.go"
 	f, err := os.Create(outPath)
