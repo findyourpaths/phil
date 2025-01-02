@@ -8,15 +8,13 @@ import (
 	"time"
 )
 
-func setResult(l yyLexer, root *datetime_ranges) {
-	l.(*datetimeLexer).ast = &ast{
-		root: root,
-	}
+func setResult(l yyLexer, root *DateTimeTZRanges) {
+	l.(*datetimeLexer).root = root
 }
 
 var ambiguousDateMode string
 
-func constructDate(first, second, year int) civil.Date {
+func NewCivilDate(first, second, year int) civil.Date {
 	if ambiguousDateMode == "us" {
 		return civil.Date{Month: time.Month(first), Day: second, Year: year}
 	}
@@ -24,16 +22,15 @@ func constructDate(first, second, year int) civil.Date {
 }
 
 type yySymType struct {
-	yys             int
-	op              string
-	label           string
-	string          string
-	int             int
-	date            *civil.Date
-	datetime        *civil.DateTime
-	datetime_range  *datetime_range
-	datetime_ranges *datetime_ranges
-	time            *civil.Time
+	yys              int
+	op               string
+	label            string
+	string           string
+	int              int
+	Date             civil.Date
+	DateTimeTZ       *DateTimeTZ
+	DateTimeTZRange  *DateTimeTZRange
+	DateTimeTZRanges *DateTimeTZRanges
 }
 
 const ILLEGAL = 57346
@@ -85,78 +82,42 @@ var yyExca = [...]int8{
 	-1, 1,
 	1, -1,
 	-2, 0,
-	-1, 54,
-	12, 37,
-	18, 37,
-	-2, 12,
 }
 
 const yyPrivate = 57344
 
-const yyLast = 93
+const yyLast = 11
 
 var yyAct = [...]int8{
-	24, 45, 15, 7, 27, 46, 4, 27, 19, 54,
-	27, 13, 14, 19, 20, 7, 34, 26, 40, 23,
-	26, 33, 19, 57, 60, 39, 41, 5, 6, 52,
-	37, 48, 49, 20, 35, 36, 27, 38, 22, 55,
-	59, 56, 58, 53, 16, 17, 18, 40, 40, 26,
-	16, 17, 18, 62, 19, 20, 27, 63, 29, 64,
-	65, 12, 3, 68, 19, 69, 61, 40, 19, 57,
-	16, 17, 18, 42, 66, 32, 43, 50, 8, 44,
-	67, 11, 9, 31, 25, 47, 51, 21, 30, 10,
-	2, 28, 1,
-}
-
-var yyPact = [...]int16{
-	9, -1000, 72, 48, 36, 19, 56, -2, 14, 46,
-	-1000, 76, 9, -1000, -5, -2, -1000, -1000, -1000, -1000,
-	-1000, 56, 56, -5, 30, -2, 68, -1000, -14, 12,
-	-14, 67, -1000, -1000, 31, 10, -10, -1000, 4, 50,
-	-1000, 31, -1000, 5, -1000, -1000, -1000, 54, -1000, -1000,
-	-1000, -14, -1000, -1000, -1000, 31, -2, 68, -2, 1,
-	69, -14, -1000, 31, 1, 31, -1000, -1000, -1000, 31,
-}
-
-var yyPgo = [...]int8{
-	0, 92, 90, 62, 6, 2, 0, 89, 87, 12,
-	86, 1, 78, 82, 85, 84,
-}
-
-var yyR1 = [...]int8{
-	0, 1, 7, 7, 2, 2, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 9, 9,
-	9, 4, 4, 5, 5, 5, 5, 6, 6, 6,
-	6, 6, 6, 6, 15, 12, 14, 13, 8, 10,
-	11,
-}
-
-var yyR2 = [...]int8{
-	0, 2, 0, 3, 1, 3, 1, 5, 4, 2,
-	3, 3, 4, 4, 5, 3, 6, 5, 1, 1,
-	1, 1, 2, 3, 5, 2, 3, 2, 2, 2,
-	3, 4, 2, 4, 1, 1, 1, 1, 1, 1,
+	11, 9, 7, 6, 10, 8, 5, 4, 3, 2,
 	1,
 }
 
+var yyPact = [...]int16{
+	-16, -1000, -1000, -1000, -1000, -1000, -18, -1000, -19, -1000,
+	-1000, -1000,
+}
+
+var yyPgo = [...]int8{
+	0, 10, 9, 8, 7, 6, 5, 4, 3,
+}
+
+var yyR1 = [...]int8{
+	0, 1, 2, 3, 4, 5, 8, 6, 7,
+}
+
+var yyR2 = [...]int8{
+	0, 1, 1, 1, 1, 3, 1, 1, 1,
+}
+
 var yyChk = [...]int16{
-	-1000, -1, -2, -3, -4, 18, 19, -5, -12, -13,
-	-7, 9, 13, -4, -9, -5, 14, 15, 16, 18,
-	19, -8, 19, -9, -6, -15, 19, 6, -13, 12,
-	-12, 7, -3, -4, -6, -9, -9, -4, -9, -6,
-	17, -6, 5, 8, 11, -11, 19, -14, 19, -11,
-	10, -10, 19, -4, 19, -6, -5, 19, -5, -6,
-	19, 12, -11, -6, -6, -6, 5, 11, -11, -6,
+	-1000, -1, -2, -3, -4, -5, -8, 18, -6, 19,
+	-7, 19,
 }
 
 var yyDef = [...]int8{
-	0, -2, 2, 4, 6, 0, 37, 21, 0, 0,
-	1, 0, 0, 9, 0, 21, 18, 19, 20, 35,
-	37, 0, 0, 0, 22, 0, 0, 34, 25, 0,
-	0, 0, 5, 10, 22, 0, 0, 11, 0, 15,
-	28, 27, 29, 0, 32, 23, 40, 0, 36, 26,
-	3, 0, 39, 8, -2, 13, 0, 37, 0, 0,
-	30, 0, 7, 14, 0, 17, 31, 33, 24, 16,
+	0, -2, 1, 2, 3, 4, 0, 6, 0, 7,
+	5, 8,
 }
 
 var yyTok1 = [...]int8{
@@ -508,144 +469,29 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		yyDollar = yyS[yypt-2 : yypt+1]
+		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			setResult(yylex, yyDollar[1].datetime_ranges)
+			setResult(yylex, yyDollar[1].DateTimeTZRanges)
+		}
+	case 2:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = &DateTimeTZRanges{Items: []*DateTimeTZRange{yyDollar[1].DateTimeTZRange}}
+		}
+	case 3:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[1].DateTimeTZ}
 		}
 	case 4:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.datetime_ranges = &datetime_ranges{items: []*datetime_range{yyDollar[1].datetime_range}}
+			yyVAL.DateTimeTZ = &DateTimeTZ{DateTime: civil.DateTime{Date: yyDollar[1].Date}}
 		}
 	case 5:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.datetime_ranges = &datetime_ranges{items: []*datetime_range{yyDollar[1].datetime_range, yyDollar[3].datetime_range}}
-		}
-	case 6:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.datetime_range = &datetime_range{start: yyDollar[1].datetime}
-		}
-	case 7:
-		yyDollar = yyS[yypt-5 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 8:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 9:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 10:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 11:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 12:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 13:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 14:
-		yyDollar = yyS[yypt-5 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 15:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 16:
-		yyDollar = yyS[yypt-6 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 17:
-		yyDollar = yyS[yypt-5 : yypt+1]
-		{
-			yyVAL.datetime_range = nil
-		}
-	case 21:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.datetime = nil
-		}
-	case 22:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		{
-			yyVAL.datetime = nil
-		}
-	case 23:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.date = nil
-		}
-	case 24:
-		yyDollar = yyS[yypt-5 : yypt+1]
-		{
-			yyVAL.date = nil
-		}
-	case 25:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		{
-			yyVAL.date = nil
-		}
-	case 26:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.date = nil
-		}
-	case 27:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		{
-			yyVAL.time = nil
-		}
-	case 28:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		{
-			yyVAL.time = nil
-		}
-	case 29:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		{
-			yyVAL.time = nil
-		}
-	case 30:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.time = nil
-		}
-	case 31:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.time = nil
-		}
-	case 32:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		{
-			yyVAL.time = nil
-		}
-	case 33:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.time = nil
+			yyVAL.Date = civil.Date{Month: 1, Day: yyDollar[2].int, Year: yyDollar[3].int}
 		}
 	}
 	goto yystack /* stack new state and value */

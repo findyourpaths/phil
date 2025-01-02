@@ -45,9 +45,27 @@ func main() {
 	if glrPkg != "" {
 		r += "import \"github.com/findyourpaths/phil/glr\"\n\n"
 	}
-	r += fmt.Sprintf("var %sRules = &%sRules{Items:[]%sRule{", pkg, glrPkg, glrPkg)
+
+	// Print rules in YACC format.
+	r += "/*\nRules\n\n"
 	for _, rule := range rules.Items {
-		r += fmt.Sprintf("\n  %#v,", rule)
+		if rule.Nonterminal == "" {
+			continue
+		}
+		rhs := "<empty>"
+		if len(rule.RHS) > 0 {
+			rhs = strings.Join(rule.RHS, " ")
+		}
+		r += fmt.Sprintf("%s:\n  %s\n", rule.Nonterminal, rhs)
+	}
+	r += "*/\n\n"
+
+	r += fmt.Sprintf("var %sRules = &%sRules{Items:[]%sRule{", pkg, glrPkg, glrPkg)
+	for i, rule := range rules.Items {
+		r += fmt.Sprintf("\n  /* %3d */ %#v,", i, rule)
+		if i == 0 {
+			r += " // ignored because rule-numbering starts at 1"
+		}
 	}
 	r += "\n}}\n\n"
 	if glrPkg == "" {
@@ -55,8 +73,8 @@ func main() {
 	}
 
 	r += fmt.Sprintf("var %sStates = &%sParseStates{Items:[]%sParseState{", pkg, glrPkg, glrPkg)
-	for _, state := range states.Items {
-		r += fmt.Sprintf("\n  %#v,", state)
+	for i, state := range states.Items {
+		r += fmt.Sprintf("\n  /* %3d */ %#v,", i, state)
 	}
 	r += "\n}}\n\n"
 	if glrPkg == "" {
@@ -192,18 +210,6 @@ func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 		}
 		slog.Debug("i", i, "rule", fmt.Sprintf("%#v", rule))
 	}
-
-	// // Print rules in YACC format.
-	// for _, rule := range rs {
-	// 	if rule == nil {
-	// 		continue
-	// 	}
-	// 	debugf("%s:\n", rule.Nonterminal)
-	// 	prefix := ""
-	// 	if rule.RHS != nil {
-	// 		debugf("  %s%s\n", prefix, strings.Join(rule.RHS, " "))
-	// 	}
-	// }
 
 	return pkg, rs, nil
 }

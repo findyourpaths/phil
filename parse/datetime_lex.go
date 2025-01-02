@@ -9,7 +9,6 @@ import (
 	"go/scanner"
 	"go/token"
 
-	"cloud.google.com/go/civil"
 	"github.com/findyourpaths/phil/glr"
 )
 
@@ -19,24 +18,24 @@ type datetimeLexer struct {
 	lval    *yySymType
 	scanner scanner.Scanner
 	err     error
-	ast     *ast
+	root    *DateTimeTZRanges
 }
 
-// // ast is the abstract syntax tree for a label formula
-type ast struct {
-	root *datetime_ranges
-}
+// // // ast is the abstract syntax tree for a label formula
+// type ast struct {
+// 	root *atetime_ranges
+// }
 
-// node represents a node in abstract syntax tree
-type datetime_ranges struct {
-	items []*datetime_range
-}
+// // node represents a node in abstract syntax tree
+// type datetime_ranges struct {
+// 	items []*datetime_range
+// }
 
-// node represents a node in abstract syntax tree
-type datetime_range struct {
-	start *civil.DateTime
-	end   *civil.DateTime
-}
+// // node represents a node in abstract syntax tree
+// type datetime_range struct {
+// 	start *civil.DateTime
+// 	end   *civil.DateTime
+// }
 
 func NewDatetimeLexer(input string) *datetimeLexer {
 	l := &datetimeLexer{
