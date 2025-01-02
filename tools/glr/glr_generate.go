@@ -13,6 +13,10 @@ import (
 )
 
 func main() {
+	logLevel := slog.LevelDebug
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
+	slog.SetDefault(logger)
+
 	glrPkg := "glr."
 	if os.Args[1] == "--in-glr-pkg" {
 		glrPkg = ""
@@ -28,17 +32,6 @@ func main() {
 	states, err := readStates(statesPath)
 	if err != nil {
 		panic(fmt.Sprintf("error reading states: %v", err))
-	}
-
-	// Validate that rule references in states are valid
-	for stateNum, state := range states.Items {
-		for _, actions := range state.Actions {
-			for _, action := range actions {
-				if action.Type == "reduce" && action.Rule >= len(rules.Items) {
-					panic(fmt.Sprintf("state %d references invalid rule number %d", stateNum, action.Rule))
-				}
-			}
-		}
 	}
 
 	r := fmt.Sprintf("package %s\n\n", pkg)
@@ -87,24 +80,34 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
-
 	_, err = f.WriteString(r)
 	if err != nil {
 		panic(err)
 	}
+	f.Close()
+
+	// Validate that rule references in states are valid
+	for stateNum, state := range states.Items {
+		for _, actions := range state.Actions {
+			for _, action := range actions {
+				if action.Type == "reduce" && action.Rule >= len(rules.Items) {
+					panic(fmt.Sprintf("state %d references invalid rule number %d", stateNum, action.Rule))
+				}
+			}
+		}
+	}
 }
 
-func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
-	file, err := os.Open(grammarFile)
+func readGrammarRules(p string) (string, *glr.Rules, error) {
+	f, err := os.Open(p)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to open grammar file: %v", err)
 	}
-	defer file.Close()
+	defer f.Close()
 
 	// Rules are numbered starting at 1.
 	rs := &glr.Rules{Items: []glr.Rule{{}}}
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(f)
 
 	inRules := false
 	currentRule := &glr.Rule{}
@@ -113,10 +116,11 @@ func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 	nontermRE := regexp.MustCompile(`^(.*):$`)
 
 	pkg := ""
-	lineNum := 0
+	i := 0
 	for scanner.Scan() {
-		lineNum++
+		i++
 		line := strings.TrimSpace(scanner.Text())
+		slog.Debug("in readGrammarRules()", "i", i, "line", line)
 
 		if strings.HasPrefix(line, "package") && pkg == "" {
 			pkg = strings.Fields(line)[1]
@@ -138,12 +142,12 @@ func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 		if strings.HasPrefix(line, "//") || strings.HasPrefix(line, "/* ") {
 			// Skip comments.
 			continue
-		} else if strings.HasPrefix(line, "%") || strings.HasPrefix(line, "{") {
+		} else if strings.HasPrefix(line, "%") { // || strings.HasPrefix(line, "{") {
 			// Skip code.
 			continue
 		} else if strings.HasPrefix(line, ";") {
 			currentRule = nil
-		} else if line == "" && expectingRHS == false {
+		} else if (line == "" || strings.HasPrefix(strings.TrimSpace(line), "{")) && expectingRHS == false {
 			// Skip empty lines only if there's no current rule.
 			continue
 		} else if nontermMatch := nontermRE.FindStringSubmatch(line); len(nontermMatch) > 1 {
@@ -151,7 +155,7 @@ func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 				Nonterminal: strings.TrimSpace(nontermMatch[1]),
 			}
 			expectingRHS = true
-			// slog.Debug("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
+			slog.Debug("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
 
 			// Handle case where RHS is on same line as colon
 			// rhsPart := strings.TrimSpace(parts[1])
@@ -167,10 +171,10 @@ func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 			// 	}
 			// }
 		} else if strings.Contains(line, "|") {
-			// slog.Debug("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
+			slog.Debug("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Alternative production for current rule
 			if currentRule.Nonterminal == "" {
-				return "", nil, fmt.Errorf("alternative production without rule at line %d: %s", lineNum, line)
+				return "", nil, fmt.Errorf("alternative production without rule at line %d: %s", i, line)
 			}
 			parts := strings.SplitN(line, "|", 2)
 			rhsPart := strings.TrimSpace(parts[1])
@@ -181,10 +185,10 @@ func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 			})
 			expectingRHS = false
 		} else {
-			// slog.Debug("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
+			slog.Debug("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Regular production
 			if currentRule.Nonterminal == "" {
-				return "", nil, fmt.Errorf("production without rule at line %d: %s", lineNum, line)
+				return "", nil, fmt.Errorf("production without rule at line %d: %s", i, line)
 			}
 			rhs := parseRHS(line)
 			rs.Items = append(rs.Items, glr.Rule{
@@ -201,14 +205,6 @@ func readGrammarRules(grammarFile string) (string, *glr.Rules, error) {
 
 	if len(rs.Items) == 0 {
 		return "", nil, fmt.Errorf("no valid rules found in grammar file")
-	}
-
-	// Print rules.
-	for i, rule := range rs.Items {
-		if rule.Nonterminal == "" {
-			continue
-		}
-		slog.Debug("i", i, "rule", fmt.Sprintf("%#v", rule))
 	}
 
 	return pkg, rs, nil
@@ -236,16 +232,16 @@ func parseRHS(line string) []string {
 	return rhs
 }
 
-func readStates(statesFile string) (*glr.ParseStates, error) {
-	file, err := os.Open(statesFile)
+func readStates(p string) (*glr.ParseStates, error) {
+	f, err := os.Open(p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open states file: %v", err)
 	}
-	defer file.Close()
+	defer f.Close()
 
 	rs := &glr.ParseStates{}
 	currentState := -1
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(f)
 	lineNum := 0
 
 	srConflictRE := regexp.MustCompile(`^\d+: shift\/reduce conflict \(shift \d+\(\d+\), red'n (\d+)\(\d+\)\) on \S+$`)
@@ -271,7 +267,7 @@ func readStates(statesFile string) (*glr.ParseStates, error) {
 			if err != nil {
 				return nil, fmt.Errorf("invalid conflict target at line %d: %q", lineNum, line)
 			}
-			slog.Debug("conflict reduce rule", rule)
+			slog.Debug("conflict reduce rule", "rule", rule)
 			actions["."] = append(actions["."], glr.Action{
 				Type: "reduce",
 				Rule: rule,
@@ -353,13 +349,8 @@ func readStates(statesFile string) (*glr.ParseStates, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("error reading states file: %v", err)
 	}
-
 	if len(rs.Items) == 0 {
 		return nil, fmt.Errorf("no valid states found in states file")
-	}
-
-	for i, state := range rs.Items {
-		slog.Debug("i", i, "state", fmt.Sprintf("%#v", state))
 	}
 	return rs, nil
 }

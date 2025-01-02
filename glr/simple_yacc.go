@@ -9,9 +9,12 @@ type node struct {
 }
 
 type yySymType struct {
-	yys   int
-	token string
-	node  *node
+	yys      int
+	string   string
+	Alphabet *Alphabet
+	ABCD     *ABCD
+	ABC      *ABC
+	BCD      *BCD
 }
 
 const A = 57346
@@ -52,8 +55,8 @@ const yyPrivate = 57344
 const yyLast = 15
 
 var yyAct = [...]int8{
-	15, 14, 13, 10, 8, 5, 6, 7, 9, 12,
-	11, 1, 4, 3, 2,
+	15, 14, 13, 10, 8, 5, 6, 7, 12, 11,
+	9, 4, 3, 2, 1,
 }
 
 var yyPact = [...]int16{
@@ -66,8 +69,8 @@ var yyPgo = [...]int8{
 }
 
 var yyR1 = [...]int8{
-	0, 4, 4, 4, 1, 2, 3, 3, 3, 7,
-	5, 5, 6,
+	0, 1, 1, 1, 2, 3, 4, 4, 4, 5,
+	6, 6, 7,
 }
 
 var yyR2 = [...]int8{
@@ -76,8 +79,8 @@ var yyR2 = [...]int8{
 }
 
 var yyChk = [...]int16{
-	-1000, -4, -1, -2, -3, 4, 5, 5, 6, -7,
-	6, -5, -6, 7, 7, 7,
+	-1000, -1, -2, -3, -4, 4, 5, 5, 6, -5,
+	6, -6, -7, 7, 7, 7,
 }
 
 var yyDef = [...]int8{
@@ -432,30 +435,50 @@ yydefault:
 	// dummy call; replaced with literal code
 	switch yynt {
 
+	case 1:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.Alphabet = &Alphabet{ABCD: yyDollar[1].ABCD}
+		}
+	case 2:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.Alphabet = &Alphabet{ABC: yyDollar[1].ABC}
+		}
+	case 3:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.Alphabet = &Alphabet{BCD: yyDollar[1].BCD}
+		}
 	case 4:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.node = nil
+			yyVAL.ABCD = &ABCD{A: yyDollar[1].string, B: yyDollar[2].string, C: yyDollar[3].string, D: yyDollar[4].string}
 		}
 	case 5:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.node = nil
+			yyVAL.ABC = &ABC{A: yyDollar[1].string, B: yyDollar[2].string, C: yyDollar[3].string}
 		}
 	case 6:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.node = nil
+			yyVAL.BCD = &BCD{B: yyDollar[1].string, C: yyDollar[2].string, D: yyDollar[3].string}
 		}
 	case 7:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.node = nil
+			yyVAL.BCD = &BCD{B: yyDollar[1].string, C: yyDollar[2].string, D: yyDollar[3].string}
 		}
 	case 8:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.node = nil
+			yyVAL.BCD = &BCD{B: yyDollar[1].string, C: yyDollar[2].string, D: yyDollar[3].string}
+		}
+	case 10:
+		yyDollar = yyS[yypt-0 : yypt+1]
+		{
+			yyVAL.string = ""
 		}
 	}
 	goto yystack /* stack new state and value */
