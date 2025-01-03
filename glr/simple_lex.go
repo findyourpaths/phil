@@ -66,6 +66,7 @@ func (l *simpleLexer) Error(msg string) {
 func (l *simpleLexer) Lex(lval *yySymType) int {
 	for {
 		_, tok, lit := l.scanner.Scan()
+		lval.string = lit
 
 		// Skip whitespace and semicolons
 		if tok == token.SEMICOLON {
@@ -78,7 +79,6 @@ func (l *simpleLexer) Lex(lval *yySymType) int {
 
 		// Handle identifiers and special tokens
 		if tok == token.IDENT {
-			lval.string = lit
 			switch lit {
 			case "a":
 				return A
@@ -96,7 +96,6 @@ func (l *simpleLexer) Lex(lval *yySymType) int {
 		}
 
 		// For any other token, treat as illegal but keep parsing
-		lval.string = lit
 		return ILLEGAL
 	}
 }

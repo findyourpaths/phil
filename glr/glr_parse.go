@@ -9,9 +9,9 @@ import (
 )
 
 // Debug flags
-var glrDebug = true
+// var glrDebug = true
 
-// var glrDebug = false
+var glrDebug = false
 
 // SetDebug toggles debug logging
 func SetDebug(enabled bool) {
@@ -393,7 +393,7 @@ func shifter(s *GLRState) []*StackNode {
 }
 
 func getRuleNode(g *Grammar, s *GLRState, rlID int, kids []*ParseNode) *ParseNode {
-	debugf("getRuleNode(g, s, rlID: %d, len(kids): %d)\n", rlID, len(kids))
+	debugf("getting rule node for rule: %d and %d kids\n", rlID, len(kids))
 	rl := &(g.Rules.Items[rlID])
 	key := fmt.Sprintf("%s:%v", rl.Nonterminal, kids)
 	if node, exists := s.ruleNodes[key]; exists {
@@ -412,7 +412,7 @@ func getRuleNode(g *Grammar, s *GLRState, rlID int, kids []*ParseNode) *ParseNod
 		// if kid.Value == nil {
 		// 	foundNil = true
 		// }
-		debugln("in getRuleNode", "i", i, "kid.Value", kid.Value)
+		debugf("found kid[%d].Value: %#v\n", i, kid.Value)
 		args[i] = reflect.ValueOf(kid.Value)
 	}
 	var val any

@@ -13,7 +13,8 @@ import (
 )
 
 func main() {
-	logLevel := slog.LevelDebug
+	// logLevel := slog.LevelDebug
+	logLevel := slog.LevelInfo
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
 	slog.SetDefault(logger)
 
@@ -24,7 +25,7 @@ func main() {
 	grammarPath := os.Args[len(os.Args)-2]
 	statesPath := os.Args[len(os.Args)-1]
 
-	pkg, rls, sas, err := readGrammarRules(grammarPath)
+	imports, pkg, rls, sas, err := readGrammarRules(grammarPath)
 	if err != nil {
 		panic(fmt.Sprintf("error reading grammar rules: %v", err))
 	}
@@ -36,8 +37,9 @@ func main() {
 
 	r := fmt.Sprintf("package %s\n\n", pkg)
 	if glrPkg != "" {
-		r += "import \"github.com/findyourpaths/phil/glr\"\n\n"
+		r += "import \"github.com/findyourpaths/phil/glr\"\n"
 	}
+	r += imports + "\n"
 
 	// Print rules in YACC format.
 	r += "/*\nRules\n\n"
@@ -70,9 +72,9 @@ func main() {
 	r += fmt.Sprintf("var %sActions = &%sSemanticActions{Items:[]any{", pkg, glrPkg)
 	for i, action := range sas.Items {
 		slog.Debug("", "i", i, "action", action)
-		rule := rls.Items[i]
-		if rule.Type == "" {
-			r += fmt.Sprintf("\n  /* %3d */ nil, // empty type", i)
+		// rule := rls.Items[i]
+		if action == nil {
+			r += fmt.Sprintf("\n  /* %3d */ nil, // empty action", i)
 			continue
 		}
 		r += fmt.Sprintf("\n  /* %3d */ %s,", i, action.(string))
@@ -115,10 +117,10 @@ func main() {
 	}
 }
 
-func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error) {
+func readGrammarRules(p string) (string, string, *glr.Rules, *glr.SemanticActions, error) {
 	f, err := os.Open(p)
 	if err != nil {
-		return "", nil, nil, fmt.Errorf("failed to open grammar file: %v", err)
+		return "", "", nil, nil, fmt.Errorf("failed to open grammar file: %v", err)
 	}
 	defer f.Close()
 
@@ -139,6 +141,7 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 	typesByField := map[string]string{}
 	typesByNonterm := map[string]string{}
 
+	imports := ""
 	pkg := ""
 	i := 0
 	for scanner.Scan() {
@@ -149,8 +152,17 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 		slog.Debug("in readGrammarRules()", "i", i, "line", line)
 		slog.Debug("in readGrammarRules()", "i", i, "fields", fields)
 
+		if len(fields) == 2 && fields[0] == "package" && pkg == "" {
+			pkg = fields[1]
+			continue
+		}
+		if len(fields) == 2 && fields[0] == "import" {
+			imports += line + "\n"
+			continue
+		}
+
 		// Parse %type declarations, which specifies the type field for each nonterminals.
-		if len(fields) == 3 && fields[0] == "%type" {
+		if len(fields) == 3 && (fields[0] == "%type" || fields[0] == "%token") {
 			tField := strings.Trim(fields[1], "<>")
 			ntSym := fields[2]
 			typeFieldsByNonterm[ntSym] = tField
@@ -180,10 +192,6 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 				slog.Debug("in readGrammarRules()", "tField", tField, "tType", tType)
 			}
 			continue
-		}
-
-		if strings.HasPrefix(line, "package") && pkg == "" {
-			pkg = strings.Fields(line)[1]
 		}
 
 		// Start of rules section
@@ -219,10 +227,10 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 		} else {
 			slog.Debug("line contains RHS", "currentNonterm", currentNonterm)
 			if currentNonterm == "" {
-				return "", nil, nil, fmt.Errorf("production without rule at line %d: %s", i, line)
+				return "", "", nil, nil, fmt.Errorf("production without rule at line %d: %s", i, line)
 			}
 			rhsLine := line
-			if fields[0] == "|" {
+			if len(fields) > 0 && fields[0] == "|" {
 				rhsLine = strings.Join(fields[1:], " ")
 			}
 			rhs, action := parseRHS(rhsLine)
@@ -239,14 +247,14 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 	}
 
 	if err := scanner.Err(); err != nil {
-		return "", nil, nil, fmt.Errorf("error reading grammar file: %v", err)
+		return "", "", nil, nil, fmt.Errorf("error reading grammar file: %v", err)
 	}
 
 	if len(rls.Items) == 0 {
-		return "", nil, nil, fmt.Errorf("no valid rules found in grammar file")
+		return "", "", nil, nil, fmt.Errorf("no valid rules found in grammar file")
 	}
 
-	return pkg, rls, sas, nil
+	return imports, pkg, rls, sas, nil
 }
 
 var symbolRE = regexp.MustCompile(`\$(\d+)`)
@@ -259,19 +267,7 @@ func newSemanticAction(typesByNonterm map[string]string, rule glr.Rule, action s
 		symByPos[i+1] = sym + strconv.Itoa(symCounts[sym])
 	}
 
-	// Replace $n variables with symbolN names
-	if action == "" {
-		action = "$1"
-	}
-	act := symbolRE.ReplaceAllStringFunc(action, func(match string) string {
-		pos, _ := strconv.Atoi(match[1:])
-		if sym, ok := symByPos[pos]; ok {
-			return sym
-		}
-		return match
-	})
-
-	// Build arguments string
+	// Make arguments.
 	var args []string
 	for i := 1; i <= len(rule.RHS); i++ {
 		sym := symByPos[i]
@@ -281,7 +277,31 @@ func newSemanticAction(typesByNonterm map[string]string, rule glr.Rule, action s
 		}
 		args = append(args, fmt.Sprintf("%s %s", sym, t))
 	}
-	return fmt.Sprintf("func (%s) %s {return %s}", strings.Join(args, ", "), rule.Type, act)
+
+	// Make return type.
+	rtype := rule.Type
+	if rtype == "" {
+		rtype = "string"
+	}
+
+	// Make body.
+	if action == "" {
+		action = "$1"
+	}
+	// Replace $n variables with symbolN names
+	act := symbolRE.ReplaceAllStringFunc(action, func(match string) string {
+		pos, _ := strconv.Atoi(match[1:])
+		if sym, ok := symByPos[pos]; ok {
+			return sym
+		}
+		return match
+	})
+	if act == "$1" {
+		// This is an empty RHS for an optional nonterminal.
+		act = "\"\""
+	}
+
+	return fmt.Sprintf("func (%s) %s {return %s}", strings.Join(args, ", "), rtype, act)
 }
 
 func parseRHS(line string) ([]string, string) {
@@ -352,6 +372,7 @@ func readStates(p string) (*glr.ParseStates, error) {
 				Type: "reduce",
 				Rule: rule,
 			})
+			continue
 		}
 
 		if strings.HasPrefix(line, "state ") {
@@ -372,9 +393,9 @@ func readStates(p string) (*glr.ParseStates, error) {
 			continue
 		}
 
-		if currentState < 0 {
-			return nil, fmt.Errorf("action or goto before state declaration at line %d: %s", lineNum, line)
-		}
+		// if currentState < 0 {
+		// 	return nil, fmt.Errorf("action or goto before state declaration at line %d: %s", lineNum, line)
+		// }
 
 		// Parse actions and gotos
 		fields := strings.Fields(line)

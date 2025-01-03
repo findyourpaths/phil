@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/civil"
 	"github.com/findyourpaths/phil/glr"
@@ -21,6 +23,27 @@ type DateTimeTZRanges struct {
 	Items []*DateTimeTZRange
 }
 
+func AppendDateTimeTZRanges(rngs *DateTimeTZRanges, rng *DateTimeTZRange) *DateTimeTZRanges {
+	rngs.Items = append(rngs.Items, rng)
+	return rngs
+}
+
+func NewRanges(rngs ...*DateTimeTZRange) *DateTimeTZRanges {
+	return &DateTimeTZRanges{Items: rngs}
+}
+
+func NewRangesWithStarts(starts ...civil.Date) *DateTimeTZRanges {
+	r := &DateTimeTZRanges{}
+	for _, start := range starts {
+		r.Items = append(r.Items, &DateTimeTZRange{Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}}})
+	}
+	return r
+}
+
+func NewRangesWithStartEnd(start civil.Date, end civil.Date) *DateTimeTZRanges {
+	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEnd(start, end)}}
+}
+
 // A DateTimeTZRange represents a range of dates and times with time zones.
 //
 // This type DOES include location information.
@@ -29,12 +52,108 @@ type DateTimeTZRange struct {
 	End   *DateTimeTZ
 }
 
+func NewRangeWithStart(start civil.Date) *DateTimeTZRange {
+	return &DateTimeTZRange{Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}}}
+}
+
+func NewRangeWithStartEnd(start civil.Date, end civil.Date) *DateTimeTZRange {
+	return &DateTimeTZRange{
+		Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}},
+		End:   &DateTimeTZ{DateTime: civil.DateTime{Date: end}},
+	}
+}
+
 // A DateTimeTZ represents a date and time with a time zone.
 //
 // This type DOES include location information.
 type DateTimeTZ struct {
 	civil.DateTime
 	TimeZone string
+}
+
+var weekdaysByNames = map[string]int{
+	"sun":       0,
+	"sunday":    0,
+	"mon":       1,
+	"monday":    1,
+	"tue":       2,
+	"tues":      2,
+	"tuesday":   2,
+	"wed":       3,
+	"weds":      3,
+	"wednesday": 3,
+	"thu":       4,
+	"thus":      4,
+	"thursday":  4,
+	"fri":       5,
+	"friday":    5,
+	"saturday":  6,
+	"sat":       6,
+}
+
+var monthsByNames = map[string]time.Month{
+	"jan":       1,
+	"january":   1,
+	"feb":       2,
+	"february":  2,
+	"mar":       3,
+	"march":     3,
+	"apr":       4,
+	"april":     4,
+	"may":       5,
+	"jun":       6,
+	"june":      6,
+	"jul":       7,
+	"july":      7,
+	"aug":       8,
+	"august":    8,
+	"sep":       9,
+	"sept":      9,
+	"september": 9,
+	"oct":       10,
+	"october":   10,
+	"nov":       11,
+	"november":  11,
+	"dec":       12,
+	"december":  12,
+}
+
+var ordinals = map[string]bool{
+	"st": true,
+	"nd": true,
+	"rd": true,
+	"th": true,
+}
+
+func mustAtoi(str string) int {
+	if str == "" {
+		return 0
+	}
+	r, err := strconv.Atoi(str)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+var ambiguousDateMode string
+
+func NewAmbiguousDate(mode string, first string, second string, year string) civil.Date {
+	// North American tends to parse dates as month-day-year.
+	if mode == "na" {
+		return civil.Date{Month: time.Month(mustAtoi(first)), Day: mustAtoi(second), Year: mustAtoi(year)}
+	}
+	return civil.Date{Day: mustAtoi(first), Month: time.Month(mustAtoi(second)), Year: mustAtoi(year)}
+}
+
+func NewDMYDate(day string, monthName string, year string) civil.Date {
+	month := monthsByNames[strings.ToLower(monthName)]
+	return civil.Date{Day: mustAtoi(day), Month: month, Year: mustAtoi(year)}
+}
+
+func NewMDYDate(monthName string, day string, year string) civil.Date {
+	month := monthsByNames[strings.ToLower(monthName)]
+	return civil.Date{Day: mustAtoi(day), Month: month, Year: mustAtoi(year)}
 }
 
 // // Message for a sequence of datetime ranges.
@@ -127,7 +246,12 @@ func ExtractDateTimeTZRanges(mode, in string) (*DateTimeTZRanges, error) {
 		fmt.Printf("in after: %q\n", in)
 	}
 
-	forest, err := glr.Parse(parseRules, parseStates, NewDatetimeLexer(in))
+	g := &glr.Grammar{
+		Rules:   parseRules,
+		Actions: parseActions,
+		States:  parseStates,
+	}
+	forest, err := glr.Parse(g, NewDatetimeLexer(in))
 	if yyDebug == 3 {
 		fmt.Printf("tree:\n%# v\n", pretty.Formatter(forest))
 		fmt.Printf("err: %v\n", err)
@@ -138,96 +262,96 @@ func ExtractDateTimeTZRanges(mode, in string) (*DateTimeTZRanges, error) {
 	if len(forest) == 0 || len(forest[0].Children) == 0 {
 		return nil, fmt.Errorf("no datetime ranges found in %q", in)
 	}
-	return NewDateTimeTZRangesFromParse(forest[0].Children[0])
+	return forest[0].Children[0].Value.(*DateTimeTZRanges), nil
 }
 
-func NewDateTimeTZRangesFromParse(root *glr.ParseNode) (*DateTimeTZRanges, error) {
-	rs := &DateTimeTZRanges{}
-	for _, dtr := range root.Children {
-		for _, dt := range dtr.Children {
-			for _, elt := range dt.Children {
-				fmt.Printf("elt: %#v\n", elt)
+// func NewRangesFromParse(root *glr.ParseNode) (*DateTimeTZRanges, error) {
+// 	rs := &DateTimeTZRanges{}
+// 	for _, dtr := range root.Children {
+// 		for _, dt := range dtr.Children {
+// 			for _, elt := range dt.Children {
+// 				fmt.Printf("elt: %#v\n", elt)
 
-				// package main
+// 				// package main
 
-				// import (
-				// 	"fmt"
-				// 	"reflect"
-				// )
+// 				// import (
+// 				// 	"fmt"
+// 				// 	"reflect"
+// 				// )
 
-				// type Time struct {
-				// 	Hour        int `json:"hour"`        // The hour of the day in 24-hour format; range [0-23]
-				// 	Minute      int `json:"minute"`      // The minute of the hour; range [0-59]
-				// 	Second      int `json:"second"`      // The second of the minute; range [0-59]
-				// 	Nanosecond int `json:"nanosecond"` // The nanosecond of the second; range [0-999999999]
-				// }
+// 				// type Time struct {
+// 				// 	Hour        int `json:"hour"`        // The hour of the day in 24-hour format; range [0-23]
+// 				// 	Minute      int `json:"minute"`      // The minute of the hour; range [0-59]
+// 				// 	Second      int `json:"second"`      // The second of the minute; range [0-59]
+// 				// 	Nanosecond int `json:"nanosecond"` // The nanosecond of the second; range [0-999999999]
+// 				// }
 
-				// func main() {
-				// 	data := map[string]int{"Hour": 1, "Minute": 2}
+// 				// func main() {
+// 				// 	data := map[string]int{"Hour": 1, "Minute": 2}
 
-				// 	timeStruct := Time{}
-				// 	timeVal := reflect.ValueOf(&timeStruct).Elem()
-				// 	timeType := timeVal.Type()
+// 				// 	timeStruct := Time{}
+// 				// 	timeVal := reflect.ValueOf(&timeStruct).Elem()
+// 				// 	timeType := timeVal.Type()
 
-				// 	for i := 0; i < timeVal.NumField(); i++ {
-				// 		field := timeType.Field(i)
-				// 		fieldName := field.Name
-				// 		value, ok := data[fieldName]
-				// 		if ok {
-				// 			timeVal.Field(i).SetInt(int64(value))
-				// 		}
-				// 	}
+// 				// 	for i := 0; i < timeVal.NumField(); i++ {
+// 				// 		field := timeType.Field(i)
+// 				// 		fieldName := field.Name
+// 				// 		value, ok := data[fieldName]
+// 				// 		if ok {
+// 				// 			timeVal.Field(i).SetInt(int64(value))
+// 				// 		}
+// 				// 	}
 
-				// 	fmt.Println(timeStruct) // Output: {1 2 0 0}
-				// }
+// 				// 	fmt.Println(timeStruct) // Output: {1 2 0 0}
+// 				// }
 
-			}
-		}
-	}
-	// 	start := datetimeToTime(dtr.start)
-	// 	var r *DatetimeRange
-	// 	if dtr.end == nil {
-	// 		r = NewDatetimeRange(start)
-	// 	} else {
-	// 		r = NewDatetimeRange(start, datetimeToTime(dtr.end))
-	// 	}
-	// 	rs.Items = append(rs.Items, r)
-	// }
-	// fmt.Printf("datetime: %q\n", t.Format(time.RFC3339))
-	return rs, nil
-	// return nil, nil
-}
-
-// // yyParse(
-
-// rng2, _, err := anytimev2.ParseRange(in, time.Now(), anytimev2.Future)
-// if err == nil {
-// 	// log.Info().Msgf("in ExtractDateTimes(), anytimev2.ParseRange(%q)", in)
-// 	// log.Info().Msgf("in ExtractDateTimes(), rng2.Start() %#v", rng2.Start())
-// 	// log.Info().Msgf("in ExtractDateTimes(), rng2.End() %#v", rng2.End())
-
-// 	return &DatetimeRanges{Items: []*DatetimeRange{
-// 		NewDatetimeRange(rng2.Start(), rng2.End()),
-// 	}}, nil
+// 			}
+// 		}
+// 	}
+// 	// 	start := datetimeToTime(dtr.start)
+// 	// 	var r *DatetimeRange
+// 	// 	if dtr.end == nil {
+// 	// 		r = NewDatetimeRange(start)
+// 	// 	} else {
+// 	// 		r = NewDatetimeRange(start, datetimeToTime(dtr.end))
+// 	// 	}
+// 	// 	rs.Items = append(rs.Items, r)
+// 	// }
+// 	// fmt.Printf("datetime: %q\n", t.Format(time.RFC3339))
+// 	return rs, nil
+// 	// return nil, nil
 // }
 
-// rng1, err := anytime.ParseRange(in, time.Now())
-// if err == nil {
-// 	// log.Info().Msgf("in ExtractDateTimes(), anytime.ParseRange(%q)", in)
-// 	// log.Info().Msgf("in ExtractDateTimes(), rng.Start() %#v", rng.Start())
-// 	// log.Info().Msgf("in ExtractDateTimes(), rng.End() %#v", rng.End())
+// // // yyParse(
 
-// 	return &DatetimeRanges{Items: []*DatetimeRange{
-// 		NewDatetimeRange(rng1.Start(), rng1.End()),
-// 	}}, nil
-// }
+// // rng2, _, err := anytimev2.ParseRange(in, time.Now(), anytimev2.Future)
+// // if err == nil {
+// // 	// log.Info().Msgf("in ExtractDateTimes(), anytimev2.ParseRange(%q)", in)
+// // 	// log.Info().Msgf("in ExtractDateTimes(), rng2.Start() %#v", rng2.Start())
+// // 	// log.Info().Msgf("in ExtractDateTimes(), rng2.End() %#v", rng2.End())
 
-// t, err := anytime.Parse(in, time.Now())
-// if err == nil {
-// 	// log.Info().Msgf("in ExtractDateTimes(), anytime.Parse(%q)", in)
-// 	// log.Info().Msgf("in ExtractDateTimes(), t %#v", t)
+// // 	return &DatetimeRanges{Items: []*DatetimeRange{
+// // 		NewDatetimeRange(rng2.Start(), rng2.End()),
+// // 	}}, nil
+// // }
 
-// 	return &DatetimeRanges{Items: []*DatetimeRange{
-// 		NewDatetimeRange(t),
-// 	}}, nil
-// }
+// // rng1, err := anytime.ParseRange(in, time.Now())
+// // if err == nil {
+// // 	// log.Info().Msgf("in ExtractDateTimes(), anytime.ParseRange(%q)", in)
+// // 	// log.Info().Msgf("in ExtractDateTimes(), rng.Start() %#v", rng.Start())
+// // 	// log.Info().Msgf("in ExtractDateTimes(), rng.End() %#v", rng.End())
+
+// // 	return &DatetimeRanges{Items: []*DatetimeRange{
+// // 		NewDatetimeRange(rng1.Start(), rng1.End()),
+// // 	}}, nil
+// // }
+
+// // t, err := anytime.Parse(in, time.Now())
+// // if err == nil {
+// // 	// log.Info().Msgf("in ExtractDateTimes(), anytime.Parse(%q)", in)
+// // 	// log.Info().Msgf("in ExtractDateTimes(), t %#v", t)
+
+// // 	return &DatetimeRanges{Items: []*DatetimeRange{
+// // 		NewDatetimeRange(t),
+// // 	}}, nil
+// // }

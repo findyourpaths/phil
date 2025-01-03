@@ -3,34 +3,15 @@ package parse
 
 import __yyfmt__ "fmt"
 
-import (
-	"cloud.google.com/go/civil"
-	"time"
-)
-
-func setResult(l yyLexer, root *DateTimeTZRanges) {
-	l.(*datetimeLexer).root = root
-}
-
-var ambiguousDateMode string
-
-func NewCivilDate(first, second, year int) civil.Date {
-	if ambiguousDateMode == "us" {
-		return civil.Date{Month: time.Month(first), Day: second, Year: year}
-	}
-	return civil.Date{Day: first, Month: time.Month(second), Year: year}
-}
+import "cloud.google.com/go/civil"
 
 type yySymType struct {
 	yys              int
-	op               string
-	label            string
-	string           string
-	int              int
-	Date             civil.Date
-	DateTimeTZ       *DateTimeTZ
-	DateTimeTZRange  *DateTimeTZRange
 	DateTimeTZRanges *DateTimeTZRanges
+	DateTimeTZRange  *DateTimeTZRange
+	DateTimeTZ       *DateTimeTZ
+	Date             civil.Date
+	string           string
 }
 
 const ILLEGAL = 57346
@@ -47,8 +28,10 @@ const SUB = 57356
 const THROUGH = 57357
 const TO = 57358
 const IDENT = 57359
-const MONTH = 57360
-const INT = 57361
+const MONTH_NAME = 57360
+const WEEKDAY_NAME = 57361
+const YEAR = 57362
+const INT = 57363
 
 var yyToknames = [...]string{
 	"$end",
@@ -68,7 +51,9 @@ var yyToknames = [...]string{
 	"THROUGH",
 	"TO",
 	"IDENT",
-	"MONTH",
+	"MONTH_NAME",
+	"WEEKDAY_NAME",
+	"YEAR",
 	"INT",
 }
 
@@ -86,38 +71,80 @@ var yyExca = [...]int8{
 
 const yyPrivate = 57344
 
-const yyLast = 11
+const yyLast = 113
 
 var yyAct = [...]int8{
-	11, 9, 7, 6, 10, 8, 5, 4, 3, 2,
-	1,
+	15, 86, 18, 19, 20, 84, 28, 21, 29, 26,
+	18, 19, 20, 25, 27, 17, 29, 18, 19, 20,
+	59, 16, 60, 58, 14, 40, 36, 9, 80, 37,
+	11, 9, 6, 12, 4, 9, 77, 5, 71, 70,
+	68, 67, 64, 57, 56, 65, 45, 51, 73, 54,
+	50, 66, 48, 45, 35, 49, 44, 43, 42, 72,
+	30, 22, 61, 31, 23, 53, 46, 17, 78, 18,
+	19, 20, 41, 16, 81, 38, 8, 34, 32, 24,
+	13, 90, 89, 87, 85, 82, 79, 75, 74, 68,
+	60, 29, 69, 63, 62, 47, 33, 17, 88, 83,
+	18, 19, 20, 16, 52, 76, 55, 39, 3, 7,
+	2, 10, 1,
 }
 
 var yyPact = [...]int16{
-	-16, -1000, -1000, -1000, -1000, -1000, -18, -1000, -19, -1000,
-	-1000, -1000,
+	16, -1000, 12, -1000, 59, 3, 86, -1000, 43, -1000,
+	-1000, 58, 55, -12, 42, 57, 76, 56, -1000, -1000,
+	-1000, 8, 54, 89, -4, 51, 37, 35, 45, -1000,
+	75, 34, 29, -1000, 92, -1000, 44, 85, -1000, -1000,
+	28, 88, 23, -1000, 2, 41, 74, -1000, 73, 24,
+	86, 20, 72, 71, 70, 69, 18, -1000, 86, 27,
+	-1000, 68, -1000, -1000, 67, 87, 15, 86, -1000, -1000,
+	66, -1000, 7, 86, -1000, -1000, 65, 81, -16, -1000,
+	64, -20, -1000, 63, 80, -1000, 62, -1000, 61, -1000,
+	-1000,
 }
 
 var yyPgo = [...]int8{
-	0, 10, 9, 8, 7, 6, 5, 4, 3,
+	0, 112, 110, 108, 32, 109, 0, 76,
 }
 
 var yyR1 = [...]int8{
-	0, 1, 2, 3, 4, 5, 8, 6, 7,
+	0, 1, 2, 2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 3,
+	3, 3, 3, 3, 3, 3, 4, 5, 5, 5,
+	5, 5, 7, 7, 6, 6, 6,
 }
 
 var yyR2 = [...]int8{
-	0, 1, 1, 1, 1, 3, 1, 1, 1,
+	0, 1, 1, 2, 3, 4, 5, 6, 3, 4,
+	5, 6, 4, 5, 6, 7, 4, 5, 6, 7,
+	7, 7, 8, 8, 8, 8, 9, 9, 5, 1,
+	4, 4, 5, 5, 3, 6, 1, 3, 3, 5,
+	3, 3, 0, 1, 1, 1, 1,
 }
 
 var yyChk = [...]int16{
-	-1000, -1, -2, -3, -4, -5, -8, 18, -6, 19,
-	-7, 19,
+	-1000, -1, -2, -3, 18, 21, -4, -5, -7, 19,
+	-3, 18, 21, 21, 21, -6, 18, 12, 14, 15,
+	16, -6, 18, 21, 21, -6, 21, -6, 18, 20,
+	18, 21, 21, 20, 21, -4, 18, 21, 21, 18,
+	-6, 21, 21, 20, 21, 18, 21, 20, 18, 21,
+	21, 18, 12, 21, 21, 18, 21, 20, 21, 18,
+	20, 21, 20, 20, 18, 21, -6, 21, 20, 20,
+	21, 20, -6, 21, 20, 20, 18, 21, -6, 20,
+	21, -6, 20, 18, 21, 20, 21, 20, 18, 20,
+	20,
 }
 
 var yyDef = [...]int8{
-	0, -2, 1, 2, 3, 4, 0, 6, 0, 7,
-	5, 8,
+	0, -2, 1, 2, 0, 0, 29, 36, 0, 43,
+	3, 0, 0, 0, 0, 0, 0, 0, 44, 45,
+	46, 0, 0, 0, 0, 0, 4, 0, 0, 37,
+	8, 0, 0, 38, 0, 34, 0, 0, 40, 41,
+	0, 0, 5, 12, 30, 0, 0, 16, 9, 0,
+	0, 31, 0, 0, 30, 31, 6, 13, 0, 0,
+	32, 0, 28, 17, 10, 0, 0, 0, 33, 39,
+	7, 14, 0, 0, 35, 18, 11, 0, 0, 15,
+	20, 0, 19, 21, 0, 24, 22, 25, 23, 26,
+	27,
 }
 
 var yyTok1 = [...]int8{
@@ -126,7 +153,7 @@ var yyTok1 = [...]int8{
 
 var yyTok2 = [...]int8{
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-	12, 13, 14, 15, 16, 17, 18, 19,
+	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 }
 
 var yyTok3 = [...]int8{
@@ -471,7 +498,7 @@ yydefault:
 	case 1:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			setResult(yylex, yyDollar[1].DateTimeTZRanges)
+			yyVAL.DateTimeTZRanges = yyDollar[1].DateTimeTZRanges
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
@@ -479,19 +506,199 @@ yydefault:
 			yyVAL.DateTimeTZRanges = &DateTimeTZRanges{Items: []*DateTimeTZRange{yyDollar[1].DateTimeTZRange}}
 		}
 	case 3:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = AppendDateTimeTZRanges(yyDollar[1].DateTimeTZRanges, yyDollar[2].DateTimeTZRange)
+		}
+	case 4:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[3].string, ""))
+		}
+	case 5:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[3].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, ""))
+		}
+	case 6:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[3].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[5].string, ""))
+		}
+	case 7:
+		yyDollar = yyS[yypt-6 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[3].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[5].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[6].string, ""))
+		}
+	case 8:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[3].string, ""), NewDMYDate(yyDollar[2].string, yyDollar[3].string, ""))
+		}
+	case 9:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[4].string, ""), NewDMYDate(yyDollar[2].string, yyDollar[4].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[4].string, ""))
+		}
+	case 10:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[5].string, ""), NewDMYDate(yyDollar[2].string, yyDollar[5].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[5].string, ""), NewDMYDate(yyDollar[4].string, yyDollar[5].string, ""))
+		}
+	case 11:
+		yyDollar = yyS[yypt-6 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[6].string, ""), NewDMYDate(yyDollar[2].string, yyDollar[6].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[6].string, ""), NewDMYDate(yyDollar[4].string, yyDollar[6].string, ""), NewDMYDate(yyDollar[5].string, yyDollar[6].string, ""))
+		}
+	case 12:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[4].string), NewMDYDate(yyDollar[1].string, yyDollar[3].string, yyDollar[4].string))
+		}
+	case 13:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string), NewMDYDate(yyDollar[1].string, yyDollar[3].string, yyDollar[5].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string))
+		}
+	case 14:
+		yyDollar = yyS[yypt-6 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[6].string), NewMDYDate(yyDollar[1].string, yyDollar[3].string, yyDollar[6].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[6].string), NewMDYDate(yyDollar[1].string, yyDollar[5].string, yyDollar[6].string))
+		}
+	case 15:
+		yyDollar = yyS[yypt-7 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[7].string), NewMDYDate(yyDollar[1].string, yyDollar[3].string, yyDollar[7].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[7].string), NewMDYDate(yyDollar[1].string, yyDollar[5].string, yyDollar[7].string), NewMDYDate(yyDollar[1].string, yyDollar[6].string, yyDollar[7].string))
+		}
+	case 16:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[3].string, yyDollar[4].string), NewDMYDate(yyDollar[2].string, yyDollar[3].string, yyDollar[4].string))
+		}
+	case 17:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string), NewDMYDate(yyDollar[2].string, yyDollar[4].string, yyDollar[5].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string))
+		}
+	case 18:
+		yyDollar = yyS[yypt-6 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[5].string, yyDollar[6].string), NewDMYDate(yyDollar[2].string, yyDollar[5].string, yyDollar[6].string), NewDMYDate(yyDollar[3].string, yyDollar[5].string, yyDollar[6].string), NewDMYDate(yyDollar[4].string, yyDollar[5].string, yyDollar[6].string))
+		}
+	case 19:
+		yyDollar = yyS[yypt-7 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRangesWithStarts(NewDMYDate(yyDollar[1].string, yyDollar[6].string, yyDollar[7].string), NewDMYDate(yyDollar[2].string, yyDollar[6].string, yyDollar[7].string), NewDMYDate(yyDollar[3].string, yyDollar[6].string, yyDollar[7].string), NewDMYDate(yyDollar[4].string, yyDollar[6].string, yyDollar[7].string), NewDMYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string))
+		}
+	case 20:
+		yyDollar = yyS[yypt-7 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, "")), NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[5].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[7].string, "")))
+		}
+	case 21:
+		yyDollar = yyS[yypt-7 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewDMYDate(yyDollar[1].string, yyDollar[7].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[7].string, "")), NewRangeWithStartEnd(NewDMYDate(yyDollar[4].string, yyDollar[7].string, ""), NewDMYDate(yyDollar[6].string, yyDollar[7].string, "")))
+		}
+	case 22:
+		yyDollar = yyS[yypt-8 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, "")), NewRangeWithStartEnd(NewMDYDate(yyDollar[5].string, yyDollar[6].string, ""), NewMDYDate(yyDollar[5].string, yyDollar[8].string, "")))
+		}
+	case 23:
+		yyDollar = yyS[yypt-8 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewDMYDate(yyDollar[1].string, yyDollar[4].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[4].string, "")), NewRangeWithStartEnd(NewDMYDate(yyDollar[5].string, yyDollar[8].string, ""), NewDMYDate(yyDollar[7].string, yyDollar[8].string, "")))
+		}
+	case 24:
+		yyDollar = yyS[yypt-8 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[8].string)), NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[5].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string)))
+		}
+	case 25:
+		yyDollar = yyS[yypt-8 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewDMYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[3].string, yyDollar[7].string, yyDollar[8].string)), NewRangeWithStartEnd(NewDMYDate(yyDollar[4].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string)))
+		}
+	case 26:
+		yyDollar = yyS[yypt-9 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[9].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEnd(NewMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[9].string), NewMDYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string)))
+		}
+	case 27:
+		yyDollar = yyS[yypt-9 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEnd(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEnd(NewDMYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string), NewDMYDate(yyDollar[7].string, yyDollar[8].string, yyDollar[9].string)))
+		}
+	case 28:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStart(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string)), NewRangeWithStart(NewMDYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string)))
+		}
+	case 29:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[1].DateTimeTZ}
 		}
-	case 4:
+	case 30:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, ""))
+		}
+	case 31:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEnd(NewDMYDate(yyDollar[1].string, yyDollar[4].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[4].string, ""))
+		}
+	case 32:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string))
+		}
+	case 33:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEnd(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string))
+		}
+	case 34:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[1].DateTimeTZ, End: yyDollar[3].DateTimeTZ}
+		}
+	case 35:
+		yyDollar = yyS[yypt-6 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEnd(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[6].string), NewMDYDate(yyDollar[4].string, yyDollar[5].string, yyDollar[6].string))
+		}
+	case 36:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.DateTimeTZ = &DateTimeTZ{DateTime: civil.DateTime{Date: yyDollar[1].Date}}
 		}
-	case 5:
+	case 37:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.Date = civil.Date{Month: 1, Day: yyDollar[2].int, Year: yyDollar[3].int}
+			yyVAL.Date = NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string)
+		}
+	case 38:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.Date = NewDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string)
+		}
+	case 39:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.Date = NewAmbiguousDate(ambiguousDateMode, yyDollar[1].string, yyDollar[3].string, yyDollar[5].string)
+		}
+	case 40:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.Date = NewMDYDate(yyDollar[2].string, yyDollar[3].string, "")
+		}
+	case 41:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.Date = NewDMYDate(yyDollar[2].string, yyDollar[3].string, "")
 		}
 	}
 	goto yystack /* stack new state and value */

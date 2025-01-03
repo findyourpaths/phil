@@ -1,11 +1,5 @@
 %{
 package glr
-
-type node struct {
-    val string
-    children []*node
-}
-
 %}
 
  /* Type of each nonterminal. */
@@ -28,8 +22,6 @@ type node struct {
 }
 
 %token <string> A B C D X Y ILLEGAL
-
-/* %type <node> ABCD ABC BCD */
 
 %%
 
