@@ -2,81 +2,82 @@
 package glr
 
 import (
+	"reflect"
 	"testing"
 )
 
 func TestGLRParser(t *testing.T) {
 	tests := []struct {
-		name       string
-		input      string
-		wantSymbol string
-		wantErr    bool
+		name    string
+		input   string
+		want    *Alphabet
+		wantErr bool
 	}{
 		{
-			name:       "Simple ABC",
-			input:      "a b c",
-			wantSymbol: "ABC",
-			wantErr:    false,
+			name:    "Simple ABC",
+			input:   "a b c",
+			want:    &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
+			wantErr: false,
 		},
 		{
-			name:       "Simple BCD",
-			input:      "b c d",
-			wantSymbol: "BCD",
-			wantErr:    false,
+			name:    "Simple BCD",
+			input:   "b c d",
+			want:    &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
+			wantErr: false,
 		},
 		{
-			name:       "Short BCD",
-			input:      "b c",
-			wantSymbol: "BCD",
-			wantErr:    false,
+			name:    "Short BCD",
+			input:   "b c",
+			want:    &Alphabet{BCD: &BCD{B: "b", C: "c"}},
+			wantErr: false,
 		},
 		{
-			name:       "Simple ABCD",
-			input:      "a b c d",
-			wantSymbol: "ABCD",
-			wantErr:    false,
+			name:    "Simple ABCD",
+			input:   "a b c d",
+			want:    &Alphabet{ABCD: &ABCD{A: "a", B: "b", C: "c", D: "d"}},
+			wantErr: false,
 		},
 		{
-			name:       "ABC with extra A",
-			input:      "a a b c",
-			wantSymbol: "ABC",
-			wantErr:    false,
+			name:    "ABC with extra A",
+			input:   "a a b c",
+			want:    &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
+			wantErr: false,
 		},
 		{
-			name:       "ABC with noise",
-			input:      "a b x c",
-			wantSymbol: "ABC",
-			wantErr:    false,
+			name:    "ABC with noise",
+			input:   "a b x c",
+			want:    &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
+			wantErr: false,
 		},
 		{
-			name:       "Long BCD with noise",
-			input:      "x b y c d",
-			wantSymbol: "BCD",
-			wantErr:    false,
+			name:    "Long BCD with noise",
+			input:   "x b y c d",
+			want:    &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
+			wantErr: false,
 		},
 		{
-			name:       "Long BCD with noise after",
-			input:      "x b y c d y",
-			wantSymbol: "BCD",
-			wantErr:    false,
+			name:    "Long BCD with noise after",
+			input:   "x b y c d y",
+			want:    &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
+			wantErr: false,
 		},
 		{
-			name:       "Short BCD with noise",
-			input:      "x b y c",
-			wantSymbol: "BCD",
-			wantErr:    false,
+			name:    "Short BCD with noise",
+			input:   "x b y c",
+			want:    &Alphabet{BCD: &BCD{B: "b", C: "c"}},
+			wantErr: false,
 		},
 		{
-			name:       "Short BCD with noise after",
-			input:      "x b y c y",
-			wantSymbol: "BCD",
-			wantErr:    false,
+			name:    "Short BCD with noise after",
+			input:   "x b y c y",
+			want:    &Alphabet{BCD: &BCD{B: "b", C: "c"}},
+			wantErr: false,
 		},
 		{
-			name:       "ABCD with noise",
-			input:      "x a y b c d x",
-			wantSymbol: "ABCD",
-			wantErr:    false,
+			name:    "ABCD with noise",
+			input:   "x a y b c d x",
+			want:    &Alphabet{ABCD: &ABCD{A: "a", B: "b", C: "c", D: "d"}},
+			wantErr: false,
 		},
 		{
 			name:    "Invalid input",
@@ -87,7 +88,7 @@ func TestGLRParser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := Parse(glrRules, glrStates, NewSimpleLexer(tt.input))
+			results, err := Parse(&Grammar{Rules: glrRules, Actions: glrActions, States: glrStates}, NewSimpleLexer(tt.input))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -95,14 +96,14 @@ func TestGLRParser(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if len(results) == 0 && tt.wantSymbol == "" {
+			if len(results) == 0 && tt.want == nil {
 				return
 			}
 
 			// Get the root node (last node in result)
-			root := results[0].Children[0]
-			if root.Symbol != tt.wantSymbol {
-				t.Errorf("Parse() got rule = %v, want %v", root.Symbol, tt.wantSymbol)
+			root := results[0]
+			if !reflect.DeepEqual(root.Value, tt.want) {
+				t.Errorf("Parse() got rule = %#v, want %#v", root.Value, tt.want)
 			}
 
 			// Verify the parse tree structure

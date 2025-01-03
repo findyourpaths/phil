@@ -47,41 +47,21 @@ var glrRules = &Rules{Items:[]Rule{
 
 // Semantic action functions
 
-func glrSemanticAction1(node *ParseNode) *Alphabet {
-  return &Alphabet{ABCD: $1}
-}
-
-func glrSemanticAction2(node *ParseNode) *Alphabet {
-  return &Alphabet{ABC: $1}
-}
-
-func glrSemanticAction3(node *ParseNode) *Alphabet {
-  return &Alphabet{BCD: $1}
-}
-
-func glrSemanticAction4(node *ParseNode) *ABCD {
-  return &ABCD{A: $1, B: $2, C: $3, D: $4}
-}
-
-func glrSemanticAction5(node *ParseNode) *ABC {
-  return &ABC{A: $1, B: $2, C: $3}
-}
-
-func glrSemanticAction6(node *ParseNode) *BCD {
-  return &BCD{B: $1, C: $2, D: $3}
-}
-
-func glrSemanticAction7(node *ParseNode) *BCD {
-  return &BCD{B: $1, C: $2, D: $3}
-}
-
-func glrSemanticAction8(node *ParseNode) *BCD {
-  return &BCD{B: $1, C: $2, D: $3}
-}
-
-func glrSemanticAction10(node *ParseNode) string {
-  return ""
-}
+var glrActions = &SemanticActions{Items:[]any{
+  /*   0 */ nil, // empty type
+  /*   1 */ func (ABCD1 *ABCD) *Alphabet {return &Alphabet{ABCD: ABCD1}},
+  /*   2 */ func (ABC1 *ABC) *Alphabet {return &Alphabet{ABC: ABC1}},
+  /*   3 */ func (BCD1 *BCD) *Alphabet {return &Alphabet{BCD: BCD1}},
+  /*   4 */ func (A1 string, B1 string, C1 string, D1 string) *ABCD {return &ABCD{A: A1, B: B1, C: C1, D: D1}},
+  /*   5 */ func (A1 string, B1 string, C1 string) *ABC {return &ABC{A: A1, B: B1, C: C1}},
+  /*   6 */ func (B1 string, C1 string, OptD1 string) *BCD {return &BCD{B: B1, C: C1, D: OptD1}},
+  /*   7 */ func (B1 string, C1 string, WrapD1 string) *BCD {return &BCD{B: B1, C: C1, D: WrapD1}},
+  /*   8 */ func (B1 string, WrapC1 string, D1 string) *BCD {return &BCD{B: B1, C: WrapC1, D: D1}},
+  /*   9 */ func (C1 string) string {return C1},
+  /*  10 */ func () string {return ""},
+  /*  11 */ func (D1 string) string {return D1},
+  /*  12 */ func (D1 string) string {return D1},
+}}
 
 var glrStates = &ParseStates{Items:[]ParseState{
   /*   0 */ ParseState{Actions:map[string][]Action{"A":[]Action{Action{Type:"shift", State:5, Rule:0}}, "B":[]Action{Action{Type:"shift", State:6, Rule:0}}}, Gotos:map[string]int{"ABC":3, "ABCD":2, "BCD":4, "root":1}},

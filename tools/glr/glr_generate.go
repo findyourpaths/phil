@@ -67,19 +67,20 @@ func main() {
 
 	// Generate semantic action functions
 	r += "// Semantic action functions\n\n"
+	r += fmt.Sprintf("var %sActions = &%sSemanticActions{Items:[]any{", pkg, glrPkg)
 	for i, action := range sas.Items {
 		slog.Debug("", "i", i, "action", action)
-		if action.Action == "" {
-			continue
-		}
 		rule := rls.Items[i]
 		if rule.Type == "" {
+			r += fmt.Sprintf("\n  /* %3d */ nil, // empty type", i)
 			continue
 		}
-		r += fmt.Sprintf("func %sSemanticAction%d(node *%sParseNode) %s {\n", pkg, i, glrPkg, rule.Type)
-		r += fmt.Sprintf("  return %s\n", action.Action)
-		r += "}\n\n"
+		r += fmt.Sprintf("\n  /* %3d */ %s,", i, action.(string))
+		// r += fmt.Sprintf("func %sSemanticAction%d(node *%sParseNode) %s {\n", pkg, i, glrPkg, rule.Type)
+		// r += fmt.Sprintf("  return %s\n", action.Action)
+		// r += "}\n\n"
 	}
+	r += "\n}}\n\n"
 
 	r += fmt.Sprintf("var %sStates = &%sParseStates{Items:[]%sParseState{", pkg, glrPkg, glrPkg)
 	for i, state := range states.Items {
@@ -123,12 +124,12 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 
 	// Rules are numbered starting at 1.
 	rls := &glr.Rules{Items: []glr.Rule{{}}}
-	sas := &glr.SemanticActions{Items: []glr.SemanticAction{{}}}
+	sas := &glr.SemanticActions{Items: []any{nil}}
 	scanner := bufio.NewScanner(f)
 
 	inRules := false
 	inUnion := false
-	currentRule := &glr.Rule{}
+	currentNonterm := ""
 	expectingRHS := false
 
 	nontermRE := regexp.MustCompile(`^(.*):$`)
@@ -136,6 +137,7 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 	// Map to store type declarations
 	typeFieldsByNonterm := map[string]string{}
 	typesByField := map[string]string{}
+	typesByNonterm := map[string]string{}
 
 	pkg := ""
 	i := 0
@@ -163,6 +165,10 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 		}
 		if len(fields) == 1 && fields[0] == "}" && inUnion {
 			inUnion = false
+			for ntSym, tField := range typeFieldsByNonterm {
+				typesByNonterm[ntSym] = typesByField[tField]
+			}
+			slog.Debug("in readGrammarRules()", "typesByNonterm", typesByNonterm)
 			continue
 		}
 		if inUnion {
@@ -201,52 +207,32 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 			// Skip code.
 			continue
 		} else if strings.HasPrefix(line, ";") {
-			currentRule = nil
+			currentNonterm = ""
 		} else if (line == "" || strings.HasPrefix(strings.TrimSpace(line), "{")) && expectingRHS == false {
 			// Skip empty lines only if there's no current rule.
 			continue
 		} else if nontermMatch := nontermRE.FindStringSubmatch(line); len(nontermMatch) > 1 {
 			ntSym := strings.TrimSpace(nontermMatch[1])
-			currentRule = &glr.Rule{
-				Nonterminal: ntSym,
-				Type:        typesByField[typeFieldsByNonterm[ntSym]],
-			}
+			currentNonterm = ntSym
 			expectingRHS = true
-			slog.Debug("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
-		} else if fields[0] == "|" {
-			slog.Debug("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
-			// Alternative production for current rule
-			if currentRule.Nonterminal == "" {
-				return "", nil, nil, fmt.Errorf("alternative production without rule at line %d: %s", i, line)
-			}
-			rhs, action := parseRHS(strings.Join(fields[1:], " "))
-			ntSym := currentRule.Nonterminal
-			rls.Items = append(rls.Items, glr.Rule{
-				Nonterminal: ntSym,
-				RHS:         rhs,
-				Type:        typesByField[typeFieldsByNonterm[ntSym]],
-			})
-			sas.Items = append(sas.Items, glr.SemanticAction{
-				Action: action,
-			})
-			slog.Debug("alt rule", "rule", rls.Items[len(rls.Items)-1], "semantic action", sas.Items[len(sas.Items)-1])
-			expectingRHS = false
+			slog.Debug("line contains :", "currentNonterm", currentNonterm)
 		} else {
-			slog.Debug("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
-			// Regular production
-			if currentRule.Nonterminal == "" {
+			slog.Debug("line contains RHS", "currentNonterm", currentNonterm)
+			if currentNonterm == "" {
 				return "", nil, nil, fmt.Errorf("production without rule at line %d: %s", i, line)
 			}
-			rhs, action := parseRHS(line)
-			ntSym := currentRule.Nonterminal
-			rls.Items = append(rls.Items, glr.Rule{
-				Nonterminal: ntSym,
+			rhsLine := line
+			if fields[0] == "|" {
+				rhsLine = strings.Join(fields[1:], " ")
+			}
+			rhs, action := parseRHS(rhsLine)
+			rule := glr.Rule{
+				Nonterminal: currentNonterm,
 				RHS:         rhs,
-				Type:        typesByField[typeFieldsByNonterm[ntSym]],
-			})
-			sas.Items = append(sas.Items, glr.SemanticAction{
-				Action: action,
-			})
+				Type:        typesByNonterm[currentNonterm],
+			}
+			rls.Items = append(rls.Items, rule)
+			sas.Items = append(sas.Items, newSemanticAction(typesByNonterm, rule, action))
 			slog.Debug("bare RHS", "rule", rls.Items[len(rls.Items)-1], "semantic action", sas.Items[len(sas.Items)-1])
 			expectingRHS = false
 		}
@@ -261,6 +247,41 @@ func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error
 	}
 
 	return pkg, rls, sas, nil
+}
+
+var symbolRE = regexp.MustCompile(`\$(\d+)`)
+
+func newSemanticAction(typesByNonterm map[string]string, rule glr.Rule, action string) string {
+	symCounts := map[string]int{}
+	symByPos := map[int]string{}
+	for i, sym := range rule.RHS {
+		symCounts[sym]++
+		symByPos[i+1] = sym + strconv.Itoa(symCounts[sym])
+	}
+
+	// Replace $n variables with symbolN names
+	if action == "" {
+		action = "$1"
+	}
+	act := symbolRE.ReplaceAllStringFunc(action, func(match string) string {
+		pos, _ := strconv.Atoi(match[1:])
+		if sym, ok := symByPos[pos]; ok {
+			return sym
+		}
+		return match
+	})
+
+	// Build arguments string
+	var args []string
+	for i := 1; i <= len(rule.RHS); i++ {
+		sym := symByPos[i]
+		t, found := typesByNonterm[rule.RHS[i-1]]
+		if !found {
+			t = "string"
+		}
+		args = append(args, fmt.Sprintf("%s %s", sym, t))
+	}
+	return fmt.Sprintf("func (%s) %s {return %s}", strings.Join(args, ", "), rule.Type, act)
 }
 
 func parseRHS(line string) ([]string, string) {
