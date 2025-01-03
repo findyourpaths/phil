@@ -5,7 +5,6 @@ go_library(
     srcs = ["glr_generate.go"],
     importpath = "github.com/findyourpaths/phil/tools/glr",
     visibility = ["//visibility:private"],
-    deps = ["//glr"],
 )
 
 go_binary(

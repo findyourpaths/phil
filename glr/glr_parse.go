@@ -31,6 +31,14 @@ func debugln(args ...interface{}) {
 	}
 }
 
+type SemanticActions struct {
+	Items []SemanticAction
+}
+
+type SemanticAction struct {
+	Action string
+}
+
 type Rules struct {
 	Items []Rule
 }
@@ -38,6 +46,7 @@ type Rules struct {
 type Rule struct {
 	Nonterminal string
 	RHS         []string
+	Type        string
 }
 
 type ParseStates struct {

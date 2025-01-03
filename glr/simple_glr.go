@@ -30,20 +30,58 @@ WrapD:
 */
 
 var glrRules = &Rules{Items:[]Rule{
-  /*   0 */ Rule{Nonterminal:"", RHS:[]string(nil)}, // ignored because rule-numbering starts at 1
-  /*   1 */ Rule{Nonterminal:"root", RHS:[]string{"ABCD"}},
-  /*   2 */ Rule{Nonterminal:"root", RHS:[]string{"ABC"}},
-  /*   3 */ Rule{Nonterminal:"root", RHS:[]string{"BCD"}},
-  /*   4 */ Rule{Nonterminal:"ABCD", RHS:[]string{"A", "B", "C", "D"}},
-  /*   5 */ Rule{Nonterminal:"ABC", RHS:[]string{"A", "B", "C"}},
-  /*   6 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "OptD"}},
-  /*   7 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "WrapD"}},
-  /*   8 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "WrapC", "D"}},
-  /*   9 */ Rule{Nonterminal:"WrapC", RHS:[]string{"C"}},
-  /*  10 */ Rule{Nonterminal:"OptD", RHS:[]string(nil)},
-  /*  11 */ Rule{Nonterminal:"OptD", RHS:[]string{"D"}},
-  /*  12 */ Rule{Nonterminal:"WrapD", RHS:[]string{"D"}},
+  /*   0 */ Rule{Nonterminal:"", RHS:[]string(nil), Type:""}, // ignored because rule-numbering starts at 1
+  /*   1 */ Rule{Nonterminal:"root", RHS:[]string{"ABCD"}, Type:"*Alphabet"},
+  /*   2 */ Rule{Nonterminal:"root", RHS:[]string{"ABC"}, Type:"*Alphabet"},
+  /*   3 */ Rule{Nonterminal:"root", RHS:[]string{"BCD"}, Type:"*Alphabet"},
+  /*   4 */ Rule{Nonterminal:"ABCD", RHS:[]string{"A", "B", "C", "D"}, Type:"*ABCD"},
+  /*   5 */ Rule{Nonterminal:"ABC", RHS:[]string{"A", "B", "C"}, Type:"*ABC"},
+  /*   6 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "OptD"}, Type:"*BCD"},
+  /*   7 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "WrapD"}, Type:"*BCD"},
+  /*   8 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "WrapC", "D"}, Type:"*BCD"},
+  /*   9 */ Rule{Nonterminal:"WrapC", RHS:[]string{"C"}, Type:"string"},
+  /*  10 */ Rule{Nonterminal:"OptD", RHS:[]string(nil), Type:"string"},
+  /*  11 */ Rule{Nonterminal:"OptD", RHS:[]string{"D"}, Type:"string"},
+  /*  12 */ Rule{Nonterminal:"WrapD", RHS:[]string{"D"}, Type:"string"},
 }}
+
+// Semantic action functions
+
+func glrSemanticAction1(node *ParseNode) *Alphabet {
+  return &Alphabet{ABCD: $1}
+}
+
+func glrSemanticAction2(node *ParseNode) *Alphabet {
+  return &Alphabet{ABC: $1}
+}
+
+func glrSemanticAction3(node *ParseNode) *Alphabet {
+  return &Alphabet{BCD: $1}
+}
+
+func glrSemanticAction4(node *ParseNode) *ABCD {
+  return &ABCD{A: $1, B: $2, C: $3, D: $4}
+}
+
+func glrSemanticAction5(node *ParseNode) *ABC {
+  return &ABC{A: $1, B: $2, C: $3}
+}
+
+func glrSemanticAction6(node *ParseNode) *BCD {
+  return &BCD{B: $1, C: $2, D: $3}
+}
+
+func glrSemanticAction7(node *ParseNode) *BCD {
+  return &BCD{B: $1, C: $2, D: $3}
+}
+
+func glrSemanticAction8(node *ParseNode) *BCD {
+  return &BCD{B: $1, C: $2, D: $3}
+}
+
+func glrSemanticAction10(node *ParseNode) string {
+  return ""
+}
 
 var glrStates = &ParseStates{Items:[]ParseState{
   /*   0 */ ParseState{Actions:map[string][]Action{"A":[]Action{Action{Type:"shift", State:5, Rule:0}}, "B":[]Action{Action{Type:"shift", State:6, Rule:0}}}, Gotos:map[string]int{"ABC":3, "ABCD":2, "BCD":4, "root":1}},

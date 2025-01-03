@@ -24,7 +24,7 @@ func main() {
 	grammarPath := os.Args[len(os.Args)-2]
 	statesPath := os.Args[len(os.Args)-1]
 
-	pkg, rules, err := readGrammarRules(grammarPath)
+	pkg, rls, sas, err := readGrammarRules(grammarPath)
 	if err != nil {
 		panic(fmt.Sprintf("error reading grammar rules: %v", err))
 	}
@@ -41,7 +41,7 @@ func main() {
 
 	// Print rules in YACC format.
 	r += "/*\nRules\n\n"
-	for _, rule := range rules.Items {
+	for _, rule := range rls.Items {
 		if rule.Nonterminal == "" {
 			continue
 		}
@@ -54,7 +54,7 @@ func main() {
 	r += "*/\n\n"
 
 	r += fmt.Sprintf("var %sRules = &%sRules{Items:[]%sRule{", pkg, glrPkg, glrPkg)
-	for i, rule := range rules.Items {
+	for i, rule := range rls.Items {
 		r += fmt.Sprintf("\n  /* %3d */ %#v,", i, rule)
 		if i == 0 {
 			r += " // ignored because rule-numbering starts at 1"
@@ -63,6 +63,22 @@ func main() {
 	r += "\n}}\n\n"
 	if glrPkg == "" {
 		r = strings.Replace(r, "glr.Rule", "Rule", -1)
+	}
+
+	// Generate semantic action functions
+	r += "// Semantic action functions\n\n"
+	for i, action := range sas.Items {
+		slog.Debug("", "i", i, "action", action)
+		if action.Action == "" {
+			continue
+		}
+		rule := rls.Items[i]
+		if rule.Type == "" {
+			continue
+		}
+		r += fmt.Sprintf("func %sSemanticAction%d(node *%sParseNode) %s {\n", pkg, i, glrPkg, rule.Type)
+		r += fmt.Sprintf("  return %s\n", action.Action)
+		r += "}\n\n"
 	}
 
 	r += fmt.Sprintf("var %sStates = &%sParseStates{Items:[]%sParseState{", pkg, glrPkg, glrPkg)
@@ -90,7 +106,7 @@ func main() {
 	for stateNum, state := range states.Items {
 		for _, actions := range state.Actions {
 			for _, action := range actions {
-				if action.Type == "reduce" && action.Rule >= len(rules.Items) {
+				if action.Type == "reduce" && action.Rule >= len(rls.Items) {
 					panic(fmt.Sprintf("state %d references invalid rule number %d", stateNum, action.Rule))
 				}
 			}
@@ -98,29 +114,67 @@ func main() {
 	}
 }
 
-func readGrammarRules(p string) (string, *glr.Rules, error) {
+func readGrammarRules(p string) (string, *glr.Rules, *glr.SemanticActions, error) {
 	f, err := os.Open(p)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to open grammar file: %v", err)
+		return "", nil, nil, fmt.Errorf("failed to open grammar file: %v", err)
 	}
 	defer f.Close()
 
 	// Rules are numbered starting at 1.
-	rs := &glr.Rules{Items: []glr.Rule{{}}}
+	rls := &glr.Rules{Items: []glr.Rule{{}}}
+	sas := &glr.SemanticActions{Items: []glr.SemanticAction{{}}}
 	scanner := bufio.NewScanner(f)
 
 	inRules := false
+	inUnion := false
 	currentRule := &glr.Rule{}
 	expectingRHS := false
 
 	nontermRE := regexp.MustCompile(`^(.*):$`)
+
+	// Map to store type declarations
+	typeFieldsByNonterm := map[string]string{}
+	typesByField := map[string]string{}
 
 	pkg := ""
 	i := 0
 	for scanner.Scan() {
 		i++
 		line := strings.TrimSpace(scanner.Text())
+		fields := strings.Fields(line)
+		slog.Debug("in readGrammarRules()", "i", i, "inUnion", inUnion, "inRules", inRules)
 		slog.Debug("in readGrammarRules()", "i", i, "line", line)
+		slog.Debug("in readGrammarRules()", "i", i, "fields", fields)
+
+		// Parse %type declarations, which specifies the type field for each nonterminals.
+		if len(fields) == 3 && fields[0] == "%type" {
+			tField := strings.Trim(fields[1], "<>")
+			ntSym := fields[2]
+			typeFieldsByNonterm[ntSym] = tField
+			slog.Debug("in readGrammarRules()", "ntSym", ntSym, "tField", tField)
+			continue
+		}
+
+		// Parse %union declaration, which specifies the type of each field.
+		if len(fields) > 0 && fields[0] == "%union" {
+			inUnion = true
+			continue
+		}
+		if len(fields) == 1 && fields[0] == "}" && inUnion {
+			inUnion = false
+			continue
+		}
+		if inUnion {
+			slog.Debug("in readGrammarRules()", "fields", fields)
+			if len(fields) == 2 {
+				tField := fields[0]
+				tType := fields[1]
+				typesByField[tField] = tType
+				slog.Debug("in readGrammarRules()", "tField", tField, "tType", tType)
+			}
+			continue
+		}
 
 		if strings.HasPrefix(line, "package") && pkg == "" {
 			pkg = strings.Fields(line)[1]
@@ -130,6 +184,7 @@ func readGrammarRules(p string) (string, *glr.Rules, error) {
 		if line == "%%" {
 			if !inRules {
 				inRules = true
+				slog.Debug("in readGrammarRules()", "typesByNonterm", typeFieldsByNonterm)
 			} else {
 				break
 			}
@@ -142,7 +197,7 @@ func readGrammarRules(p string) (string, *glr.Rules, error) {
 		if strings.HasPrefix(line, "//") || strings.HasPrefix(line, "/* ") {
 			// Skip comments.
 			continue
-		} else if strings.HasPrefix(line, "%") { // || strings.HasPrefix(line, "{") {
+		} else if strings.HasPrefix(line, "%") {
 			// Skip code.
 			continue
 		} else if strings.HasPrefix(line, ";") {
@@ -151,85 +206,89 @@ func readGrammarRules(p string) (string, *glr.Rules, error) {
 			// Skip empty lines only if there's no current rule.
 			continue
 		} else if nontermMatch := nontermRE.FindStringSubmatch(line); len(nontermMatch) > 1 {
+			ntSym := strings.TrimSpace(nontermMatch[1])
 			currentRule = &glr.Rule{
-				Nonterminal: strings.TrimSpace(nontermMatch[1]),
+				Nonterminal: ntSym,
+				Type:        typesByField[typeFieldsByNonterm[ntSym]],
 			}
 			expectingRHS = true
 			slog.Debug("line contains :", "currentRule.NonTerminal", currentRule.Nonterminal)
-
-			// Handle case where RHS is on same line as colon
-			// rhsPart := strings.TrimSpace(parts[1])
-			// if rhsPart != "" && !strings.HasPrefix(rhsPart, "{") {
-			// 	rhs := parseRHS(rhsPart)
-			// 	if len(rhs) > 0 {
-			// 		rule := Rule{
-			// 			NonTerminal: currentRule.NonTerminal,
-			// 			RHS:         rhs,
-			// 			Action:      createRuleAction(currentRule.NonTerminal, rhs),
-			// 		}
-			// 		rules = append(rules, rule)
-			// 	}
-			// }
-		} else if strings.Contains(line, "|") {
+		} else if fields[0] == "|" {
 			slog.Debug("line contains | RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Alternative production for current rule
 			if currentRule.Nonterminal == "" {
-				return "", nil, fmt.Errorf("alternative production without rule at line %d: %s", i, line)
+				return "", nil, nil, fmt.Errorf("alternative production without rule at line %d: %s", i, line)
 			}
-			parts := strings.SplitN(line, "|", 2)
-			rhsPart := strings.TrimSpace(parts[1])
-			rhs := parseRHS(rhsPart)
-			rs.Items = append(rs.Items, glr.Rule{
-				Nonterminal: currentRule.Nonterminal,
+			rhs, action := parseRHS(strings.Join(fields[1:], " "))
+			ntSym := currentRule.Nonterminal
+			rls.Items = append(rls.Items, glr.Rule{
+				Nonterminal: ntSym,
 				RHS:         rhs,
+				Type:        typesByField[typeFieldsByNonterm[ntSym]],
 			})
+			sas.Items = append(sas.Items, glr.SemanticAction{
+				Action: action,
+			})
+			slog.Debug("alt rule", "rule", rls.Items[len(rls.Items)-1], "semantic action", sas.Items[len(sas.Items)-1])
 			expectingRHS = false
 		} else {
 			slog.Debug("line contains bare RHS", "currentRule.NonTerminal", currentRule.Nonterminal)
 			// Regular production
 			if currentRule.Nonterminal == "" {
-				return "", nil, fmt.Errorf("production without rule at line %d: %s", i, line)
+				return "", nil, nil, fmt.Errorf("production without rule at line %d: %s", i, line)
 			}
-			rhs := parseRHS(line)
-			rs.Items = append(rs.Items, glr.Rule{
-				Nonterminal: currentRule.Nonterminal,
+			rhs, action := parseRHS(line)
+			ntSym := currentRule.Nonterminal
+			rls.Items = append(rls.Items, glr.Rule{
+				Nonterminal: ntSym,
 				RHS:         rhs,
+				Type:        typesByField[typeFieldsByNonterm[ntSym]],
 			})
+			sas.Items = append(sas.Items, glr.SemanticAction{
+				Action: action,
+			})
+			slog.Debug("bare RHS", "rule", rls.Items[len(rls.Items)-1], "semantic action", sas.Items[len(sas.Items)-1])
 			expectingRHS = false
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return "", nil, fmt.Errorf("error reading grammar file: %v", err)
+		return "", nil, nil, fmt.Errorf("error reading grammar file: %v", err)
 	}
 
-	if len(rs.Items) == 0 {
-		return "", nil, fmt.Errorf("no valid rules found in grammar file")
+	if len(rls.Items) == 0 {
+		return "", nil, nil, fmt.Errorf("no valid rules found in grammar file")
 	}
 
-	return pkg, rs, nil
+	return pkg, rls, sas, nil
 }
 
-func parseRHS(line string) []string {
-	// Find the position of the first opening brace
-	braceIndex := strings.Index(line, "{")
-	if braceIndex != -1 {
-		// Only take the part before the brace
-		line = line[:braceIndex]
-	}
-
+func parseRHS(line string) ([]string, string) {
 	line = strings.TrimSpace(line)
 	if strings.HasSuffix(line, ";") {
 		line = line[:len(line)-1]
 	}
 
+	// Find semantic action between braces
+	var action string
+	braceStart := strings.Index(line, "{")
+	if braceStart != -1 {
+		braceEnd := strings.LastIndex(line, "}")
+		if braceEnd != -1 {
+			action = strings.TrimPrefix(strings.TrimSpace(line[braceStart+1:braceEnd]), "$$ = ")
+			line = strings.TrimSpace(line[:braceStart])
+		}
+	}
+
+	slog.Debug("in parseRHS", "line", line, "strings.Fields(line)", strings.Fields(line))
 	var rhs []string
 	for _, token := range strings.Fields(line) {
 		if token != "|" && token != ";" && token != "" {
 			rhs = append(rhs, strings.TrimSpace(token))
 		}
 	}
-	return rhs
+	slog.Debug("in parseRHS", "rhs", rhs, "action", action)
+	return rhs, action
 }
 
 func readStates(p string) (*glr.ParseStates, error) {
