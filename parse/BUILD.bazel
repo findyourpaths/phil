@@ -13,6 +13,7 @@ go_library(
     importpath = "github.com/findyourpaths/phil/parse",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//glr",
         "@com_github_kr_pretty//:pretty",
         "@com_github_microcosm_cc_bluemonday//:bluemonday",
         "@com_google_cloud_go//civil",

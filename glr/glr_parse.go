@@ -514,37 +514,3 @@ func contains(slice []*StackNode, item *StackNode) bool {
 	}
 	return false
 }
-
-// func parseTreeEqual(n1, n2 *ParseNode) {
-// 	visited := make(map[*ParseNode]bool)
-// 	parseTreeEqualHelper(n1, n2, visited)
-// }
-
-// func parseTreeEqualHelper(n1, n2 *ParseNode, visited map[*ParseNode]bool) {
-// 	if (n1 == nil && n2 == nil) || (visited[n1] && visited[n2]) {
-// 		return
-// 	}
-// 	visited[n1] = true
-// 	visited[n2] = true
-
-// 	// Verify node positions are consistent
-// 	if len(node.children) > 0 {
-// 		firstChild := node.children[0]
-// 		lastChild := node.children[len(node.children)-1]
-
-// 		if node.startPos != firstChild.startPos {
-// 			t.Errorf("Node start position inconsistent: node=%d, firstChild=%d",
-// 				node.startPos, firstChild.startPos)
-// 		}
-
-// 		if node.endPos != lastChild.endPos {
-// 			t.Errorf("Node end position inconsistent: node=%d, lastChild=%d",
-// 				node.endPos, lastChild.endPos)
-// 		}
-// 	}
-
-// 	// Recursively verify children
-// 	for _, child := range node.children {
-// 		verifyParseTreeHelper(t, child, visited)
-// 	}
-// }

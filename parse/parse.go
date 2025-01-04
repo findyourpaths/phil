@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"log/slog"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -32,7 +33,15 @@ func NewRanges(rngs ...*DateTimeTZRange) *DateTimeTZRanges {
 	return &DateTimeTZRanges{Items: rngs}
 }
 
-func NewRangesWithStarts(starts ...civil.Date) *DateTimeTZRanges {
+func NewRangesWithStartDateTimes(starts ...*DateTimeTZ) *DateTimeTZRanges {
+	r := &DateTimeTZRanges{}
+	for _, start := range starts {
+		r.Items = append(r.Items, &DateTimeTZRange{Start: start})
+	}
+	return r
+}
+
+func NewRangesWithStartDates(starts ...civil.Date) *DateTimeTZRanges {
 	r := &DateTimeTZRanges{}
 	for _, start := range starts {
 		r.Items = append(r.Items, &DateTimeTZRange{Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}}})
@@ -40,8 +49,12 @@ func NewRangesWithStarts(starts ...civil.Date) *DateTimeTZRanges {
 	return r
 }
 
-func NewRangesWithStartEnd(start civil.Date, end civil.Date) *DateTimeTZRanges {
-	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEnd(start, end)}}
+func NewRangesWithStartEndDates(start civil.Date, end civil.Date) *DateTimeTZRanges {
+	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDates(start, end)}}
+}
+
+func NewRangesWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTimeTZRanges {
+	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDateTimes(start, end)}}
 }
 
 // A DateTimeTZRange represents a range of dates and times with time zones.
@@ -56,10 +69,17 @@ func NewRangeWithStart(start civil.Date) *DateTimeTZRange {
 	return &DateTimeTZRange{Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}}}
 }
 
-func NewRangeWithStartEnd(start civil.Date, end civil.Date) *DateTimeTZRange {
+func NewRangeWithStartEndDates(start civil.Date, end civil.Date) *DateTimeTZRange {
 	return &DateTimeTZRange{
 		Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}},
 		End:   &DateTimeTZ{DateTime: civil.DateTime{Date: end}},
+	}
+}
+
+func NewRangeWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTimeTZRange {
+	return &DateTimeTZRange{
+		Start: start,
+		End:   end,
 	}
 }
 
@@ -69,6 +89,15 @@ func NewRangeWithStartEnd(start civil.Date, end civil.Date) *DateTimeTZRange {
 type DateTimeTZ struct {
 	civil.DateTime
 	TimeZone string
+}
+
+func NewDateTime(date civil.Date, time civil.Time, tz string) *DateTimeTZ {
+	// fmt.Printf("NewDateTime(date: %#v, time: %#v, tz: %q)\n", date, time, tz)
+	return &DateTimeTZ{DateTime: civil.DateTime{Date: date, Time: time}, TimeZone: tz}
+}
+
+func NewDateTimeWithDate(date civil.Date) *DateTimeTZ {
+	return &DateTimeTZ{DateTime: civil.DateTime{Date: date}}
 }
 
 var weekdaysByNames = map[string]int{
@@ -146,14 +175,72 @@ func NewAmbiguousDate(mode string, first string, second string, year string) civ
 	return civil.Date{Day: mustAtoi(first), Month: time.Month(mustAtoi(second)), Year: mustAtoi(year)}
 }
 
-func NewDMYDate(day string, monthName string, year string) civil.Date {
-	month := monthsByNames[strings.ToLower(monthName)]
-	return civil.Date{Day: mustAtoi(day), Month: month, Year: mustAtoi(year)}
+func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
+	var day int
+	switch dayAny.(type) {
+	case int:
+		day = dayAny.(int)
+	case string:
+		day = mustAtoi(dayAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle day in unknown format: %#v", dayAny))
+	}
+
+	var month time.Month
+	switch monthAny.(type) {
+	case int:
+		month = monthAny.(time.Month)
+	case time.Month:
+		month = monthAny.(time.Month)
+	case string:
+		var found bool
+		month, found = monthsByNames[strings.ToLower(monthAny.(string))]
+		if !found {
+			month = time.Month(mustAtoi(monthAny.(string)))
+		}
+	default:
+		panic(fmt.Sprintf("can't handle month %#v of unknown type: %s", monthAny, reflect.TypeOf(monthAny)))
+	}
+
+	var year int
+	switch yearAny.(type) {
+	case int:
+		year = yearAny.(int)
+	case string:
+		year = mustAtoi(yearAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle year in unknown format: %#v", yearAny))
+	}
+
+	return civil.Date{Day: day, Month: month, Year: year}
 }
 
-func NewMDYDate(monthName string, day string, year string) civil.Date {
-	month := monthsByNames[strings.ToLower(monthName)]
-	return civil.Date{Day: mustAtoi(day), Month: month, Year: mustAtoi(year)}
+func NewMDYDate(monthAny any, dayAny any, yearAny any) civil.Date {
+	return NewDMYDate(dayAny, monthAny, yearAny)
+}
+
+func NewTime(hourAny any, minuteAny any) civil.Time {
+	var hour int
+	switch hourAny.(type) {
+	case int:
+		hour = hourAny.(int)
+	case string:
+		hour = mustAtoi(hourAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle hour in unknown format: %#v", hourAny))
+	}
+
+	var minute int
+	switch minuteAny.(type) {
+	case int:
+		minute = minuteAny.(int)
+	case string:
+		minute = mustAtoi(minuteAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle minute in unknown format: %#v", minuteAny))
+	}
+
+	return civil.Time{Hour: hour, Minute: minute}
 }
 
 // // Message for a sequence of datetime ranges.
@@ -262,7 +349,7 @@ func ExtractDateTimeTZRanges(mode, in string) (*DateTimeTZRanges, error) {
 	if len(forest) == 0 || len(forest[0].Children) == 0 {
 		return nil, fmt.Errorf("no datetime ranges found in %q", in)
 	}
-	return forest[0].Children[0].Value.(*DateTimeTZRanges), nil
+	return forest[0].Children[1].Value.(*DateTimeTZRanges), nil
 }
 
 // func NewRangesFromParse(root *glr.ParseNode) (*DateTimeTZRanges, error) {

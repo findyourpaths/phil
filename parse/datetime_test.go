@@ -25,123 +25,164 @@ var DateFor2023Feb05 = civil.Date{Year: 2023, Month: time.February, Day: 5}
 var DateFor2023Mar02 = civil.Date{Year: 2023, Month: time.March, Day: 2}
 var DateFor2023Mar03 = civil.Date{Year: 2023, Month: time.March, Day: 3}
 
+var DateTimeForFeb03_09AM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor09AM}}
+var DateTimeForFeb03_12PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}}
+var DateTimeForFeb03_03PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor03PM}}
+
+var DateTimeFor2023Feb03_09AM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor09AM}}
+var DateTimeFor2023Feb03_12PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}}
+var DateTimeFor2023Feb03_03PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor03PM}}
+
+var DateTimeForFeb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: "PST"}
+var DateTimeForFeb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: "PST"}
+
+var DateTimeFor2023Feb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor09AM}, TimeZone: "PST"}
+var DateTimeFor2023Feb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: "PST"}
+
+var TimeFor09AM = civil.Time{Hour: 9}
+var TimeFor12PM = civil.Time{Hour: 12}
+var TimeFor03PM = civil.Time{Hour: 15}
+
 func TestExtractDatetimesRanges(t *testing.T) {
 	type test struct {
-		mode  string
-		input string
-		want  *DateTimeTZRanges
+		mode string
+		in   string
+		want *DateTimeTZRanges
 	}
 
 	tests := []test{
+
+		//
+		// Dates and Date Ranges
+		//
+
 		// MD
-		{mode: "", input: "Feb 3", want: NewRangesWithStarts(DateForFeb03)},
-		{mode: "", input: "Thu Feb 3", want: NewRangesWithStarts(DateForFeb03)},
-		{mode: "", input: "Thu 3 Feb", want: NewRangesWithStarts(DateForFeb03)},
+		{in: "Feb 3", want: NewRangesWithStartDates(DateForFeb03)},
+		{in: "Thu Feb 3", want: NewRangesWithStartDates(DateForFeb03)},
+		{in: "Thu 3 Feb", want: NewRangesWithStartDates(DateForFeb03)},
 		// DM
-		{mode: "", input: "3 Feb", want: NewRangesWithStarts(DateForFeb03)},
+		{in: "3 Feb", want: NewRangesWithStartDates(DateForFeb03)},
 
 		// MDY
-		{mode: "", input: "Feb 3 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
-		{mode: "", input: "February 3 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
-		{mode: "", input: "February 3, 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
-		{mode: "", input: "February 3rd, 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
-		{mode: "", input: "Thu Feb 3, 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
+		{in: "Feb 3 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "February 3 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "February 3, 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "February 3rd, 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "Thu Feb 3, 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
 		// DMY
-		{mode: "", input: "3 Feb 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
-		{mode: "", input: "3rd Feb 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
-		{mode: "", input: "3 February, 2023", want: NewRangesWithStarts(DateFor2023Feb03)},
+		{in: "3 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "3rd Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "3 February, 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
 
 		// Both
-		{mode: "na", input: "2/3/2023", want: NewRangesWithStarts(DateFor2023Feb03)},
-		{mode: "", input: "2/3/2023", want: NewRangesWithStarts(DateFor2023Mar02)},
+		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Feb03), mode: "na"},
+		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Mar02)},
 
 		// MD
-		{mode: "", input: "Feb 3-4", want: NewRangesWithStartEnd(DateForFeb03, DateForFeb04)},
-		{mode: "", input: "Feb 3 - Mar 2", want: NewRangesWithStartEnd(DateForFeb03, DateForMar02)},
+		{in: "Feb 3-4", want: NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)},
+		{in: "Feb 3 - Mar 2", want: NewRangesWithStartEndDates(DateForFeb03, DateForMar02)},
+		{in: "Feb 3 to Mar 2", want: NewRangesWithStartEndDates(DateForFeb03, DateForMar02)},
 		// DM
-		{mode: "", input: "3-4 Feb", want: NewRangesWithStartEnd(DateForFeb03, DateForFeb04)},
-		{mode: "", input: "Thu Feb 3 - Fri Feb 4", want: NewRangesWithStartEnd(DateForFeb03, DateForFeb04)},
-		{mode: "", input: "3 February - 2 March", want: NewRangesWithStartEnd(DateForFeb03, DateForMar02)},
+		{in: "3-4 Feb", want: NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)},
+		{in: "Thu Feb 3 - Fri Feb 4", want: NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)},
+		{in: "3 February - 2 March", want: NewRangesWithStartEndDates(DateForFeb03, DateForMar02)},
 
 		// MDY
-		{mode: "", input: "Feb 3-4 2023", want: NewRangesWithStartEnd(DateFor2023Feb03, DateFor2023Feb04)},
-		{mode: "", input: "Feb 3 - 4 2023", want: NewRangesWithStartEnd(DateFor2023Feb03, DateFor2023Feb04)},
-		{mode: "", input: "Feb 3 2023 - Feb 4 2023", want: NewRangesWithStartEnd(DateFor2023Feb03, DateFor2023Feb04)},
-		{mode: "", input: "Thu Feb 3, 2023 - Fri Feb 4, 2023", want: NewRangesWithStartEnd(DateFor2023Feb03, DateFor2023Feb04)},
-		{mode: "", input: "February 3 - March 2, 2023", want: NewRangesWithStartEnd(DateFor2023Feb03, DateFor2023Mar02)},
+		{in: "Feb 3-4 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "Feb 3 - 4 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "Feb 3 2023 - Feb 4 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "Thu Feb 3, 2023 - Fri Feb 4, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "February 3 - March 2, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Mar02)},
 		// DMY
-		{mode: "", input: "3-4 Feb 2023", want: NewRangesWithStartEnd(DateFor2023Feb03, DateFor2023Feb04)},
-		{mode: "", input: "3-4 February, 2023", want: NewRangesWithStartEnd(DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "3-4 Feb 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "3-4 February, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
 
 		// MD
-		{mode: "", input: "Feb 1, 2", want: NewRangesWithStarts(DateForFeb01, DateForFeb02)},
-		{mode: "", input: "Feb 1, 2, 3", want: NewRangesWithStarts(DateForFeb01, DateForFeb02, DateForFeb03)},
-		{mode: "", input: "Feb 1, 2, 3, 4", want: NewRangesWithStarts(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
-		{mode: "", input: "Feb 1, 2, 3, 4, 5", want: NewRangesWithStarts(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
+		{in: "Feb 1, 2", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02)},
+		{in: "Feb 1, 2, 3", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03)},
+		{in: "Feb 1, 2, 3, 4", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
+		{in: "Feb 1, 2, 3, 4, 5", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
 		// DM
-		{mode: "", input: "1, 2 Feb", want: NewRangesWithStarts(DateForFeb01, DateForFeb02)},
-		{mode: "", input: "1, 2, 3 Feb", want: NewRangesWithStarts(DateForFeb01, DateForFeb02, DateForFeb03)},
-		{mode: "", input: "1, 2, 3, 4 Feb", want: NewRangesWithStarts(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
-		{mode: "", input: "1, 2, 3, 4, 5 Feb", want: NewRangesWithStarts(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
+		{in: "1, 2 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02)},
+		{in: "1, 2, 3 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03)},
+		{in: "1, 2, 3, 4 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
+		{in: "1, 2, 3, 4, 5 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
+		{in: "1, 2, 3 Feb and 2 Mar", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForMar02)},
 
 		// MDY
-		{mode: "", input: "Feb 1, 2 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02)},
-		{mode: "", input: "Feb 1, 2, 3 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03)},
-		{mode: "", input: "Feb 1, 2, 3, 4 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04)},
-		{mode: "", input: "Feb 1, 2, 3, 4, 5 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04, DateFor2023Feb05)},
+		{in: "Feb 1, 2 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02)},
+		{in: "Feb 1, 2, 3 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03)},
+		{in: "Feb 1, 2, 3, 4 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "Feb 1, 2, 3, 4, 5 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04, DateFor2023Feb05)},
 		// DMY
-		{mode: "", input: "1, 2 Feb 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02)},
-		{mode: "", input: "1, 2, 3 Feb 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03)},
-		{mode: "", input: "1, 2, 3, 4 Feb 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04)},
-		{mode: "", input: "1, 2, 3, 4, 5 Feb 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04, DateFor2023Feb05)},
+		{in: "1, 2 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02)},
+		{in: "1, 2, 3 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03)},
+		{in: "1, 2, 3, 4 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "1, 2, 3, 4, 5 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04, DateFor2023Feb05)},
+		// {input: "1, 2, 3 Feb and 2 Mar 2023", want: NewRangesWithStarts(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Mar02)},
 
 		// MD
-		{mode: "", input: "Feb 3 Mar 2", want: NewRangesWithStarts(DateForFeb03, DateForMar02)},
+		{in: "Feb 3 Mar 2", want: NewRangesWithStartDates(DateForFeb03, DateForMar02)},
 		// MDY
-		{mode: "", input: "Feb 3 Mar 2 2023", want: NewRangesWithStarts(DateFor2023Feb03, DateFor2023Mar02)},
+		{in: "Feb 3 Mar 2 2023", want: NewRangesWithStartDates(DateFor2023Feb03, DateFor2023Mar02)},
 
 		// MD
-		{mode: "", input: "Feb 1-2, 3-4", want: NewRanges(NewRangeWithStartEnd(DateForFeb01, DateForFeb02), NewRangeWithStartEnd(DateForFeb03, DateForFeb04))},
-		{mode: "", input: "Feb 1-2, 3-4 2023", want: NewRanges(NewRangeWithStartEnd(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEnd(DateFor2023Feb03, DateFor2023Feb04))},
+		{in: "Feb 1-2, 3-4", want: NewRanges(NewRangeWithStartEndDates(DateForFeb01, DateForFeb02), NewRangeWithStartEndDates(DateForFeb03, DateForFeb04))},
+		{in: "Feb 1-2, 3-4 2023", want: NewRanges(NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04))},
 
 		// MD
-		{mode: "", input: "Feb 1-2; Mar 2-3", want: NewRanges(NewRangeWithStartEnd(DateForFeb01, DateForFeb02), NewRangeWithStartEnd(DateForMar02, DateForMar03))},
+		{in: "Feb 1-2; Mar 2-3", want: NewRanges(NewRangeWithStartEndDates(DateForFeb01, DateForFeb02), NewRangeWithStartEndDates(DateForMar02, DateForMar03))},
 		// DM
-		{mode: "", input: "1-2 Feb; 2-3 Mar", want: NewRanges(NewRangeWithStartEnd(DateForFeb01, DateForFeb02), NewRangeWithStartEnd(DateForMar02, DateForMar03))},
+		{in: "1-2 Feb; 2-3 Mar", want: NewRanges(NewRangeWithStartEndDates(DateForFeb01, DateForFeb02), NewRangeWithStartEndDates(DateForMar02, DateForMar03))},
 
 		// MDY
-		{mode: "", input: "Feb 1-2; Mar 2-3 2023", want: NewRanges(NewRangeWithStartEnd(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEnd(DateFor2023Mar02, DateFor2023Mar03))},
+		{in: "Feb 1-2; Mar 2-3 2023", want: NewRanges(NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEndDates(DateFor2023Mar02, DateFor2023Mar03))},
 		// DMY
-		{mode: "", input: "1-2 Feb; 2-3 Mar 2023", want: NewRanges(NewRangeWithStartEnd(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEnd(DateFor2023Mar02, DateFor2023Mar03))},
+		{in: "1-2 Feb; 2-3 Mar 2023", want: NewRanges(NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEndDates(DateFor2023Mar02, DateFor2023Mar03))},
 
-		// {mode: "", input: "Feb 3 2023 12pm PST", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03Noon)}}},
-		// {mode: "", input: "Feb 3 2023 9am - 12pm", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03NineAM, TimeFor2023Feb03Noon)}}},
-		// {mode: "", input: "Feb 3 2023 9am PST to 3pm PST", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03NineAM, TimeFor2023Feb03ThreePM)}}},
-		// {mode: "", input: "Feb 3 @ 9:00 AM - Feb 3 @ 3:00 PM", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03NineAM, TimeFor2023Feb03ThreePM)}}},
-		// {mode: "", input: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03NineAM, TimeFor2023Feb03ThreePM)}}},
-		// {mode: "", input: "Feb 3 2023 9:00 AM 3:00 PM 09:00 15:00 Google Calendar ICS", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03NineAM, TimeFor2023Feb03ThreePM)}}},
-		// {mode: "", input: "When 3 Feb 2023 12:00 PM - 3:00 PM", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03Noon, TimeFor2023Feb03ThreePM)}}},
-		// {mode: "", input: "Thursday, February 3, 2023 12:00 PM 3:00 PM Google Calendar ICS", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03Noon, TimeFor2023Feb03ThreePM)}}},
+		//
+		// DateTimes and DateTime Ranges
+		//
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+		// {in: "Feb 3 12:00 PM 12:00", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+		// {in: "Feb 3 3:00 PM 15:00", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
 
-		// {mode: "", input: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00", want: &DatetimeRanges{Items: []*DatetimeRange{
-		// 	NewDatetimeRange(TimeFor2023Feb03NineAMPST, TimeFor2023Feb03ThreePMPST)}}},
+		{in: "Feb 3 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
+		{in: "Feb 3 @ 9:00 AM - Feb 3 @ 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
+		// {in: "Feb 3 9:00 AM 09:00 Feb 3 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
 
-		// "Tue May 9 2023, 07:00pm MDT to 09:00pm MDT"
-		// "29 April 2023 10 am - 12 pm"
-		// "Fri, Apr 14, 2023 9:00 AM 09:00 Sat, Apr 15, 2023 5:00 PM 17:00"
+		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_03PM)},
+
+		{in: "Feb 3 2023 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+
+		{in: "When 3 Feb 2023 9:00 AM - 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+
+		// {in: "Thursday, February 3, 2023 9:00 AM 12:00 PM Google Calendar ICS", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+
+		{in: "3 Feb 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
+
+		// {in: "Feb 3 12pm PST", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_PST)},
+
+		// {in: "Feb 3 2023 12pm PST", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_PST)},
+
+		// {in: "Feb 3 2023 9am - 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
+
+		// {in: "Feb 3 2023 9am PST to 3pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
+
+		// {in: "Feb 3 @ 9:00 AM PST - Feb 3 @ 3:00 PM PST", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
+
+		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00"
+		// {in: "Feb 3 2023 9:00 AM 3:00 PM 09:00 15:00 Google Calendar ICS"
+		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00"
+		// {in: "Fri, Apr 14, 2023 9:00 AM 09:00 Sat, Apr 15, 2023 5:00 PM 17:00"
 	}
 
+	// for _, tc := range tests[len(tests)-3 : len(tests)-2] {
+	// for _, tc := range tests[0:1] {
 	for _, tc := range tests {
-		t.Run(tc.input, func(t *testing.T) {
-			got, err := ExtractDateTimeTZRanges(tc.mode, tc.input)
+		t.Run(tc.in, func(t *testing.T) {
+			got, err := ExtractDateTimeTZRanges(tc.mode, tc.in)
 			if err != nil {
 				t.Fatalf("error: %v", err)
 			}

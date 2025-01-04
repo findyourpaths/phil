@@ -3,11 +3,6 @@ package glr
 
 import __yyfmt__ "fmt"
 
-type node struct {
-	val      string
-	children []*node
-}
-
 type yySymType struct {
 	yys      int
 	string   string

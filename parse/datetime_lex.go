@@ -111,6 +111,10 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			switch lowLit {
 			case "am":
 				return AM
+			case "and":
+				return AND
+			case "at":
+				return AT
 			case "calendar":
 				return CALENDAR
 			case "google":
@@ -123,6 +127,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return THROUGH
 			case "to":
 				return TO
+			case "when":
+				return WHEN
 
 			default:
 				return IDENT

@@ -21,19 +21,19 @@ state 1
 state 2
 	root:  ABCD.    (1)
 
-	.  reduce 1 (src line 36)
+	.  reduce 1 (src line 28)
 
 
 state 3
 	root:  ABC.    (2)
 
-	.  reduce 2 (src line 38)
+	.  reduce 2 (src line 30)
 
 
 state 4
 	root:  BCD.    (3)
 
-	.  reduce 3 (src line 39)
+	.  reduce 3 (src line 31)
 
 
 state 5
@@ -70,7 +70,7 @@ state 8
 	OptD: .    (10)
 
 	D  shift 13
-	.  reduce 10 (src line 60)
+	.  reduce 10 (src line 52)
 
 	OptD  goto 11
 	WrapD  goto 12
@@ -87,19 +87,19 @@ state 10
 	ABC:  A B C.    (5)
 
 	D  shift 15
-	.  reduce 5 (src line 46)
+	.  reduce 5 (src line 38)
 
 
 state 11
 	BCD:  B C OptD.    (6)
 
-	.  reduce 6 (src line 50)
+	.  reduce 6 (src line 42)
 
 
 state 12
 	BCD:  B C WrapD.    (7)
 
-	.  reduce 7 (src line 52)
+	.  reduce 7 (src line 44)
 
 
  13: reduce/reduce conflict  (red'ns 11 and 12) on $end
@@ -107,19 +107,19 @@ state 13
 	OptD:  D.    (11)
 	WrapD:  D.    (12)
 
-	.  reduce 11 (src line 62)
+	.  reduce 11 (src line 54)
 
 
 state 14
 	BCD:  B WrapC D.    (8)
 
-	.  reduce 8 (src line 53)
+	.  reduce 8 (src line 45)
 
 
 state 15
 	ABCD:  A B C D.    (4)
 
-	.  reduce 4 (src line 42)
+	.  reduce 4 (src line 34)
 
 Rule not reduced: WrapC:  C 
 Rule not reduced: WrapD:  D 

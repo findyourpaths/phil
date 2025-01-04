@@ -1,5 +1,6 @@
 package glr
 
+
 /*
 Rules
 
@@ -48,7 +49,7 @@ var glrRules = &Rules{Items:[]Rule{
 // Semantic action functions
 
 var glrActions = &SemanticActions{Items:[]any{
-  /*   0 */ nil, // empty type
+  /*   0 */ nil, // empty action
   /*   1 */ func (ABCD1 *ABCD) *Alphabet {return &Alphabet{ABCD: ABCD1}},
   /*   2 */ func (ABC1 *ABC) *Alphabet {return &Alphabet{ABC: ABC1}},
   /*   3 */ func (BCD1 *BCD) *Alphabet {return &Alphabet{BCD: BCD1}},
