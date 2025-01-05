@@ -4,6 +4,7 @@ go_library(
     name = "parse",
     srcs = [
         "clean.go",
+        "datetime.go",
         "datetime_glr.go",
         "datetime_lex.go",
         "datetime_yacc.go",

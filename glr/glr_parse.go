@@ -547,38 +547,10 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 		ruleID:   old.ruleID,
 	}
 
-	// old.Children = sortParseNodes(append(old.Children, new))
 	old.Children = sortParseNodes([]*ParseNode{newOld, new})
 	old.isAlt = true
 	old.ruleID = 0
-	// // old.numNonterms = min(old.numNonterms, new.numNonterms)
-	// debugf("adding new as alternative to old\n")
 
-	// debugf("returning\n")
-	// printNodeTree(old, "")
-	// return old
-	// }
-
-	// r := &ParseNode{
-	// 	Symbol: old.Symbol,
-	// 	// Value:  old.Value,
-	// 	// Children:    sortParseNodes([]*ParseNode{old, new}),
-	// 	Children: []*ParseNode{old, new},
-	// 	startPos: old.startPos,
-	// 	endPos:   old.endPos,
-	// 	// numNonterms: min(old.numNonterms, new.numNonterms),
-	// 	numTerms: max(old.numTerms, new.numTerms),
-	// 	isAlt:    true,
-	// }
-
-	// Update references
-	// for i, n := range s.symbolNodes {
-	// 	debugf("looking at s.symbolNodes[%d] with symbol: %q\n", i, n.Symbol)
-	// 	if n == old {
-	// 		debugf("replacing with new alternative\n")
-	// 		s.symbolNodes[i] = r
-	// 	}
-	// }
 	debugf("adding alternative by merging new and old\n")
 	debugf("returning\n")
 	printNodeTree(old, "")
@@ -593,23 +565,6 @@ func sortParseNodes(ns []*ParseNode) []*ParseNode {
 	})
 	return ns
 }
-
-// func parseNodesEqual(n1, n2 *ParseNode) bool {
-// 	if n1.Symbol != n2.Symbol ||
-// 		n1.Value != n2.Value ||
-// 		len(n1.Children) != len(n2.Children) ||
-// 		n1.startPos != n2.startPos ||
-// 		n1.endPos != n2.endPos ||
-// 		n1.numTerms != n2.numTerms {
-// 		return false
-// 	}
-// 	for i, n1C := range n1.Children {
-// 		if !parseNodesEqual(n1C, n2.Children[i]) {
-// 			return false
-// 		}
-// 	}
-// 	return true
-// }
 
 func getStackNode(ps []*StackNode, state int) *StackNode {
 	for _, parser := range ps {
