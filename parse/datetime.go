@@ -203,12 +203,25 @@ func mustAtoi(str string) int {
 	return r
 }
 
-func NewAmbiguousDate(first string, second string, year string) civil.Date {
+func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
+	var year int
+	switch yearAny.(type) {
+	case int:
+		year = yearAny.(int)
+	case string:
+		year = mustAtoi(yearAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle year in unknown format: %#v", yearAny))
+	}
+	if year == 0 {
+		year = parseYear
+	}
+
 	// North American tends to parse dates as month-day-year.
 	if parseDateMode == "na" {
-		return civil.Date{Month: time.Month(mustAtoi(first)), Day: mustAtoi(second), Year: mustAtoi(year)}
+		return civil.Date{Month: time.Month(mustAtoi(first)), Day: mustAtoi(second), Year: year}
 	}
-	return civil.Date{Day: mustAtoi(first), Month: time.Month(mustAtoi(second)), Year: mustAtoi(year)}
+	return civil.Date{Day: mustAtoi(first), Month: time.Month(mustAtoi(second)), Year: year}
 }
 
 func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {

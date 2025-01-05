@@ -105,5 +105,6 @@ func ExtractDateTimeTZRanges(year int, dateMode, timeZone, in string) (*DateTime
 	// 		rng.End.TimeZone = timeZone
 	// 	}
 	// }
+	debugf("rngs: %#v\n", rngs)
 	return rngs, nil
 }
