@@ -2,11 +2,16 @@
 package glr
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
 
 func TestGLRParser(t *testing.T) {
+	if os.Getenv("DEBUG") == "true" {
+		DoDebug = true
+	}
+
 	tests := []struct {
 		name    string
 		input   string

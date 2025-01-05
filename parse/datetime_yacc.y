@@ -12,9 +12,11 @@ import "cloud.google.com/go/civil"
 %token AT
 %token CALENDAR
 %token COLON
+%token COMMA
 %token GOOGLE
 %token ICS
 %token PM
+%token PERIOD
 %token QUO
 %token SEMICOLON
 %token SUB
@@ -94,24 +96,24 @@ DateTimeTZRanges:
 /* | INT INT INT INT Date {$$ = NewRangesWithStartDates(NewDMYDate($1, $5.Month, $5.Year), NewDMYDate($2, $5.Month, $5.Year), NewDMYDate($3, $5.Month, $5.Year), NewDMYDate($4, $5.Month, $5.Year), $5)} */
 
   // "Feb 1-2, 3-4"
-| MONTH_NAME INT Sep INT INT Sep INT {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, "")), NewRangeWithStartEndDates(NewMDYDate($1, $5, ""), NewMDYDate($1, $7, "")))}
+| MONTH_NAME INT RangeSep INT INT RangeSep INT {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, "")), NewRangeWithStartEndDates(NewMDYDate($1, $5, ""), NewMDYDate($1, $7, "")))}
   // "1-2, 3-4 Feb"
-| INT Sep INT INT Sep INT MONTH_NAME {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $7, ""), NewDMYDate($3, $7, "")), NewRangeWithStartEndDates(NewDMYDate($4, $7, ""), NewDMYDate($6, $7, "")))}
+| INT RangeSep INT INT RangeSep INT MONTH_NAME {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $7, ""), NewDMYDate($3, $7, "")), NewRangeWithStartEndDates(NewDMYDate($4, $7, ""), NewDMYDate($6, $7, "")))}
 
   // "Feb 1-2, Mar 3-4"
-| MONTH_NAME INT Sep INT MONTH_NAME INT Sep INT {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, "")), NewRangeWithStartEndDates(NewMDYDate($5, $6, ""), NewMDYDate($5, $8, "")))}
+| MONTH_NAME INT RangeSep INT MONTH_NAME INT RangeSep INT {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, "")), NewRangeWithStartEndDates(NewMDYDate($5, $6, ""), NewMDYDate($5, $8, "")))}
   // "1-2 Feb, 3-4 Mar"
-| INT Sep INT MONTH_NAME INT Sep INT MONTH_NAME {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $4, ""), NewDMYDate($3, $4, "")), NewRangeWithStartEndDates(NewDMYDate($5, $8, ""), NewDMYDate($7, $8, "")))}
+| INT RangeSep INT MONTH_NAME INT RangeSep INT MONTH_NAME {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $4, ""), NewDMYDate($3, $4, "")), NewRangeWithStartEndDates(NewDMYDate($5, $8, ""), NewDMYDate($7, $8, "")))}
 
   // "Feb 1-2, 3-4 2023"
-| MONTH_NAME INT Sep INT INT Sep INT YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, $8), NewMDYDate($1, $4, $8)), NewRangeWithStartEndDates(NewMDYDate($1, $5, $8), NewMDYDate($1, $7, $8)))}
+| MONTH_NAME INT RangeSep INT INT RangeSep INT YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, $8), NewMDYDate($1, $4, $8)), NewRangeWithStartEndDates(NewMDYDate($1, $5, $8), NewMDYDate($1, $7, $8)))}
   // "1-2, 3-4 Feb 2023"
-| INT Sep INT INT Sep INT MONTH_NAME YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $7, $8), NewDMYDate($3, $7, $8)), NewRangeWithStartEndDates(NewDMYDate($4, $7, $8), NewDMYDate($6, $7, $8)))}
+| INT RangeSep INT INT RangeSep INT MONTH_NAME YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $7, $8), NewDMYDate($3, $7, $8)), NewRangeWithStartEndDates(NewDMYDate($4, $7, $8), NewDMYDate($6, $7, $8)))}
 
   // "Feb 1-2, Mar 3-4 2023"
-| MONTH_NAME INT Sep INT MONTH_NAME INT Sep INT YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, $9), NewMDYDate($1, $4, $9)), NewRangeWithStartEndDates(NewMDYDate($5, $6, $9), NewMDYDate($5, $8, $9)))}
+| MONTH_NAME INT RangeSep INT MONTH_NAME INT RangeSep INT YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, $9), NewMDYDate($1, $4, $9)), NewRangeWithStartEndDates(NewMDYDate($5, $6, $9), NewMDYDate($5, $8, $9)))}
   // "1-2 Feb, 3-4 Mar 2023"
-| INT Sep INT MONTH_NAME INT Sep INT MONTH_NAME YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $4, $9), NewDMYDate($3, $4, $9)), NewRangeWithStartEndDates(NewDMYDate($5, $8, $9), NewDMYDate($7, $8, $9)))}
+| INT RangeSep INT MONTH_NAME INT RangeSep INT MONTH_NAME YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $4, $9), NewDMYDate($3, $4, $9)), NewRangeWithStartEndDates(NewDMYDate($5, $8, $9), NewDMYDate($7, $8, $9)))}
 
   // "Feb 3, Mar 4 2023"
 | MONTH_NAME INT MONTH_NAME INT YEAR {$$ = NewRanges(NewRangeWithStart(NewMDYDate($1, $2, $5)), NewRangeWithStart(NewMDYDate($3, $4, $5)))}
@@ -120,23 +122,23 @@ DateTimeTZRanges:
 
 DateTimeTZRange:
   DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
-| DateTimeTZ Sep Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, ""))}
+| DateTimeTZ RangeSep Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, ""))}
 
   // "Feb 3-4"
-| MONTH_NAME INT Sep INT {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, ""))}
+| MONTH_NAME INT RangeSep INT {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, ""))}
   // "3-4 Feb"
-| INT Sep INT MONTH_NAME {$$ = NewRangeWithStartEndDates(NewDMYDate($1, $4, ""), NewDMYDate($3, $4, ""))}
+| INT RangeSep INT MONTH_NAME {$$ = NewRangeWithStartEndDates(NewDMYDate($1, $4, ""), NewDMYDate($3, $4, ""))}
 
   // "Feb 3-4, 2023"
-| MONTH_NAME INT Sep INT YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, $5), NewMDYDate($1, $4, $5))}
+| MONTH_NAME INT RangeSep INT YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, $5), NewMDYDate($1, $4, $5))}
   // "3-4 Feb 2023"
-| INT Sep INT MONTH_NAME YEAR {$$ = NewRangeWithStartEndDates(NewDMYDate($1, $4, $5), NewDMYDate($3, $4, $5))}
+| INT RangeSep INT MONTH_NAME YEAR {$$ = NewRangeWithStartEndDates(NewDMYDate($1, $4, $5), NewDMYDate($3, $4, $5))}
 
   // "Feb 3, 2023 - Feb 4, 2023"
-| DateTimeTZ Sep DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
+| DateTimeTZ RangeSep DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
 
   // "Feb 3 - Mar 4, 2023"
-| MONTH_NAME INT Sep MONTH_NAME INT YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, $6), NewMDYDate($4, $5, $6))}
+| MONTH_NAME INT RangeSep MONTH_NAME INT YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, $6), NewMDYDate($4, $5, $6))}
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
@@ -145,13 +147,21 @@ DateTimeTZRange:
 
 DateTimeTZ:
   Date {$$ = NewDateTimeWithDate($1)}
-| Date AtOpt Time {$$ = NewDateTime($1, $3, "")}
+| Date DateTimeSep Time {$$ = NewDateTime($1, $3, "")}
 ;
 
 Date:
-  YEAR {$$ = NewDMYDate("", "", $1)}
+  WEEKDAY_NAME CommaOpt Date {$$ = $3}
+
+  // "2006-01-02 T 15:04:05Z07:00"
+| Date T
+
+  // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
+| INT DateSep INT {$$ = NewAmbiguousDate($1, $3, "")}
+
+| YEAR {$$ = NewDMYDate("", "", $1)}
 | YEAR SUB INT {$$ = NewDMYDate("", $3, $1)}
-| YEAR SUB INT SUB INT TOpt {$$ = NewDMYDate($5, $3, $1)}
+| YEAR SUB INT SUB INT {$$ = NewDMYDate($5, $3, $1)}
 
   // "Feb 3 2023"
 | MONTH_NAME INT YEAR {$$ = NewMDYDate($1, $2, $3)}
@@ -160,26 +170,13 @@ Date:
 | INT MONTH_NAME YEAR {$$ = NewDMYDate($1, $2, $3)}
 
   // "2/3/2023", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
-| INT QUO INT QUO YEAR {$$ = NewAmbiguousDate(ambiguousDateMode, $1, $3, $5)}
+| INT DateSep INT DateSep YEAR {$$ = NewAmbiguousDate($1, $3, $5)}
 
   // "Feb 3"
-  // "Thu Feb 3"
-| WeekDayNameOpt MONTH_NAME INT {$$ = NewMDYDate($2, $3, "")}
+| MONTH_NAME INT {$$ = NewMDYDate($1, $2, "")}
 
   // "3 Feb"
-| WeekDayNameOpt INT MONTH_NAME {$$ = NewDMYDate($2, $3, "")}
-;
-
-
-TOpt:
-
-| T
-;
-
-
-WeekDayNameOpt:
-
-| WEEKDAY_NAME
+| INT MONTH_NAME {$$ = NewDMYDate($1, $2, "")}
 ;
 
 
@@ -208,19 +205,20 @@ Time:
 ;
 
 
-AndOpt:
-
-| AND
+DateSep:
+  QUO
+| PERIOD
 ;
 
 
-AtOpt:
+DateTimeSep:
 
 | AT
+| SUB
 ;
 
 
-Sep:
+RangeSep:
   SUB
 | THROUGH
 | TO
@@ -232,20 +230,16 @@ PrefixOpt:
 ;
 
 
-WhenOpt:
-
-| WHEN
-;
-
-
 SuffixOpt:
   GoogleOpt CalendarOpt ICSOpt
 ;
 
 
-GoogleOpt:
+/* All optional terminals */
 
-| GOOGLE
+AndOpt:
+
+| AND
 ;
 
 
@@ -255,7 +249,25 @@ CalendarOpt:
 ;
 
 
+CommaOpt:
+
+| COMMA
+;
+
+
+GoogleOpt:
+
+| GOOGLE
+;
+
+
 ICSOpt:
 
 | ICS
+;
+
+
+WhenOpt:
+
+| WHEN
 ;

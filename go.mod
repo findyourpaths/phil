@@ -9,6 +9,7 @@ require (
 	github.com/kr/pretty v0.3.1
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/segmentio/ksuid v1.0.4
+	github.com/tkuchiki/go-timezone v0.2.3
 	google.golang.org/protobuf v1.36.1
 )
 

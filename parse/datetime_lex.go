@@ -137,7 +137,12 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			}
 
 		case token.INT:
-			if len(lit) == 4 && (strings.HasPrefix(lit, "19") || strings.HasPrefix(lit, "20")) {
+			if len(lit) == 4 &&
+				(strings.HasPrefix(lit, "17") ||
+					strings.HasPrefix(lit, "18") ||
+					strings.HasPrefix(lit, "19") ||
+					strings.HasPrefix(lit, "20") ||
+					strings.HasPrefix(lit, "21")) {
 				return YEAR
 			}
 			return INT
@@ -145,7 +150,9 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 		case token.COLON:
 			return COLON
 		case token.COMMA:
-			return l.Lex(lval)
+			return COMMA
+		case token.PERIOD:
+			return PERIOD
 		case token.QUO:
 			return QUO
 		case token.SEMICOLON:

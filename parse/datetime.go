@@ -10,6 +10,10 @@ import (
 	"cloud.google.com/go/civil"
 )
 
+var parseDateMode string
+var parseYear int
+var parseTimeZone string
+
 // A DateTimeTZs represents a sequence of date and time ranges.
 //
 // This type DOES include location information.
@@ -45,7 +49,7 @@ func NewRangesWithStartDateTimes(starts ...*DateTimeTZ) *DateTimeTZRanges {
 func NewRangesWithStartDates(starts ...civil.Date) *DateTimeTZRanges {
 	r := &DateTimeTZRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeTZRange{Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}}})
+		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeWithDate(start)})
 	}
 	return r
 }
@@ -101,36 +105,57 @@ type DateTimeTZ struct {
 }
 
 func (dttz DateTimeTZ) String() string {
-	return dttz.DateTime.String()
+	r := dttz.DateTime.String()
+	if dttz.TimeZone != "" {
+		tzs, err := singletonTZ.GetTzAbbreviationInfo(dttz.TimeZone)
+		if err != nil {
+			panic(fmt.Sprintf("got error looking up time zone for %#v: %v", dttz, err))
+		}
+		if len(tzs) > 1 {
+			panic(fmt.Sprintf("got multiple time zones for abbreviation: %q for %#v", dttz.TimeZone, dttz))
+		}
+		r += tzs[0].OffsetHHMM()
+	}
+	return r
 }
 
 func NewDateTime(date civil.Date, time civil.Time, tz string) *DateTimeTZ {
 	// fmt.Printf("NewDateTime(date: %#v, time: %#v, tz: %q)\n", date, time, tz)
+	if tz == "" {
+		tz = parseTimeZone
+	}
 	return &DateTimeTZ{DateTime: civil.DateTime{Date: date, Time: time}, TimeZone: tz}
 }
 
 func NewDateTimeWithDate(date civil.Date) *DateTimeTZ {
-	return &DateTimeTZ{DateTime: civil.DateTime{Date: date}}
+	return &DateTimeTZ{DateTime: civil.DateTime{Date: date}, TimeZone: parseTimeZone}
 }
 
 var weekdaysByNames = map[string]int{
+	"su":        0,
 	"sun":       0,
 	"sunday":    0,
+	"mo":        1,
 	"mon":       1,
 	"monday":    1,
+	"tu":        2,
 	"tue":       2,
 	"tues":      2,
 	"tuesday":   2,
+	"we":        3,
 	"wed":       3,
 	"weds":      3,
 	"wednesday": 3,
+	"th":        4,
 	"thu":       4,
 	"thus":      4,
 	"thursday":  4,
+	"fr":        5,
 	"fri":       5,
 	"friday":    5,
-	"saturday":  6,
+	"sa":        6,
 	"sat":       6,
+	"saturday":  6,
 }
 
 var monthsByNames = map[string]time.Month{
@@ -178,11 +203,9 @@ func mustAtoi(str string) int {
 	return r
 }
 
-var ambiguousDateMode string
-
-func NewAmbiguousDate(mode string, first string, second string, year string) civil.Date {
+func NewAmbiguousDate(first string, second string, year string) civil.Date {
 	// North American tends to parse dates as month-day-year.
-	if mode == "na" {
+	if parseDateMode == "na" {
 		return civil.Date{Month: time.Month(mustAtoi(first)), Day: mustAtoi(second), Year: mustAtoi(year)}
 	}
 	return civil.Date{Day: mustAtoi(first), Month: time.Month(mustAtoi(second)), Year: mustAtoi(year)}
@@ -223,6 +246,9 @@ func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
 		year = mustAtoi(yearAny.(string))
 	default:
 		panic(fmt.Sprintf("can't handle year in unknown format: %#v", yearAny))
+	}
+	if year == 0 {
+		year = parseYear
 	}
 
 	return civil.Date{Day: day, Month: month, Year: year}

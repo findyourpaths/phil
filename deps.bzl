@@ -170,6 +170,12 @@ def go_dependencies():
         version = "v1.9.0",
     )
     go_repository(
+        name = "com_github_tkuchiki_go_timezone",
+        importpath = "github.com/tkuchiki/go-timezone",
+        sum = "h1:D3TVdIPrFsu9lxGxqNX2wsZwn1MZtTqTW0mdevMozHc=",
+        version = "v0.2.3",
+    )
+    go_repository(
         name = "com_google_cloud_go",
         importpath = "cloud.google.com/go",
         sum = "h1:Z5TNFfQxj7WG2FgOGX1ekC5RiXrYgms6QscOm32M/4s=",

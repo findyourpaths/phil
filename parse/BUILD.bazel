@@ -17,6 +17,7 @@ go_library(
         "//glr",
         "@com_github_kr_pretty//:pretty",
         "@com_github_microcosm_cc_bluemonday//:bluemonday",
+        "@com_github_tkuchiki_go_timezone//:go-timezone",
         "@com_google_cloud_go//civil",
     ],
 )

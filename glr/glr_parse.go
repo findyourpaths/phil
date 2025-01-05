@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/scanner"
 	"go/token"
-	"math"
 	"reflect"
 	"sort"
 	"strconv"
@@ -82,22 +81,6 @@ type ParseNode struct {
 	ruleID   int
 }
 
-func (n ParseNode) size() int {
-	if n.isAlt {
-		r := math.MaxInt32
-		for _, c := range n.Children {
-			r = min(r, c.size())
-		}
-		return r
-	}
-
-	r := 1
-	for _, c := range n.Children {
-		r += c.size()
-	}
-	return r
-}
-
 func (n ParseNode) String() string {
 	alt := ""
 	if n.isAlt {
@@ -109,7 +92,7 @@ func (n ParseNode) String() string {
 	} else {
 		rule = strconv.Itoa(n.ruleID)
 	}
-	return fmt.Sprintf("%d.%d: [%d, %d]: %s%s: %s", n.size(), n.numTerms, n.startPos, n.endPos, alt, n.Symbol, rule) //n.Value)
+	return fmt.Sprintf("%s: [%d, %d]: %s%s: %s", n.score(0), n.startPos, n.endPos, alt, n.Symbol, rule) //n.Value)
 }
 
 func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
@@ -136,6 +119,74 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
 	}
 	r := fn.Call(args)[0].Interface()
 	debugf("%sreturning computed value: %#v\n", spaces, r)
+	return r
+}
+
+// We prefer parse trees covering the most terms, with the fewest total
+// children, but most deep nodes.
+//
+// For the last one, we use depth-based weighting to prefer "bushy" parse trees
+// at the lower levels and more streamlined structures near the root.
+//
+// Assign weights to nodes based on their depth in the tree. Nodes closer to the
+// root receive lower weights, while nodes further down receive higher weights.
+//
+// This encourages branching at lower levels because each new branch deeper in
+// the tree contributes more to the overall score.
+func sortParseNodes(ns []*ParseNode, depth int) ([]*ParseNode, []*scoredParseNode) {
+	sns := []*scoredParseNode{}
+	for _, n := range ns {
+		sns = append(sns, n.score(depth))
+	}
+
+	sort.Slice(sns, func(i, j int) bool {
+		return (sns[i].numTerms > sns[j].numTerms) ||
+
+			(sns[i].numTerms == sns[j].numTerms &&
+				sns[i].size < sns[j].size) ||
+
+			(sns[i].numTerms == sns[j].numTerms &&
+				sns[i].size == sns[j].size &&
+				sns[i].depths > sns[j].depths)
+	})
+
+	rs := []*ParseNode{}
+	for _, sn := range sns {
+		rs = append(rs, sn.node)
+	}
+	return rs, sns
+}
+
+type scoredParseNode struct {
+	numTerms int
+	size     int
+	depths   int
+	node     *ParseNode
+}
+
+func (s scoredParseNode) String() string {
+	return fmt.Sprintf("%d.%d.%d", s.numTerms, s.size, s.depths)
+}
+
+func (n *ParseNode) score(depth int) *scoredParseNode {
+	if n.isAlt {
+		_, sns := sortParseNodes(n.Children, depth)
+		return sns[0]
+	}
+
+	r := &scoredParseNode{node: n}
+	r.size = 1
+	r.depths = depth
+	if n.Term != "" {
+		r.numTerms = 1
+	} else {
+		for _, c := range n.Children {
+			csc := c.score(depth + 1)
+			r.numTerms += csc.numTerms
+			r.size += csc.size
+			r.depths += csc.depths
+		}
+	}
 	return r
 }
 
@@ -239,6 +290,7 @@ type GLRState struct {
 	acceptingParsers []*StackNode
 	ruleNodes        map[string]*ParseNode
 	symbolNodes      []*ParseNode
+	partialResults   []*ParseNode
 	lookahead        *ParseNode
 	debug            bool
 }
@@ -297,25 +349,34 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 		}
 	}
 
-	// Handle end of input
-	if len(s.acceptingParsers) == 0 {
-		return nil, fmt.Errorf("parsing failed")
-	}
-
-	var results []*ParseNode
+	aps := []*ParseNode{}
 	for _, parser := range s.acceptingParsers {
 		if len(parser.backlinks) > 0 {
-			results = append(results, parser.backlinks[0].node)
+			aps = append(aps, parser.backlinks[0].node)
 		}
 	}
-	results = sortParseNodes(results)
-
-	debugf("found %d results\n", len(results))
-	for i, result := range results {
-		debugf("result[%d]\n", i)
-		printNodeTree(result, "")
+	prs := []*ParseNode{}
+	for _, pr := range s.partialResults {
+		found := false
+		for _, ap := range aps {
+			if pr == ap {
+				found = true
+				break
+			}
+		}
+		if !found {
+			prs = append(prs, pr)
+		}
 	}
-	return results, nil
+
+	debugf("ended with %d accepting parsers and %d partial results\n", len(aps), len(prs))
+	rs, _ := sortParseNodes(append(aps, prs...), 0)
+	debugf("found %d results\n", len(rs))
+	for i, r := range rs {
+		debugf("result[%d]\n", i)
+		printNodeTree(r, "")
+	}
+	return rs, nil
 }
 
 func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
@@ -343,12 +404,11 @@ func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
 	}
 
 	// Perform shifts if any available
-	if len(s.parsersToShift) == 0 && (len(s.acceptingParsers) == 0 || term.Symbol != "$end") {
-		// No valid actions found
-		debugf("  accepting with no valid actions found\n")
-		s.acceptingParsers = append(s.acceptingParsers, s.initialParsers...)
+	if len(s.parsersToShift) == 0 && term.Symbol != "$end" {
+		debugf("  ending with no valid actions found\n")
 		return false
 	}
+
 	s.activeParsers = shifter(s)
 	return true
 }
@@ -408,12 +468,16 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 
 	if stackNode == nil {
 		// Create new parser state
-		nonterminal := getSymbolNode(s, ruleNode)
+		nonterm := getSymbolNode(s, ruleNode)
 		stackNode = &StackNode{
 			state:     gotoState,
-			backlinks: []*StackLink{{stackNode: p, node: nonterminal}}}
+			backlinks: []*StackLink{{stackNode: p, node: nonterm}}}
 		s.activeParsers = append(s.activeParsers, stackNode)
 		s.parsersToAct = append(s.parsersToAct, stackNode)
+		if rl.Type == g.Rules.Items[1].Type {
+			debugf("saving current partial result with node of same type as root: %s\n", rl.Type)
+			s.partialResults = append(s.partialResults, nonterm)
+		}
 		return
 	}
 
@@ -426,8 +490,8 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 	}
 
 	// Add new path
-	nonterminal := getSymbolNode(s, ruleNode)
-	newLink := &StackLink{stackNode: p, node: nonterminal}
+	nonterm := getSymbolNode(s, ruleNode)
+	newLink := &StackLink{stackNode: p, node: nonterm}
 	stackNode.backlinks = append(stackNode.backlinks, newLink)
 
 	// Process additional reductions
@@ -528,7 +592,7 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 			}
 		}
 		debugf("adding new as alternative to old\n")
-		old.Children = sortParseNodes(append(old.Children, new))
+		old.Children, _ = sortParseNodes(append(old.Children, new), 0)
 		debugf("returning\n")
 		printNodeTree(old, "")
 		return old
@@ -547,7 +611,7 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 		ruleID:   old.ruleID,
 	}
 
-	old.Children = sortParseNodes([]*ParseNode{newOld, new})
+	old.Children, _ = sortParseNodes([]*ParseNode{newOld, new}, 0)
 	old.isAlt = true
 	old.ruleID = 0
 
@@ -555,15 +619,6 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 	debugf("returning\n")
 	printNodeTree(old, "")
 	return old
-}
-
-func sortParseNodes(ns []*ParseNode) []*ParseNode {
-	sort.Slice(ns, func(i, j int) bool {
-		return ns[i].numTerms > ns[j].numTerms ||
-			(ns[i].numTerms == ns[j].numTerms &&
-				ns[i].size() < ns[j].size())
-	})
-	return ns
 }
 
 func getStackNode(ps []*StackNode, state int) *StackNode {

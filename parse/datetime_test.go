@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -51,10 +52,14 @@ var TimeFor03PM = civil.Time{Hour: 15}
 func TestExtractDatetimesRanges(t *testing.T) {
 	if os.Getenv("DEBUG") == "true" {
 		glr.DoDebug = true
+		DoDebug = true
 	}
 
 	type test struct {
-		mode string
+		dateMode string
+		year     int
+		timeZone string
+
 		in   string
 		want *DateTimeTZRanges
 	}
@@ -94,8 +99,12 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "3 February, 2023", want: NewRangesWithStartDates(DateFor2023Feb03)},
 
 		// Both
-		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Feb03), mode: "na"},
-		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Mar02)},
+		{in: "02.03", want: NewRangesWithStartDates(DateForFeb03), dateMode: "na"},
+		{in: "02.03", want: NewRangesWithStartDates(DateForMar02), dateMode: "rest"},
+		{in: "02.03.", want: NewRangesWithStartDates(DateForFeb03), dateMode: "na"},
+		{in: "02.03.", want: NewRangesWithStartDates(DateForMar02), dateMode: "rest"},
+		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Feb03), dateMode: "na"},
+		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest"},
 
 		// MD
 		{in: "Feb 3-4", want: NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)},
@@ -163,7 +172,10 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// DateTimes and DateTime Ranges
 		//
 		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST), timeZone: "PST"},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST), timeZone: "America/Los_Angeles"},
 		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+
 		// {in: "Feb 3 12:00 PM 12:00", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		// {in: "Feb 3 3:00 PM 15:00", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
 
@@ -174,6 +186,8 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_03PM)},
 
 		{in: "Feb 3 2023 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "Th , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "na"},
+		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "rest"},
 
 		{in: "When 3 Feb 2023 9:00 AM - 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
 
@@ -197,11 +211,12 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// {in: "Fri, Apr 14, 2023 9:00 AM 09:00 Sat, Apr 15, 2023 5:00 PM 17:00"
 	}
 
-	// for _, tc := range tests[len(tests)-3 : len(tests)-2] {
-	// for _, tc := range tests[6:7] {
-	for _, tc := range tests {
-		t.Run(tc.in, func(t *testing.T) {
-			got, err := ExtractDateTimeTZRanges(tc.mode, tc.in)
+	for i, tc := range tests {
+		// for i, tc := range tests[len(tests)-3 : len(tests)-2] {
+		// for i, tc := range tests[22:23] {
+		// for i, tc := range tests[70:71] {
+		t.Run(fmt.Sprintf("%03d__%s", i, tc.in), func(t *testing.T) {
+			got, err := ExtractDateTimeTZRanges(tc.year, tc.dateMode, tc.timeZone, tc.in)
 			if err != nil {
 				t.Fatalf("error: %v", err)
 			}
