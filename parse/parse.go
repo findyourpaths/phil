@@ -24,6 +24,14 @@ type DateTimeTZRanges struct {
 	Items []*DateTimeTZRange
 }
 
+func (rngs DateTimeTZRanges) String() string {
+	rs := []string{}
+	for _, elt := range rngs.Items {
+		rs = append(rs, elt.String())
+	}
+	return strings.Join(rs, ", ")
+}
+
 func AppendDateTimeTZRanges(rngs *DateTimeTZRanges, rng *DateTimeTZRange) *DateTimeTZRanges {
 	rngs.Items = append(rngs.Items, rng)
 	return rngs
@@ -65,6 +73,14 @@ type DateTimeTZRange struct {
 	End   *DateTimeTZ
 }
 
+func (rng DateTimeTZRange) String() string {
+	r := rng.Start.String()
+	if rng.End != nil {
+		r += " - " + rng.End.String()
+	}
+	return r
+}
+
 func NewRangeWithStart(start civil.Date) *DateTimeTZRange {
 	return &DateTimeTZRange{Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}}}
 }
@@ -89,6 +105,10 @@ func NewRangeWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTime
 type DateTimeTZ struct {
 	civil.DateTime
 	TimeZone string
+}
+
+func (dttz DateTimeTZ) String() string {
+	return dttz.DateTime.String()
 }
 
 func NewDateTime(date civil.Date, time civil.Time, tz string) *DateTimeTZ {
@@ -219,7 +239,7 @@ func NewMDYDate(monthAny any, dayAny any, yearAny any) civil.Date {
 	return NewDMYDate(dayAny, monthAny, yearAny)
 }
 
-func NewTime(hourAny any, minuteAny any) civil.Time {
+func NewTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
 	var hour int
 	switch hourAny.(type) {
 	case int:
@@ -240,7 +260,27 @@ func NewTime(hourAny any, minuteAny any) civil.Time {
 		panic(fmt.Sprintf("can't handle minute in unknown format: %#v", minuteAny))
 	}
 
-	return civil.Time{Hour: hour, Minute: minute}
+	var second int
+	switch secondAny.(type) {
+	case int:
+		second = secondAny.(int)
+	case string:
+		second = mustAtoi(secondAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle second in unknown format: %#v", secondAny))
+	}
+
+	var ns int
+	switch nsAny.(type) {
+	case int:
+		ns = nsAny.(int)
+	case string:
+		ns = mustAtoi(nsAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle ns in unknown format: %#v", nsAny))
+	}
+
+	return civil.Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns}
 }
 
 // // Message for a sequence of datetime ranges.
@@ -349,7 +389,7 @@ func ExtractDateTimeTZRanges(mode, in string) (*DateTimeTZRanges, error) {
 	if len(forest) == 0 || len(forest[0].Children) == 0 {
 		return nil, fmt.Errorf("no datetime ranges found in %q", in)
 	}
-	return forest[0].Children[1].Value.(*DateTimeTZRanges), nil
+	return glr.GetParseNodeValue(g, forest[0].Children[1], "").(*DateTimeTZRanges), nil
 }
 
 // func NewRangesFromParse(root *glr.ParseNode) (*DateTimeTZRanges, error) {

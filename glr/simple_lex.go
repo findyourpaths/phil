@@ -48,7 +48,7 @@ func NewSimpleLexer(input string) *simpleLexer {
 	return l
 }
 
-func (l *simpleLexer) NextToken(pos int) (string, any, bool) {
+func (l *simpleLexer) NextToken(pos int) (string, string, bool) {
 	val := l.Lex(l.lval)
 	sym := l.lval.string
 	if val >= 57343 {

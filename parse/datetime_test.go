@@ -1,10 +1,12 @@
 package parse
 
 import (
+	"os"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/civil"
+	"github.com/findyourpaths/phil/glr"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/testing/protocmp"
 )
@@ -16,6 +18,9 @@ var DateForFeb04 = civil.Date{Month: time.February, Day: 4}
 var DateForFeb05 = civil.Date{Month: time.February, Day: 5}
 var DateForMar02 = civil.Date{Month: time.March, Day: 2}
 var DateForMar03 = civil.Date{Month: time.March, Day: 3}
+
+var DateFor2023 = civil.Date{Year: 2023}
+var DateFor2023Feb = civil.Date{Year: 2023, Month: time.February}
 
 var DateFor2023Feb01 = civil.Date{Year: 2023, Month: time.February, Day: 1}
 var DateFor2023Feb02 = civil.Date{Year: 2023, Month: time.February, Day: 2}
@@ -44,6 +49,10 @@ var TimeFor12PM = civil.Time{Hour: 12}
 var TimeFor03PM = civil.Time{Hour: 15}
 
 func TestExtractDatetimesRanges(t *testing.T) {
+	if os.Getenv("DEBUG") == "true" {
+		glr.DoDebug = true
+	}
+
 	type test struct {
 		mode string
 		in   string
@@ -51,6 +60,16 @@ func TestExtractDatetimesRanges(t *testing.T) {
 	}
 
 	tests := []test{
+
+		// ISO 8601 format
+
+		{in: "2023", want: NewRangesWithStartDates(DateFor2023)},
+		{in: "2023-02", want: NewRangesWithStartDates(DateFor2023Feb)},
+		{in: "2023-02-03", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "2023-02-03T", want: NewRangesWithStartDates(DateFor2023Feb03)},
+		{in: "2023-02-03T12", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "2023-02-03T12:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "2023-02-03T12:00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 
 		//
 		// Dates and Date Ranges
@@ -179,7 +198,7 @@ func TestExtractDatetimesRanges(t *testing.T) {
 	}
 
 	// for _, tc := range tests[len(tests)-3 : len(tests)-2] {
-	// for _, tc := range tests[0:1] {
+	// for _, tc := range tests[6:7] {
 	for _, tc := range tests {
 		t.Run(tc.in, func(t *testing.T) {
 			got, err := ExtractDateTimeTZRanges(tc.mode, tc.in)

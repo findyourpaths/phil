@@ -44,7 +44,7 @@ func NewDatetimeLexer(input string) *datetimeLexer {
 	return l
 }
 
-func (l *datetimeLexer) NextToken(pos int) (string, any, bool) {
+func (l *datetimeLexer) NextToken(pos int) (string, string, bool) {
 	val := l.Lex(l.lval)
 	sym := l.lval.string
 	if val >= 57343 {
@@ -125,6 +125,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return PM
 			case "through":
 				return THROUGH
+			case "t":
+				return T
 			case "to":
 				return TO
 			case "when":

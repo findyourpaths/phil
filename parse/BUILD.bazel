@@ -25,6 +25,7 @@ go_test(
     srcs = ["datetime_test.go"],
     embed = [":parse"],
     deps = [
+        "//glr",
         "@com_github_google_go_cmp//cmp",
         "@com_google_cloud_go//civil",
         "@org_golang_google_protobuf//testing/protocmp",

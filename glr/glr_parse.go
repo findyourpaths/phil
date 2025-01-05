@@ -4,30 +4,32 @@ import (
 	"fmt"
 	"go/scanner"
 	"go/token"
+	"math"
 	"reflect"
 	"sort"
+	"strconv"
 )
 
 // Debug flags
-// var glrDebug = true
+// var DoDebug = true
 
-var glrDebug = false
+var DoDebug = false
 
 // SetDebug toggles debug logging
 func SetDebug(enabled bool) {
-	glrDebug = enabled
+	DoDebug = enabled
 }
 
 // debugf prints debug messages if debug is enabled
 func debugf(format string, args ...any) {
-	if glrDebug {
+	if DoDebug {
 		fmt.Printf(format, args...)
 	}
 }
 
 // debugf prints debug messages if debug is enabled
 func debugln(args ...any) {
-	if glrDebug {
+	if DoDebug {
 		fmt.Println(args...)
 	}
 }
@@ -69,21 +71,88 @@ type Action struct {
 
 type ParseNode struct {
 	Symbol   string
-	Value    any
+	Term     string
 	Children []*ParseNode
 
 	startPos int
 	endPos   int
+	// numNonterms int
 	numTerms int
 	isAlt    bool
+	ruleID   int
 }
 
-func printNodeTree(n *ParseNode, spaces string) {
+func (n ParseNode) size() int {
+	if n.isAlt {
+		r := math.MaxInt32
+		for _, c := range n.Children {
+			r = min(r, c.size())
+		}
+		return r
+	}
+
+	r := 1
+	for _, c := range n.Children {
+		r += c.size()
+	}
+	return r
+}
+
+func (n ParseNode) String() string {
 	alt := ""
 	if n.isAlt {
 		alt = "ALT "
 	}
-	debugf("%s%d: [%d, %d]: %ssymbol: %q, value: %#v\n", spaces, n.numTerms, n.startPos, n.endPos, alt, n.Symbol, n.Value)
+	var rule string
+	if n.Term != "" {
+		rule = fmt.Sprintf("%q", n.Term)
+	} else {
+		rule = strconv.Itoa(n.ruleID)
+	}
+	return fmt.Sprintf("%d.%d: [%d, %d]: %s%s: %s", n.size(), n.numTerms, n.startPos, n.endPos, alt, n.Symbol, rule) //n.Value)
+}
+
+func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
+	debugf("%sgetting value for: %s\n", spaces, n)
+	if n.isAlt {
+		r := GetParseNodeValue(g, n.Children[0], spaces+"  ")
+		debugf("%sreturning first alternative\n", spaces)
+		return r
+	}
+	if n.Term != "" {
+		debugf("%sreturning term: %q\n", spaces, n.Term)
+		return n.Term
+	}
+	if n.ruleID == 0 {
+		debugf("%sreturning empty rule result: %q\n", spaces, n.Term)
+		return ""
+	}
+
+	fn := reflect.ValueOf(g.Actions.Items[n.ruleID])
+	cs := n.Children
+	args := make([]reflect.Value, len(cs))
+	for i, c := range cs {
+		args[i] = reflect.ValueOf(GetParseNodeValue(g, c, spaces+"  "))
+	}
+	r := fn.Call(args)[0].Interface()
+	debugf("%sreturning computed value: %#v\n", spaces, r)
+	return r
+}
+
+func printNodes(ns []*ParseNode, spaces string) {
+	if !DoDebug {
+		return
+	}
+	for _, n := range ns {
+		debugf("%s%s\n", spaces, n)
+	}
+}
+
+func printNodeTree(n *ParseNode, spaces string) {
+	if !DoDebug {
+		return
+	}
+	debugf("%s%s\n", spaces, n)
 	for _, child := range n.Children {
 		printNodeTree(child, spaces+"  ")
 	}
@@ -91,6 +160,9 @@ func printNodeTree(n *ParseNode, spaces string) {
 
 // printActiveParser prints all active parsers
 func printAllParsers(s *GLRState, p *StackNode) {
+	if !DoDebug {
+		return
+	}
 	if p != nil {
 		debugf("  current parser with state: %v\n", p.state)
 		printParser(p, "  ", nil)
@@ -172,7 +244,7 @@ type GLRState struct {
 }
 
 type Lexer interface {
-	NextToken(int) (string, any, bool)
+	NextToken(int) (string, string, bool)
 	Error(string)
 }
 
@@ -206,7 +278,7 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 		sym, val, hasMore := l.NextToken(pos)
 		term := &ParseNode{
 			Symbol:   sym,
-			Value:    val,
+			Term:     val,
 			startPos: pos,
 			endPos:   pos + 1,
 			numTerms: 1,
@@ -236,11 +308,9 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 			results = append(results, parser.backlinks[0].node)
 		}
 	}
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].numTerms > results[j].numTerms
-	})
+	results = sortParseNodes(results)
 
-	debugf("results\n")
+	debugf("found %d results\n", len(results))
 	for i, result := range results {
 		debugf("result[%d]\n", i)
 		printNodeTree(result, "")
@@ -267,6 +337,8 @@ func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
 		s.parsersToAct = s.parsersToAct[1:]
 		s.activeParser = p
 		printAllParsers(s, p)
+		debugf("symbol nodes\n")
+		printNodes(s.symbolNodes, "  ")
 		actor(g, s, p)
 	}
 
@@ -331,7 +403,7 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 
 	ruleNode := getRuleNode(g, s, rlID, kids)
 	stackNode := getStackNode(s.activeParsers, gotoState)
-	debugln("  gotoState", gotoState, "stackNode", stackNode)
+	debugf("  gotoState: %d, stackNode: %v\n", gotoState, stackNode)
 	printNodeTree(ruleNode, "  ")
 
 	if stackNode == nil {
@@ -400,31 +472,20 @@ func getRuleNode(g *Grammar, s *GLRState, rlID int, kids []*ParseNode) *ParseNod
 		return node
 	}
 
+	// numNonterms := 1
 	numTerms := 0
 	for _, kid := range kids {
+		// numNonterms += kid.numNonterms
 		numTerms += kid.numTerms
 	}
 
-	fn := reflect.ValueOf(g.Actions.Items[rlID])
-	args := make([]reflect.Value, len(kids))
-	// foundNil := false
-	for i, kid := range kids {
-		// if kid.Value == nil {
-		// 	foundNil = true
-		// }
-		debugf("found kid[%d].Value: %#v\n", i, kid.Value)
-		args[i] = reflect.ValueOf(kid.Value)
-	}
-	var val any
-	// if !foundNil {
-	val = fn.Call(args)[0].Interface()
-	// }
-
 	node := &ParseNode{
-		Symbol:   rl.Nonterminal,
-		Value:    val,
+		Symbol: rl.Nonterminal,
+		// Value:    val,
 		Children: kids,
+		// numNonterms: numNonterms,
 		numTerms: numTerms,
+		ruleID:   rlID,
 	}
 	if len(kids) > 0 {
 		node.startPos = kids[0].startPos
@@ -435,67 +496,120 @@ func getRuleNode(g *Grammar, s *GLRState, rlID int, kids []*ParseNode) *ParseNod
 }
 
 func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
-	for _, node := range s.symbolNodes {
-		if node.Symbol == n.Symbol && node.startPos == n.startPos && node.endPos == n.endPos {
-			return node
+	debugf("maybe getting old symbol node for: %s\n", n)
+	for _, old := range s.symbolNodes {
+		if old.Symbol == n.Symbol && old.startPos == n.startPos && old.endPos == n.endPos {
+			debugf("returning old: %s\n", old)
+			return old
 		}
 	}
+	debugf("returning new\n")
 	s.symbolNodes = append(s.symbolNodes, n)
 	return n
 }
 
 func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
-	debugf("adding alternative with old.symbol: %q, old.isAlt: %t, new.symbol: %q, new.isAlt: %t, old == new: %t\n", old.Symbol, old.isAlt, new.Symbol, new.isAlt, old == new)
-	// if parseNodesEqual(old, new) {
+	debugf("maybe adding alternative with old.symbol: %q, old.isAlt: %t, new.symbol: %q, new.isAlt: %t\n", old.Symbol, old.isAlt, new.Symbol, new.isAlt)
+	debugf("old\n")
+	printNodeTree(old, "")
+	debugf("new\n")
+	printNodeTree(new, "")
+
 	if reflect.DeepEqual(old, new) {
+		debugf("skipping adding alternative because new == old\n")
 		return old
 	}
 
 	if old.isAlt {
-		for _, alt := range old.Children {
+		for i, alt := range old.Children {
 			if reflect.DeepEqual(alt, new) {
+				debugf("skipping adding alternative because new == old.Children[%d]\n", i)
 				return old
 			}
 		}
-		old.Children = append(old.Children, new)
+		debugf("adding new as alternative to old\n")
+		old.Children = sortParseNodes(append(old.Children, new))
+		debugf("returning\n")
+		printNodeTree(old, "")
 		return old
 	}
 
-	r := &ParseNode{
+	// This is ugly and not functional programming, but we ran into a bug where we
+	// didn't see the node that already incorporated old. So leave old in the tree
+	// but promote it to an alternative and create "newOld", a copy of old as the
+	// new child of the promoted old, along with new.
+	newOld := &ParseNode{
 		Symbol:   old.Symbol,
-		Value:    old.Value,
-		Children: []*ParseNode{old, new},
+		Children: old.Children,
 		startPos: old.startPos,
 		endPos:   old.endPos,
-		numTerms: max(old.numTerms, new.numTerms),
-		isAlt:    true,
+		numTerms: old.numTerms,
+		ruleID:   old.ruleID,
 	}
+
+	// old.Children = sortParseNodes(append(old.Children, new))
+	old.Children = sortParseNodes([]*ParseNode{newOld, new})
+	old.isAlt = true
+	old.ruleID = 0
+	// // old.numNonterms = min(old.numNonterms, new.numNonterms)
+	// debugf("adding new as alternative to old\n")
+
+	// debugf("returning\n")
+	// printNodeTree(old, "")
+	// return old
+	// }
+
+	// r := &ParseNode{
+	// 	Symbol: old.Symbol,
+	// 	// Value:  old.Value,
+	// 	// Children:    sortParseNodes([]*ParseNode{old, new}),
+	// 	Children: []*ParseNode{old, new},
+	// 	startPos: old.startPos,
+	// 	endPos:   old.endPos,
+	// 	// numNonterms: min(old.numNonterms, new.numNonterms),
+	// 	numTerms: max(old.numTerms, new.numTerms),
+	// 	isAlt:    true,
+	// }
 
 	// Update references
-	for i, node := range s.symbolNodes {
-		if node == old {
-			s.symbolNodes[i] = r
-		}
-	}
-	return r
+	// for i, n := range s.symbolNodes {
+	// 	debugf("looking at s.symbolNodes[%d] with symbol: %q\n", i, n.Symbol)
+	// 	if n == old {
+	// 		debugf("replacing with new alternative\n")
+	// 		s.symbolNodes[i] = r
+	// 	}
+	// }
+	debugf("adding alternative by merging new and old\n")
+	debugf("returning\n")
+	printNodeTree(old, "")
+	return old
 }
 
-func parseNodesEqual(n1, n2 *ParseNode) bool {
-	if n1.Symbol != n2.Symbol ||
-		n1.Value != n2.Value ||
-		len(n1.Children) != len(n2.Children) ||
-		n1.startPos != n2.startPos ||
-		n1.endPos != n2.endPos ||
-		n1.numTerms != n2.numTerms {
-		return false
-	}
-	for i, n1C := range n1.Children {
-		if !parseNodesEqual(n1C, n2.Children[i]) {
-			return false
-		}
-	}
-	return true
+func sortParseNodes(ns []*ParseNode) []*ParseNode {
+	sort.Slice(ns, func(i, j int) bool {
+		return ns[i].numTerms > ns[j].numTerms ||
+			(ns[i].numTerms == ns[j].numTerms &&
+				ns[i].size() < ns[j].size())
+	})
+	return ns
 }
+
+// func parseNodesEqual(n1, n2 *ParseNode) bool {
+// 	if n1.Symbol != n2.Symbol ||
+// 		n1.Value != n2.Value ||
+// 		len(n1.Children) != len(n2.Children) ||
+// 		n1.startPos != n2.startPos ||
+// 		n1.endPos != n2.endPos ||
+// 		n1.numTerms != n2.numTerms {
+// 		return false
+// 	}
+// 	for i, n1C := range n1.Children {
+// 		if !parseNodesEqual(n1C, n2.Children[i]) {
+// 			return false
+// 		}
+// 	}
+// 	return true
+// }
 
 func getStackNode(ps []*StackNode, state int) *StackNode {
 	for _, parser := range ps {

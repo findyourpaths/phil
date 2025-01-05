@@ -20,6 +20,7 @@ import "cloud.google.com/go/civil"
 %token SUB
 %token THROUGH
 %token TO
+%token T
 %token WHEN
 
 %token <string> IDENT
@@ -148,8 +149,12 @@ DateTimeTZ:
 ;
 
 Date:
+  YEAR {$$ = NewDMYDate("", "", $1)}
+| YEAR SUB INT {$$ = NewDMYDate("", $3, $1)}
+| YEAR SUB INT SUB INT TOpt {$$ = NewDMYDate($5, $3, $1)}
+
   // "Feb 3 2023"
-  MONTH_NAME INT YEAR {$$ = NewMDYDate($1, $2, $3)}
+| MONTH_NAME INT YEAR {$$ = NewMDYDate($1, $2, $3)}
 
   // "3 Feb 2023"
 | INT MONTH_NAME YEAR {$$ = NewDMYDate($1, $2, $3)}
@@ -166,6 +171,12 @@ Date:
 ;
 
 
+TOpt:
+
+| T
+;
+
+
 WeekDayNameOpt:
 
 | WEEKDAY_NAME
@@ -173,18 +184,23 @@ WeekDayNameOpt:
 
 
 Time:
+  INT {$$ = NewTime($1, "", "", "")}
+
   // "11am"
-  INT AM {$$ = NewTime($1, 0)}
-| INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, 0)}
+| INT AM {$$ = NewTime($1, "", "", "")}
+| INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, "", "", "")}
 
   // "12:00"
-| INT COLON INT {$$ = NewTime($1, $3)}
+| INT COLON INT {$$ = NewTime($1, $3, "", "")}
+
+  // "12:00:00"
+| INT COLON INT COLON INT {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, $5, "")}
 
   // "9:00 AM"
-| INT COLON INT AM {$$ = NewTime($1, $3)}
+| INT COLON INT AM {$$ = NewTime($1, $3, "", "")}
 
   // "12:00 PM"
-| INT COLON INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, $3)}
+| INT COLON INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, "", "")}
 
 /* // "Feb 3 2023 11am PST" */
 /* |   time TimeZoneOpt { */

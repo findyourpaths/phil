@@ -88,7 +88,8 @@ func TestGLRParser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := Parse(&Grammar{Rules: glrRules, Actions: glrActions, States: glrStates}, NewSimpleLexer(tt.input))
+			g := &Grammar{Rules: glrRules, Actions: glrActions, States: glrStates}
+			results, err := Parse(g, NewSimpleLexer(tt.input))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -101,13 +102,13 @@ func TestGLRParser(t *testing.T) {
 			}
 
 			// Get the root node (last node in result)
-			root := results[0]
-			if !reflect.DeepEqual(root.Value, tt.want) {
-				t.Errorf("Parse() got rule = %#v, want %#v", root.Value, tt.want)
+			got := GetParseNodeValue(g, results[0], "")
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Parse() got rule = %#v, want %#v", got, tt.want)
 			}
 
 			// Verify the parse tree structure
-			verifyParseTree(t, root)
+			verifyParseTree(t, results[0])
 		})
 	}
 }
