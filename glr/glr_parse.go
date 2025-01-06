@@ -204,7 +204,7 @@ func sortAlternatives(ns []*ParseNode) []*ParseNode {
 }
 
 func (s parseNodeScore) String() string {
-	return fmt.Sprintf("%d.%d.%d", s.numTerms, s.size, s.depths)
+	return fmt.Sprintf("[%2d, %2d, %3d]", s.numTerms, s.size, s.depths)
 }
 
 func printNodes(ns []*ParseNode, spaces string) {

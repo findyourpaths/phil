@@ -120,7 +120,6 @@ func (dttz DateTimeTZ) String() string {
 }
 
 func NewDateTime(date civil.Date, time civil.Time, tz string) *DateTimeTZ {
-	// fmt.Printf("NewDateTime(date: %#v, time: %#v, tz: %q)\n", date, time, tz)
 	if tz == "" {
 		tz = parseTimeZone
 	}
@@ -204,15 +203,7 @@ func mustAtoi(str string) int {
 }
 
 func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
-	var year int
-	switch yearAny.(type) {
-	case int:
-		year = yearAny.(int)
-	case string:
-		year = mustAtoi(yearAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle year in unknown format: %#v", yearAny))
-	}
+	year := findInt("year", yearAny)
 	if year == 0 {
 		year = parseYear
 	}
@@ -233,15 +224,7 @@ func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []civil.Date {
 }
 
 func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
-	var day int
-	switch dayAny.(type) {
-	case int:
-		day = dayAny.(int)
-	case string:
-		day = mustAtoi(dayAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle day in unknown format: %#v", dayAny))
-	}
+	day := findInt("day", dayAny)
 
 	var month time.Month
 	switch monthAny.(type) {
@@ -259,15 +242,7 @@ func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
 		panic(fmt.Sprintf("can't handle month %#v of unknown type: %s", monthAny, reflect.TypeOf(monthAny)))
 	}
 
-	var year int
-	switch yearAny.(type) {
-	case int:
-		year = yearAny.(int)
-	case string:
-		year = mustAtoi(yearAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle year in unknown format: %#v", yearAny))
-	}
+	year := findInt("year", yearAny)
 	if year == 0 {
 		year = parseYear
 	}
@@ -288,45 +263,20 @@ func NewMDYDate(monthAny any, dayAny any, yearAny any) civil.Date {
 }
 
 func NewTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
-	var hour int
-	switch hourAny.(type) {
-	case int:
-		hour = hourAny.(int)
-	case string:
-		hour = mustAtoi(hourAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle hour in unknown format: %#v", hourAny))
-	}
-
-	var minute int
-	switch minuteAny.(type) {
-	case int:
-		minute = minuteAny.(int)
-	case string:
-		minute = mustAtoi(minuteAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle minute in unknown format: %#v", minuteAny))
-	}
-
-	var second int
-	switch secondAny.(type) {
-	case int:
-		second = secondAny.(int)
-	case string:
-		second = mustAtoi(secondAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle second in unknown format: %#v", secondAny))
-	}
-
-	var ns int
-	switch nsAny.(type) {
-	case int:
-		ns = nsAny.(int)
-	case string:
-		ns = mustAtoi(nsAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle ns in unknown format: %#v", nsAny))
-	}
-
+	hour := findInt("hour", hourAny)
+	minute := findInt("minute", minuteAny)
+	second := findInt("second", secondAny)
+	ns := findInt("ns", nsAny)
 	return civil.Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns}
+}
+
+func findInt(name string, valAny any) int {
+	switch valAny.(type) {
+	case int:
+		return valAny.(int)
+	case string:
+		return mustAtoi(valAny.(string))
+	default:
+		panic(fmt.Sprintf("can't handle %s in unknown format: %#v", name, valAny))
+	}
 }
