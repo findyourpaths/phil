@@ -10,19 +10,27 @@ import "cloud.google.com/go/civil"
 %token AMP
 %token AND
 %token AT
+%token BEGINNING
 %token CALENDAR
 %token COLON
 %token COMMA
+%token DEC
+%token FROM
 %token GOOGLE
 %token ICS
+%token OF
+%token ORD_IND
 %token PM
 %token PERIOD
 %token QUO
 %token SEMICOLON
 %token SUB
 %token THROUGH
-%token TO
 %token T
+%token TH
+%token TILL
+%token TO
+%token UNTIL
 %token WHEN
 
 %token <string> IDENT
@@ -36,9 +44,15 @@ import "cloud.google.com/go/civil"
 %type <DateTimeTZRanges> root
 %type <DateTimeTZRanges> DateTimeTZRanges
 %type <DateTimeTZRange> DateTimeTZRange
+
 %type <DateTimeTZ> DateTimeTZ
+
 %type <Date> Date
+
+%type <string> Day
+
 %type <Time> Time
+
 
 %start root
 
@@ -121,8 +135,9 @@ DateTimeTZRanges:
 
 
 DateTimeTZRange:
-  DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
-| DateTimeTZ RangeSep Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, ""))}
+  RangePrefix DateTimeTZRange {$$ = $2}
+| RangePrefixOpt DateTimeTZ {$$ = &DateTimeTZRange{Start: $2}}
+| RangePrefixOpt DateTimeTZ RangeSep Time {$$ = NewRangeWithStartEndDateTimes($2, NewDateTime($2.Date, $4, ""))}
 
   // "Feb 3-4"
 | MONTH_NAME INT RangeSep INT {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, ""))}
@@ -140,64 +155,112 @@ DateTimeTZRange:
   // "Feb 3 - Mar 4, 2023"
 | MONTH_NAME INT RangeSep MONTH_NAME INT YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, $6), NewMDYDate($4, $5, $6))}
 
+  // "Thu Feb 3 - Sat Mar 4, 2023"
+| WeekDay MONTH_NAME INT RangeSep WeekDay MONTH_NAME INT YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($2, $3, $8), NewMDYDate($6, $7, $8))}
+
+  // "Thu 3 Feb - Sat 4 Mar, 2023"
+| WeekDay INT MONTH_NAME RangeSep WeekDay INT MONTH_NAME YEAR {$$ = NewRangeWithStartEndDates(NewDMYDate($2, $3, $8), NewDMYDate($6, $7, $8))}
+
+  // "Thu Feb 3 - Sat 4 Mar, 2023"
+| WeekDay MONTH_NAME INT RangeSep WeekDay INT MONTH_NAME YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($2, $3, $8), NewDMYDate($6, $7, $8))}
+
+  // "Thu 3 Feb - Sat Mar 4, 2023"
+| WeekDay MONTH_NAME INT RangeSep WeekDay MONTH_NAME INT YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($2, $3, $8), NewMDYDate($6, $7, $8))}
+
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
 /* | Date Time Time {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1, $3, ""), NewDateTime($1, $3, ""))} */
 ;
 
+
+RangePrefixOpt:
+
+| RangePrefix
+;
+
+
+RangePrefix:
+  BEGINNING
+| FROM
+;
+
+
 DateTimeTZ:
   Date {$$ = NewDateTimeWithDate($1)}
-| Date DateTimeSep Time {$$ = NewDateTime($1, $3, "")}
+| Date DateTimeSepOpt Time {$$ = NewDateTime($1, $3, "")}
 ;
 
 Date:
-  WEEKDAY_NAME CommaOpt Date {$$ = $3}
+  WeekDay CommaOpt Date {$$ = $3}
 
   // "2006-01-02 T 15:04:05Z07:00"
 | Date T
 
   // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
-| INT DateSep INT {$$ = NewAmbiguousDate($1, $3, "")}
+| Day DateSep Day {$$ = NewAmbiguousDate($1, $3, "")}
 
 | YEAR {$$ = NewDMYDate("", "", $1)}
-| YEAR SUB INT {$$ = NewDMYDate("", $3, $1)}
-| YEAR SUB INT SUB INT {$$ = NewDMYDate($5, $3, $1)}
+| YEAR DateSep INT {$$ = NewDMYDate("", $3, $1)}
+| YEAR DateSep INT DateSep Day {$$ = NewDMYDate($5, $3, $1)}
 
   // "Feb 3 2023"
-| MONTH_NAME INT YEAR {$$ = NewMDYDate($1, $2, $3)}
+| MONTH_NAME Day YEAR {$$ = NewMDYDate($1, $2, $3)}
 
   // "3 Feb 2023"
-| INT MONTH_NAME YEAR {$$ = NewDMYDate($1, $2, $3)}
+| Day MONTH_NAME YEAR {$$ = NewDMYDate($1, $2, $3)}
 
   // "2/3/2023", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
 | INT DateSep INT DateSep YEAR {$$ = NewAmbiguousDate($1, $3, $5)}
 
   // "Feb 3"
-| MONTH_NAME INT {$$ = NewMDYDate($1, $2, "")}
+| MONTH_NAME Day {$$ = NewMDYDate($1, $2, "")}
 
   // "3 Feb"
-| INT MONTH_NAME {$$ = NewDMYDate($1, $2, "")}
+| Day MONTH_NAME {$$ = NewDMYDate($1, $2, "")}
 ;
 
 
-Time:
-  INT {$$ = NewTime($1, "", "", "")}
+Day:
+  INT OrdinalIndicatorOpt OfOpt
+;
 
+
+OfOpt:
+
+| OF
+;
+
+
+OrdinalIndicatorOpt:
+
+| ORD_IND
+| TH
+;
+
+
+WeekDay:
+  TH
+| WEEKDAY_NAME
+;
+
+/* Time */
+Time:
+  /* INT {$$ = NewTime($1, "", "", "")} */
   // "11am"
-| INT AM {$$ = NewTime($1, "", "", "")}
+  INT AM {$$ = NewTime($1, "", "", "")}
 | INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, "", "", "")}
 
   // "12:00"
-| INT COLON INT {$$ = NewTime($1, $3, "", "")}
+| INT TimeSepOpt INT {$$ = NewTime($1, $3, "", "")}
 
   // "12:00:00"
-| INT COLON INT COLON INT {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, $5, "")}
+| INT TimeSepOpt INT TimeSepOpt INT {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, $5, "")}
 
   // "9:00 AM"
-| INT COLON INT AM {$$ = NewTime($1, $3, "", "")}
+| INT TimeSepOpt INT AM {$$ = NewTime($1, $3, "", "")}
 
   // "12:00 PM"
-| INT COLON INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, "", "")}
+| INT TimeSepOpt INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, "", "")}
 
 /* // "Feb 3 2023 11am PST" */
 /* |   time TimeZoneOpt { */
@@ -205,23 +268,37 @@ Time:
 ;
 
 
+/* Separators */
+
 DateSep:
-  QUO
+  DEC
 | PERIOD
+| SUB
+| QUO
 ;
 
 
-DateTimeSep:
+DateTimeSepOpt:
 
 | AT
+| DEC
 | SUB
 ;
 
 
 RangeSep:
-  SUB
+  DEC
+| SUB
 | THROUGH
+| TILL
 | TO
+| UNTIL
+;
+
+
+TimeSepOpt:
+
+| COLON
 ;
 
 

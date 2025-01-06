@@ -2,6 +2,7 @@
 package glr
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -91,25 +92,26 @@ func TestGLRParser(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for i, tc := range tests {
+		// for i, tc := range tests[11:12] {
+		t.Run(fmt.Sprintf("%03d__%s", i, tc.name), func(t *testing.T) {
 			g := &Grammar{Rules: glrRules, Actions: glrActions, States: glrStates}
-			results, err := Parse(g, NewSimpleLexer(tt.input))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
+			results, err := Parse(g, NewSimpleLexer(tc.input))
+			if (err != nil) != tc.wantErr {
+				t.Errorf("Parse() error = %v, wantErr %v", err, tc.wantErr)
 				return
 			}
 			if err != nil {
 				return
 			}
-			if len(results) == 0 && tt.want == nil {
+			if len(results) == 0 && tc.want == nil {
 				return
 			}
 
 			// Get the root node (last node in result)
 			got := GetParseNodeValue(g, results[0], "")
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Parse() got rule = %#v, want %#v", got, tt.want)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("Parse() got rule = %#v, want %#v", got, tc.want)
 			}
 
 			// Verify the parse tree structure
@@ -123,30 +125,38 @@ func verifyParseTree(t *testing.T, node *ParseNode) {
 	verifyParseTreeHelper(t, node, visited)
 }
 
-func verifyParseTreeHelper(t *testing.T, node *ParseNode, visited map[*ParseNode]bool) {
-	if node == nil || visited[node] {
+func verifyParseTreeHelper(t *testing.T, n *ParseNode, visited map[*ParseNode]bool) {
+	if n == nil || visited[n] {
 		return
 	}
-	visited[node] = true
+	visited[n] = true
+
+	if n.isAlt {
+		// Recursively verify children
+		for _, child := range n.Children {
+			verifyParseTreeHelper(t, child, visited)
+		}
+		return
+	}
 
 	// Verify node positions are consistent
-	if len(node.Children) > 0 {
-		firstChild := node.Children[0]
-		lastChild := node.Children[len(node.Children)-1]
+	if len(n.Children) > 0 {
+		first := n.Children[0]
+		last := n.Children[len(n.Children)-1]
 
-		if node.startPos != firstChild.startPos {
+		if n.startPos != first.startPos {
 			t.Errorf("Node start position inconsistent: node=%d, firstChild=%d",
-				node.startPos, firstChild.startPos)
+				n.startPos, first.startPos)
 		}
 
-		if node.endPos != lastChild.endPos {
+		if n.endPos != last.endPos {
 			t.Errorf("Node end position inconsistent: node=%d, lastChild=%d",
-				node.endPos, lastChild.endPos)
+				n.endPos, last.endPos)
 		}
 	}
 
 	// Recursively verify children
-	for _, child := range node.Children {
+	for _, child := range n.Children {
 		verifyParseTreeHelper(t, child, visited)
 	}
 }

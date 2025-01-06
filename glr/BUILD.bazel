@@ -11,6 +11,7 @@ go_library(
     ],
     importpath = "github.com/findyourpaths/phil/glr",
     visibility = ["//visibility:public"],
+    deps = ["@com_github_k0kubun_pp_v3//:pp"],
 )
 
 go_test(

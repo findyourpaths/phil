@@ -146,16 +146,16 @@ var weekdaysByNames = map[string]int{
 	"wed":       3,
 	"weds":      3,
 	"wednesday": 3,
-	"th":        4,
-	"thu":       4,
-	"thus":      4,
-	"thursday":  4,
-	"fr":        5,
-	"fri":       5,
-	"friday":    5,
-	"sa":        6,
-	"sat":       6,
-	"saturday":  6,
+	//	"th":        4, recognize this separately because it also appears in "4th"
+	"thu":      4,
+	"thus":     4,
+	"thursday": 4,
+	"fr":       5,
+	"fri":      5,
+	"friday":   5,
+	"sa":       6,
+	"sat":      6,
+	"saturday": 6,
 }
 
 var monthsByNames = map[string]time.Month{
@@ -189,7 +189,7 @@ var ordinals = map[string]bool{
 	"st": true,
 	"nd": true,
 	"rd": true,
-	"th": true,
+	// "th": true, recognize this separately because it also shortens Thursday
 }
 
 func mustAtoi(str string) int {

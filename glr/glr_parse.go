@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+
+	"github.com/k0kubun/pp/v3"
 )
 
 // Debug flags
@@ -75,10 +77,15 @@ type ParseNode struct {
 
 	startPos int
 	endPos   int
-	// numNonterms int
-	numTerms int
 	isAlt    bool
 	ruleID   int
+	score    *parseNodeScore
+}
+
+type parseNodeScore struct {
+	numTerms int
+	size     int
+	depths   int
 }
 
 func (n ParseNode) String() string {
@@ -90,9 +97,9 @@ func (n ParseNode) String() string {
 	if n.Term != "" {
 		rule = fmt.Sprintf("%q", n.Term)
 	} else {
-		rule = strconv.Itoa(n.ruleID)
+		rule = "(rule " + strconv.Itoa(n.ruleID) + ")"
 	}
-	return fmt.Sprintf("%s: [%d, %d]: %s%s: %s", n.score(0), n.startPos, n.endPos, alt, n.Symbol, rule) //n.Value)
+	return fmt.Sprintf("%s [%d:%d] %s%s %s", n.score, n.startPos, n.endPos, alt, n.Symbol, rule) //n.Value)
 }
 
 func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
@@ -116,10 +123,56 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
 	args := make([]reflect.Value, len(cs))
 	for i, c := range cs {
 		args[i] = reflect.ValueOf(GetParseNodeValue(g, c, spaces+"  "))
+		debugf("%sgot args[%d]: %#v\n", spaces, i, args[i])
 	}
+	debugf("%scalling rule %d fn with %d args\n", spaces, n.ruleID, len(args))
 	r := fn.Call(args)[0].Interface()
-	debugf("%sreturning computed value: %#v\n", spaces, r)
+	if spaces == "" {
+		pp.Default.SetColoringEnabled(false)
+		debugf("%sreturning computed value:\n%s\n", spaces, pp.Sprint(r))
+	}
 	return r
+}
+
+func setNodeChildrenAndScore(n *ParseNode, children []*ParseNode) {
+	if n.isAlt {
+		n.Children = sortAlternatives(children)
+		n.score = n.Children[0].score
+		for _, c := range n.Children {
+			if n.startPos > c.startPos {
+				n.startPos = c.startPos
+			}
+			if n.endPos < c.endPos {
+				n.endPos = c.endPos
+			}
+		}
+		return
+	}
+
+	n.Children = children
+	for _, c := range n.Children {
+		if n.startPos > c.startPos {
+			n.startPos = c.startPos
+		}
+		if n.endPos < c.endPos {
+			n.endPos = c.endPos
+		}
+	}
+
+	sc := &parseNodeScore{}
+	sc.size = 1
+	// sc.depths = depth
+	if n.Term != "" {
+		sc.numTerms = 1
+	} else {
+		for _, c := range n.Children {
+			csc := c.score
+			sc.numTerms += csc.numTerms
+			sc.size += csc.size
+			// sc.depths += csc.depths
+		}
+	}
+	n.score = sc
 }
 
 // We prefer parse trees covering the most terms, with the fewest total
@@ -133,61 +186,22 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
 //
 // This encourages branching at lower levels because each new branch deeper in
 // the tree contributes more to the overall score.
-func sortParseNodes(ns []*ParseNode, depth int) ([]*ParseNode, []*scoredParseNode) {
-	sns := []*scoredParseNode{}
-	for _, n := range ns {
-		sns = append(sns, n.score(depth))
-	}
+func sortAlternatives(ns []*ParseNode) []*ParseNode {
+	sort.Slice(ns, func(i, j int) bool {
+		return (ns[i].score.numTerms > ns[j].score.numTerms) ||
 
-	sort.Slice(sns, func(i, j int) bool {
-		return (sns[i].numTerms > sns[j].numTerms) ||
+			(ns[i].score.numTerms == ns[j].score.numTerms &&
+				ns[i].score.size < ns[j].score.size) ||
 
-			(sns[i].numTerms == sns[j].numTerms &&
-				sns[i].size < sns[j].size) ||
-
-			(sns[i].numTerms == sns[j].numTerms &&
-				sns[i].size == sns[j].size &&
-				sns[i].depths > sns[j].depths)
+			(ns[i].score.numTerms == ns[j].score.numTerms &&
+				ns[i].score.size == ns[j].score.size &&
+				ns[i].score.depths > ns[j].score.depths)
 	})
-
-	rs := []*ParseNode{}
-	for _, sn := range sns {
-		rs = append(rs, sn.node)
-	}
-	return rs, sns
+	return ns
 }
 
-type scoredParseNode struct {
-	numTerms int
-	size     int
-	depths   int
-	node     *ParseNode
-}
-
-func (s scoredParseNode) String() string {
+func (s parseNodeScore) String() string {
 	return fmt.Sprintf("%d.%d.%d", s.numTerms, s.size, s.depths)
-}
-
-func (n *ParseNode) score(depth int) *scoredParseNode {
-	if n.isAlt {
-		_, sns := sortParseNodes(n.Children, depth)
-		return sns[0]
-	}
-
-	r := &scoredParseNode{node: n}
-	r.size = 1
-	r.depths = depth
-	if n.Term != "" {
-		r.numTerms = 1
-	} else {
-		for _, c := range n.Children {
-			csc := c.score(depth + 1)
-			r.numTerms += csc.numTerms
-			r.size += csc.size
-			r.depths += csc.depths
-		}
-	}
-	return r
 }
 
 func printNodes(ns []*ParseNode, spaces string) {
@@ -288,11 +302,13 @@ type GLRState struct {
 	parsersToShift   []*StackNode
 	statesToShiftTo  []int
 	acceptingParsers []*StackNode
-	ruleNodes        map[string]*ParseNode
-	symbolNodes      []*ParseNode
-	partialResults   []*ParseNode
-	lookahead        *ParseNode
-	debug            bool
+	// ruleNodes        map[string]*ParseNode
+	ruleNodes      []*ParseNode
+	symbolNodes    []*ParseNode
+	partialResults []*ParseNode
+	lookahead      *ParseNode
+	debug          bool
+	position       int
 }
 
 type Lexer interface {
@@ -315,8 +331,9 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	debugf("\nstarting GLR parse\n")
 
 	s := &GLRState{
-		ruleNodes: map[string]*ParseNode{},
-		debug:     false,
+		// ruleNodes: map[string]*ParseNode{},
+		// ruleNodes: []*ParseNode{},
+		debug: false,
 	}
 
 	// Initialize with start state
@@ -324,18 +341,17 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	s.activeParsers = []*StackNode{firstParser}
 	debugf("initialized with start state 0\n")
 
-	pos := 0
 	for {
 		// Create parse node for token
-		sym, val, hasMore := l.NextToken(pos)
+		sym, val, hasMore := l.NextToken(s.position)
 		term := &ParseNode{
 			Symbol:   sym,
 			Term:     val,
-			startPos: pos,
-			endPos:   pos + 1,
-			numTerms: 1,
+			startPos: s.position,
+			endPos:   s.position + 1,
 		}
-		pos++
+		setNodeChildrenAndScore(term, nil)
+		s.position++
 		if sym == "" {
 			break
 		}
@@ -363,6 +379,12 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 				found = true
 				break
 			}
+			for _, apc := range ap.Children {
+				if pr == apc {
+					found = true
+					break
+				}
+			}
 		}
 		if !found {
 			prs = append(prs, pr)
@@ -370,7 +392,14 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	}
 
 	debugf("ended with %d accepting parsers and %d partial results\n", len(aps), len(prs))
-	rs, _ := sortParseNodes(append(aps, prs...), 0)
+	alts := append(aps, prs...)
+	if len(alts) == 0 {
+		debugf("found no results\n")
+		return nil, nil
+	}
+	all := &ParseNode{isAlt: true}
+	setNodeChildrenAndScore(all, alts)
+	rs := all.Children
 	debugf("found %d results\n", len(rs))
 	for i, r := range rs {
 		debugf("result[%d]\n", i)
@@ -388,7 +417,8 @@ func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
 	s.parsersToAct = s.activeParsers
 	s.parsersToShift = nil
 	s.statesToShiftTo = nil
-	s.ruleNodes = make(map[string]*ParseNode)
+	// s.ruleNodes = make(map[string]*ParseNode)
+	s.ruleNodes = nil
 	s.symbolNodes = nil
 
 	// Process all parsers
@@ -469,6 +499,8 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 	if stackNode == nil {
 		// Create new parser state
 		nonterm := getSymbolNode(s, ruleNode)
+		debugf("  symbol node nonterm\n")
+		printNodeTree(nonterm, "  ")
 		stackNode = &StackNode{
 			state:     gotoState,
 			backlinks: []*StackLink{{stackNode: p, node: nonterm}}}
@@ -491,6 +523,9 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 
 	// Add new path
 	nonterm := getSymbolNode(s, ruleNode)
+	debugf("  new path nonterm\n")
+	printNodeTree(nonterm, "  ")
+
 	newLink := &StackLink{stackNode: p, node: nonterm}
 	stackNode.backlinks = append(stackNode.backlinks, newLink)
 
@@ -509,54 +544,71 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 }
 
 func shifter(s *GLRState) []*StackNode {
-	var newParsers []*StackNode
+	var rs []*StackNode
 
 	for i, p := range s.parsersToShift {
 		newState := s.statesToShiftTo[i]
 		newLink := &StackLink{stackNode: p, node: s.lookahead}
-		stackNode := getStackNode(newParsers, newState)
+		r := getStackNode(rs, newState)
 
-		if stackNode != nil {
-			stackNode.backlinks = append(stackNode.backlinks, newLink)
+		if r != nil {
+			r.backlinks = append(r.backlinks, newLink)
 			continue
 		}
 
-		stackNode = &StackNode{state: newState, backlinks: []*StackLink{newLink}}
-		newParsers = append(newParsers, stackNode)
+		r = &StackNode{state: newState, backlinks: []*StackLink{newLink}}
+		rs = append(rs, r)
 	}
 
-	return newParsers
+	return rs
 }
 
-func getRuleNode(g *Grammar, s *GLRState, rlID int, kids []*ParseNode) *ParseNode {
-	debugf("getting rule node for rule: %d and %d kids\n", rlID, len(kids))
+func getRuleNode(g *Grammar, s *GLRState, rlID int, children []*ParseNode) *ParseNode {
+	debugf("getting rule node for rule: %d and %d kids\n", rlID, len(children))
 	rl := &(g.Rules.Items[rlID])
-	key := fmt.Sprintf("%s:%v", rl.Nonterminal, kids)
-	if node, exists := s.ruleNodes[key]; exists {
-		return node
+	for _, old := range s.ruleNodes {
+		if rl.Nonterminal != old.Symbol {
+			continue
+		}
+		if len(old.Children) != len(children) {
+			continue
+		}
+		sameCs := true
+		for i, oldC := range old.Children {
+			if oldC != children[i] {
+				sameCs = false
+				break
+			}
+		}
+		if sameCs {
+			debugf("returning old: %s\n", old)
+			return old
+		}
 	}
 
-	// numNonterms := 1
-	numTerms := 0
-	for _, kid := range kids {
-		// numNonterms += kid.numNonterms
-		numTerms += kid.numTerms
-	}
+	// key := fmt.Sprintf("%s:%v", rl.Nonterminal, kids)
+	// debugf("  key: %q\n", key)
+	// if node, exists := s.ruleNodes[key]; exists {
+	// 	return node
+	// }
 
-	node := &ParseNode{
+	r := &ParseNode{
 		Symbol: rl.Nonterminal,
-		// Value:    val,
-		Children: kids,
-		// numNonterms: numNonterms,
-		numTerms: numTerms,
-		ruleID:   rlID,
+		ruleID: rlID,
 	}
-	if len(kids) > 0 {
-		node.startPos = kids[0].startPos
-		node.endPos = kids[len(kids)-1].endPos
+	if len(children) > 0 {
+		r.startPos = children[0].startPos
+		r.endPos = children[len(children)-1].endPos
+	} else {
+		r.startPos = s.position
+		r.endPos = s.position
 	}
-	s.ruleNodes[key] = node
-	return node
+	setNodeChildrenAndScore(r, children)
+	// s.ruleNodes[key] = r
+
+	debugf("  got rule node nonterm\n")
+	printNodeTree(r, "  ")
+	return r
 }
 
 func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
@@ -592,7 +644,7 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 			}
 		}
 		debugf("adding new as alternative to old\n")
-		old.Children, _ = sortParseNodes(append(old.Children, new), 0)
+		setNodeChildrenAndScore(old, append(old.Children, new))
 		debugf("returning\n")
 		printNodeTree(old, "")
 		return old
@@ -604,16 +656,15 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 	// new child of the promoted old, along with new.
 	newOld := &ParseNode{
 		Symbol:   old.Symbol,
-		Children: old.Children,
 		startPos: old.startPos,
 		endPos:   old.endPos,
-		numTerms: old.numTerms,
 		ruleID:   old.ruleID,
 	}
+	setNodeChildrenAndScore(newOld, old.Children)
 
-	old.Children, _ = sortParseNodes([]*ParseNode{newOld, new}, 0)
 	old.isAlt = true
 	old.ruleID = 0
+	setNodeChildrenAndScore(old, []*ParseNode{newOld, new})
 
 	debugf("adding alternative by merging new and old\n")
 	debugf("returning\n")

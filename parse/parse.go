@@ -29,15 +29,16 @@ func debugf(format string, args ...any) {
 }
 
 // daysre is a regexp to match day names, either long or short, regardless of case.
-var daysRE = regexp.MustCompile(`(?i:\b` + strings.Join(
-	[]string{
-		"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
-		"sun", "mon", "tue", "wed", "thu", "fri", "sat",
-	}, `\b|\b`) + `\b,?)`)
+// var daysRE = regexp.MustCompile(`(?i:\b` + strings.Join(
+// 	[]string{
+// 		"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+// 		"sun", "mon", "tue", "wed", "thu", "fri", "sat",
+// 	}, `\b|\b`) + `\b,?)`)
 
 // Match a digit on one side and a letter on another. Used to separate `12pm`.
 var boundaryRE1 = regexp.MustCompile(`([[:alpha:]])([[:^alpha:]])`)
 var boundaryRE2 = regexp.MustCompile(`([[:^alpha:]])([[:alpha:]])`)
+var spacifyRE = regexp.MustCompile(`\s*\b(.|-)\b\s*`)
 
 var singletonTZ = timezone.New()
 
@@ -69,12 +70,12 @@ func ExtractDateTimeTZRanges(year int, dateMode, timeZone, in string) (*DateTime
 
 	// yyDebug = 3
 	debugf("in before processing: %q\n", in)
-	in = daysRE.ReplaceAllString(in, ``)
+	// in = daysRE.ReplaceAllString(in, ``)
 	in = boundaryRE1.ReplaceAllString(in, `$1 $2`)
 	in = boundaryRE2.ReplaceAllString(in, `$1 $2`)
-	in = strings.Replace(in, ".", " . ", -1)
-	in = strings.TrimPrefix(in, "When ")
-	in = strings.TrimPrefix(in, "when ")
+	in = spacifyRE.ReplaceAllString(in, ` $1 `)
+	// in = strings.TrimPrefix(in, "When ")
+	// in = strings.TrimPrefix(in, "when ")
 	in = CleanTextLine(in)
 	debugf("in after processing: %q\n", in)
 
