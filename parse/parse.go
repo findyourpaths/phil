@@ -38,7 +38,9 @@ func debugf(format string, args ...any) {
 // Match a digit on one side and a letter on another. Used to separate `12pm`.
 var boundaryRE1 = regexp.MustCompile(`([[:alpha:]])([[:^alpha:]])`)
 var boundaryRE2 = regexp.MustCompile(`([[:^alpha:]])([[:alpha:]])`)
-var spacifyRE = regexp.MustCompile(`\s*\b(.|-)\b\s*`)
+
+// var spacifyRE = regexp.MustCompile(`\s*\b(.|-)\b\s*`)
+var spacifyRE = regexp.MustCompile(`(?:^|\s*\b)(.|-)(?:\b\s*|$)`)
 
 var singletonTZ = timezone.New()
 

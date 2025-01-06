@@ -224,6 +224,14 @@ func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
 	return civil.Date{Day: mustAtoi(first), Month: time.Month(mustAtoi(second)), Year: year}
 }
 
+func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []civil.Date {
+	rs := []civil.Date{}
+	for _, dayAny := range daysAny {
+		rs = append(rs, NewDMYDate(dayAny, monthAny, yearAny))
+	}
+	return rs
+}
+
 func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
 	var day int
 	switch dayAny.(type) {
@@ -265,6 +273,14 @@ func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
 	}
 
 	return civil.Date{Day: day, Month: month, Year: year}
+}
+
+func NewMDsYDates(monthAny any, daysAny []string, yearAny any) []civil.Date {
+	rs := []civil.Date{}
+	for _, dayAny := range daysAny {
+		rs = append(rs, NewMDYDate(monthAny, dayAny, yearAny))
+	}
+	return rs
 }
 
 func NewMDYDate(monthAny any, dayAny any, yearAny any) civil.Date {

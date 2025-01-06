@@ -102,10 +102,12 @@ func (n ParseNode) String() string {
 	return fmt.Sprintf("%s [%d:%d] %s%s %s", n.score, n.startPos, n.endPos, alt, n.Symbol, rule) //n.Value)
 }
 
+var space = "\u2758 "
+
 func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
 	debugf("%sgetting value for: %s\n", spaces, n)
 	if n.isAlt {
-		r := GetParseNodeValue(g, n.Children[0], spaces+"  ")
+		r := GetParseNodeValue(g, n.Children[0], spaces+space)
 		debugf("%sreturning first alternative\n", spaces)
 		return r
 	}
@@ -122,7 +124,7 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
 	cs := n.Children
 	args := make([]reflect.Value, len(cs))
 	for i, c := range cs {
-		args[i] = reflect.ValueOf(GetParseNodeValue(g, c, spaces+"  "))
+		args[i] = reflect.ValueOf(GetParseNodeValue(g, c, spaces+space))
 		debugf("%sgot args[%d]: %#v\n", spaces, i, args[i])
 	}
 	debugf("%scalling rule %d fn with %d args\n", spaces, n.ruleID, len(args))
@@ -169,9 +171,10 @@ func setNodeChildrenAndScore(n *ParseNode, children []*ParseNode) {
 			csc := c.score
 			sc.numTerms += csc.numTerms
 			sc.size += csc.size
-			// sc.depths += csc.depths
+			sc.depths += csc.depths
 		}
 	}
+	sc.depths += sc.size
 	n.score = sc
 }
 
@@ -219,7 +222,7 @@ func printNodeTree(n *ParseNode, spaces string) {
 	}
 	debugf("%s%s\n", spaces, n)
 	for _, child := range n.Children {
-		printNodeTree(child, spaces+"  ")
+		printNodeTree(child, spaces+space)
 	}
 }
 
