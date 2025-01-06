@@ -123,6 +123,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return BEGINNING
 			case "calendar":
 				return CALENDAR
+			case "date":
+				return DATE
 			case "from":
 				return FROM
 			case "google":
@@ -143,6 +145,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return TH
 			case "till":
 				return TILL
+			case "time":
+				return TIME
 			case "to":
 				return TO
 			case "until":

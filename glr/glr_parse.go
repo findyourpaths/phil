@@ -216,13 +216,25 @@ func printNodes(ns []*ParseNode, spaces string) {
 	}
 }
 
-func printNodeTree(n *ParseNode, spaces string) {
+func printNodeRoot(n *ParseNode) {
 	if !DoDebug {
 		return
 	}
+	printNodeTree(n, map[*ParseNode]bool{}, "  ")
+}
+
+// var hideCycles = true
+var hideCycles = false
+
+func printNodeTree(n *ParseNode, seen map[*ParseNode]bool, spaces string) {
+	if hideCycles && seen[n] {
+		debugf("%s-> %s\n", spaces, n.Symbol)
+		return
+	}
+	seen[n] = true
 	debugf("%s%s\n", spaces, n)
 	for _, child := range n.Children {
-		printNodeTree(child, spaces+space)
+		printNodeTree(child, seen, spaces+space)
 	}
 }
 
@@ -406,7 +418,7 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	debugf("found %d results\n", len(rs))
 	for i, r := range rs {
 		debugf("result[%d]\n", i)
-		printNodeTree(r, "")
+		printNodeRoot(r)
 	}
 	return rs, nil
 }
@@ -496,14 +508,14 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 
 	ruleNode := getRuleNode(g, s, rlID, kids)
 	stackNode := getStackNode(s.activeParsers, gotoState)
-	debugf("  gotoState: %d, stackNode: %v\n", gotoState, stackNode)
-	printNodeTree(ruleNode, "  ")
+	debugf("  gotoState: %d, stackNode: %#v\n", gotoState, stackNode)
+	printNodeRoot(ruleNode)
 
 	if stackNode == nil {
 		// Create new parser state
 		nonterm := getSymbolNode(s, ruleNode)
 		debugf("  symbol node nonterm\n")
-		printNodeTree(nonterm, "  ")
+		printNodeRoot(nonterm)
 		stackNode = &StackNode{
 			state:     gotoState,
 			backlinks: []*StackLink{{stackNode: p, node: nonterm}}}
@@ -527,7 +539,7 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 	// Add new path
 	nonterm := getSymbolNode(s, ruleNode)
 	debugf("  new path nonterm\n")
-	printNodeTree(nonterm, "  ")
+	printNodeRoot(nonterm)
 
 	newLink := &StackLink{stackNode: p, node: nonterm}
 	stackNode.backlinks = append(stackNode.backlinks, newLink)
@@ -610,7 +622,7 @@ func getRuleNode(g *Grammar, s *GLRState, rlID int, children []*ParseNode) *Pars
 	// s.ruleNodes[key] = r
 
 	debugf("  got rule node nonterm\n")
-	printNodeTree(r, "  ")
+	printNodeRoot(r)
 	return r
 }
 
@@ -630,9 +642,9 @@ func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
 func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 	debugf("maybe adding alternative with old.symbol: %q, old.isAlt: %t, new.symbol: %q, new.isAlt: %t\n", old.Symbol, old.isAlt, new.Symbol, new.isAlt)
 	debugf("old\n")
-	printNodeTree(old, "")
+	printNodeRoot(old)
 	debugf("new\n")
-	printNodeTree(new, "")
+	printNodeRoot(new)
 
 	if reflect.DeepEqual(old, new) {
 		debugf("skipping adding alternative because new == old\n")
@@ -649,7 +661,7 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 		debugf("adding new as alternative to old\n")
 		setNodeChildrenAndScore(old, append(old.Children, new))
 		debugf("returning\n")
-		printNodeTree(old, "")
+		printNodeRoot(old)
 		return old
 	}
 
@@ -671,7 +683,7 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 
 	debugf("adding alternative by merging new and old\n")
 	debugf("returning\n")
-	printNodeTree(old, "")
+	printNodeRoot(old)
 	return old
 }
 

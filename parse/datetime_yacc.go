@@ -25,30 +25,32 @@ const BEGINNING = 57351
 const CALENDAR = 57352
 const COLON = 57353
 const COMMA = 57354
-const DEC = 57355
-const FROM = 57356
-const GOOGLE = 57357
-const ICS = 57358
-const OF = 57359
-const ON = 57360
-const ORD_IND = 57361
-const PM = 57362
-const PERIOD = 57363
-const QUO = 57364
-const SEMICOLON = 57365
-const SUB = 57366
-const THROUGH = 57367
-const T = 57368
-const TH = 57369
-const TILL = 57370
-const TO = 57371
-const UNTIL = 57372
-const WHEN = 57373
-const IDENT = 57374
-const MONTH_NAME = 57375
-const WEEKDAY_NAME = 57376
-const YEAR = 57377
-const INT = 57378
+const DATE = 57355
+const DEC = 57356
+const FROM = 57357
+const GOOGLE = 57358
+const ICS = 57359
+const OF = 57360
+const ON = 57361
+const ORD_IND = 57362
+const PM = 57363
+const PERIOD = 57364
+const QUO = 57365
+const SEMICOLON = 57366
+const SUB = 57367
+const THROUGH = 57368
+const T = 57369
+const TH = 57370
+const TILL = 57371
+const TIME = 57372
+const TO = 57373
+const UNTIL = 57374
+const WHEN = 57375
+const IDENT = 57376
+const MONTH_NAME = 57377
+const WEEKDAY_NAME = 57378
+const YEAR = 57379
+const INT = 57380
 
 var yyToknames = [...]string{
 	"$end",
@@ -63,6 +65,7 @@ var yyToknames = [...]string{
 	"CALENDAR",
 	"COLON",
 	"COMMA",
+	"DATE",
 	"DEC",
 	"FROM",
 	"GOOGLE",
@@ -79,6 +82,7 @@ var yyToknames = [...]string{
 	"T",
 	"TH",
 	"TILL",
+	"TIME",
 	"TO",
 	"UNTIL",
 	"WHEN",
@@ -95,163 +99,217 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-var yyExca = [...]int8{
+var yyExca = [...]int16{
 	-1, 1,
 	1, -1,
 	-2, 0,
-	-1, 5,
-	1, 99,
-	10, 99,
-	16, 99,
-	-2, 93,
-	-1, 10,
-	33, 19,
-	-2, 64,
 	-1, 30,
-	7, 19,
-	-2, 64,
+	8, 134,
+	15, 134,
+	19, 134,
+	-2, 91,
+	-1, 32,
+	8, 137,
+	15, 137,
+	19, 137,
+	-2, 93,
+	-1, 42,
+	7, 29,
+	-2, 84,
+	-1, 53,
+	12, 97,
+	22, 97,
+	23, 97,
+	-2, 56,
+	-1, 54,
+	12, 99,
+	22, 99,
+	23, 99,
+	-2, 57,
 }
 
 const yyPrivate = 57344
 
-const yyLast = 319
+const yyLast = 516
 
 var yyAct = [...]uint8{
-	16, 9, 60, 38, 80, 15, 42, 61, 82, 29,
-	13, 14, 17, 59, 15, 31, 73, 64, 79, 13,
-	186, 74, 20, 70, 57, 58, 83, 15, 36, 21,
-	40, 72, 13, 32, 72, 72, 53, 69, 43, 177,
-	72, 174, 63, 66, 51, 41, 49, 50, 170, 44,
-	45, 72, 52, 46, 47, 48, 90, 34, 165, 92,
-	94, 37, 162, 31, 104, 64, 167, 59, 152, 72,
-	105, 106, 107, 144, 32, 30, 143, 110, 109, 58,
-	116, 117, 114, 150, 112, 131, 103, 115, 130, 34,
-	126, 33, 119, 72, 34, 75, 37, 128, 124, 127,
-	76, 123, 125, 132, 136, 77, 118, 102, 99, 133,
-	98, 78, 199, 81, 197, 67, 196, 115, 64, 194,
-	193, 51, 141, 82, 142, 192, 68, 45, 191, 52,
-	46, 47, 48, 190, 147, 93, 189, 188, 37, 138,
-	139, 154, 156, 187, 20, 185, 155, 157, 20, 159,
-	62, 21, 22, 113, 164, 21, 18, 163, 169, 149,
-	172, 19, 168, 160, 171, 153, 173, 151, 18, 158,
-	146, 145, 161, 19, 20, 178, 95, 108, 181, 166,
-	55, 21, 22, 56, 96, 184, 20, 67, 183, 195,
-	182, 175, 7, 21, 22, 10, 198, 180, 68, 45,
-	67, 179, 46, 47, 48, 176, 148, 4, 67, 108,
-	137, 68, 45, 122, 111, 46, 47, 48, 43, 68,
-	45, 35, 95, 46, 47, 48, 49, 50, 81, 44,
-	45, 101, 51, 46, 47, 48, 20, 121, 65, 85,
-	52, 26, 62, 21, 22, 56, 85, 49, 50, 27,
-	86, 97, 85, 73, 49, 50, 85, 86, 89, 140,
-	49, 50, 40, 86, 49, 50, 65, 86, 53, 91,
-	85, 120, 84, 88, 85, 25, 51, 41, 49, 50,
-	51, 86, 49, 50, 52, 86, 75, 75, 52, 6,
-	3, 76, 76, 134, 40, 100, 77, 77, 39, 53,
-	53, 54, 78, 78, 81, 71, 12, 129, 135, 41,
-	8, 11, 24, 23, 87, 28, 2, 5, 1,
+	76, 8, 13, 155, 8, 99, 42, 46, 73, 49,
+	78, 66, 100, 72, 85, 115, 59, 84, 77, 5,
+	94, 88, 5, 44, 106, 45, 47, 52, 75, 65,
+	11, 71, 15, 50, 6, 44, 8, 66, 51, 197,
+	40, 46, 111, 49, 150, 67, 81, 12, 239, 128,
+	12, 129, 131, 237, 5, 65, 4, 12, 7, 28,
+	44, 122, 110, 236, 41, 233, 134, 63, 132, 232,
+	135, 231, 138, 230, 140, 68, 123, 229, 143, 119,
+	44, 228, 12, 12, 48, 52, 142, 144, 145, 69,
+	226, 139, 60, 118, 112, 52, 142, 224, 136, 203,
+	70, 55, 61, 62, 56, 113, 57, 58, 146, 149,
+	23, 151, 152, 44, 148, 202, 43, 28, 121, 199,
+	190, 185, 160, 161, 162, 19, 130, 132, 165, 167,
+	153, 184, 14, 20, 89, 28, 126, 15, 79, 159,
+	172, 2, 163, 130, 116, 38, 74, 168, 169, 80,
+	171, 95, 127, 124, 18, 108, 176, 120, 180, 175,
+	165, 182, 166, 133, 186, 64, 49, 46, 123, 189,
+	170, 37, 173, 174, 193, 195, 43, 117, 21, 183,
+	198, 27, 142, 187, 201, 114, 164, 132, 43, 204,
+	179, 93, 26, 207, 166, 210, 132, 212, 9, 130,
+	137, 213, 39, 96, 109, 86, 216, 217, 141, 196,
+	220, 206, 22, 209, 107, 225, 10, 36, 181, 3,
+	192, 194, 154, 215, 35, 1, 218, 219, 0, 221,
+	222, 223, 234, 0, 0, 227, 0, 238, 235, 0,
+	208, 157, 211, 188, 69, 124, 142, 156, 158, 130,
+	130, 0, 69, 0, 124, 70, 55, 0, 200, 56,
+	0, 57, 58, 70, 55, 205, 19, 56, 74, 57,
+	58, 0, 130, 0, 20, 0, 44, 214, 60, 29,
+	112, 191, 30, 34, 33, 69, 91, 0, 61, 62,
+	31, 113, 0, 0, 0, 0, 70, 55, 0, 19,
+	56, 32, 57, 58, 141, 0, 15, 20, 28, 16,
+	29, 24, 0, 30, 34, 33, 0, 25, 0, 0,
+	0, 31, 29, 24, 0, 30, 34, 33, 0, 25,
+	19, 0, 32, 31, 0, 17, 0, 15, 20, 28,
+	16, 0, 19, 69, 32, 82, 34, 33, 79, 15,
+	20, 28, 16, 0, 70, 55, 0, 0, 56, 80,
+	57, 58, 19, 60, 83, 53, 28, 0, 0, 15,
+	20, 28, 44, 61, 62, 0, 54, 55, 0, 0,
+	56, 29, 57, 58, 90, 0, 15, 79, 91, 44,
+	0, 60, 31, 112, 0, 69, 0, 0, 80, 0,
+	89, 61, 62, 92, 113, 0, 70, 55, 0, 0,
+	56, 87, 57, 58, 69, 0, 15, 44, 28, 44,
+	82, 34, 33, 0, 0, 70, 55, 0, 0, 56,
+	0, 57, 58, 103, 0, 15, 177, 19, 44, 83,
+	0, 104, 101, 125, 15, 20, 28, 44, 29, 105,
+	97, 90, 178, 147, 79, 91, 101, 0, 0, 31,
+	0, 0, 60, 0, 53, 80, 98, 147, 0, 0,
+	92, 0, 61, 62, 0, 54, 55, 29, 87, 56,
+	90, 57, 58, 0, 91, 15, 97, 60, 31, 112,
+	0, 0, 101, 103, 0, 0, 0, 61, 62, 92,
+	113, 104, 98, 102, 0, 37, 0, 87, 157, 105,
+	15, 0, 0, 0, 156, 158,
 }
 
 var yyPact = [...]int16{
-	176, -1000, 159, -1000, -1000, 234, -1000, 39, 58, 188,
-	25, 147, 209, 205, 195, 4, 279, 87, -1000, -1000,
-	-1000, -1000, 239, -1000, 147, 248, -1000, -1000, 21, 262,
-	102, 187, -1000, 149, -1000, 244, 74, -1000, 72, 214,
-	-1000, -1000, 71, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
-	-1000, -1000, -1000, -1000, -1000, -2, 257, 195, 278, 279,
-	241, 233, -2, -1, -1, 142, 209, -1000, -1000, -1,
-	181, 117, 213, -1000, 117, -1000, -1000, -1000, -1000, -28,
-	-28, -1000, 289, 70, -1, -1000, -1000, -1000, 221, -1000,
-	-1000, 180, 65, 62, 57, -1000, -1000, 61, 52, 243,
-	-1000, -1000, 288, -28, 117, 141, 177, -1000, -1000, -1000,
-	195, 195, 202, 261, 226, 202, -1000, -1000, 243, -1000,
-	-1000, -1000, 61, 40, 136, 135, -1, 173, 60, 53,
-	195, 47, 132, 32, -1000, -1000, -1000, 130, -5, -5,
-	174, -1, 128, 195, 26, -1000, -1000, 122, 119, 22,
-	195, -1000, -1000, -1000, 33, 121, 15, 121, -1, -1000,
-	-1000, 5, 195, -1000, -1000, 172, 3, -1, 168, 164,
-	-1, 157, 155, 152, 110, -16, 108, 104, 101, 98,
-	93, 90, 85, 84, 279, -1000, 81, -1000, 79, -1000,
-	-1000, -1000, -1000, -1000, -1000, -28, -1000, -1000, 77, -1000,
+	302, -1000, 164, 302, -1000, 22, -3, 102, 351, -1000,
+	314, 230, -3, 334, 373, 139, 481, -1000, -1000, -1000,
+	-1000, 469, 409, 475, -1000, -1000, -1000, -1000, 132, -1000,
+	-1000, -1000, -1000, -1000, -1000, 302, 314, -1000, 164, -1000,
+	42, 150, 381, -1000, 421, 99, -1000, 145, -15, -1000,
+	75, 379, 98, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
+	-1000, -1000, -1000, -1000, -1000, 22, 450, 271, -1000, -1000,
+	-1000, -15, 102, -15, 107, 334, 475, 22, -1000, -1000,
+	-1000, -1000, -1000, -1000, 469, 440, 107, 445, -1000, -1000,
+	-1000, -1000, -1000, 139, -1000, -1000, 421, -1000, -1000, 6,
+	-1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, 107, -1000,
+	379, -15, -1000, -1000, 132, -1000, -1000, 498, -1000, -1000,
+	102, -15, -15, 400, -1000, -1000, -1000, -15, -3, 102,
+	-1000, 266, -1000, -1000, 329, 334, -1000, 373, 230, 230,
+	102, 107, -1000, 98, -1000, -1000, -1000, -1000, -1000, -1000,
+	431, 266, -1000, -1000, 231, -1000, -1000, -1000, -1000, -15,
+	-3, 94, 84, -15, 102, -15, -15, 230, -15, 83,
+	80, 334, -1000, 238, 238, 230, 1, -1000, -1000, 379,
+	-1000, 82, 230, -15, -1000, -1000, 78, 62, -15, 230,
+	-1000, -1000, -3, 97, -3, 97, 75, -1000, -1000, -1000,
+	-15, 230, -1000, -1000, 102, -15, -15, 102, 102, -15,
+	102, 102, 102, 60, -15, 53, 102, 44, 40, 36,
+	34, 32, 28, 124, -1000, 26, -1000, 16, -1000, -1000,
+	-1000, -1000, -1000, -1000, 469, 124, -1000, -1000, 11, -1000,
 }
 
-var yyPgo = [...]int16{
-	0, 318, 317, 289, 11, 12, 7, 1, 307, 0,
-	316, 313, 312, 28, 311, 306, 2, 4, 305, 3,
-	298, 295, 6, 290, 275, 273, 271,
+var yyPgo = [...]uint8{
+	0, 225, 141, 56, 30, 132, 0, 18, 110, 58,
+	34, 2, 224, 222, 3, 219, 217, 75, 198, 216,
+	33, 46, 8, 154, 14, 10, 212, 205, 38, 181,
+	16, 21, 203, 12, 191, 20, 185, 15, 178, 5,
+	192, 178,
 }
 
 var yyR1 = [...]int8{
-	0, 1, 2, 2, 2, 2, 2, 2, 2, 2,
-	2, 2, 2, 2, 2, 2, 2, 2, 2, 7,
-	7, 8, 8, 3, 3, 3, 3, 3, 3, 3,
+	0, 12, 1, 13, 13, 14, 14, 14, 2, 2,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 15, 15, 18, 9,
+	9, 10, 10, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	15, 15, 14, 14, 4, 4, 4, 5, 5, 5,
-	5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-	5, 6, 21, 21, 20, 20, 20, 16, 16, 9,
-	9, 9, 9, 9, 9, 19, 19, 19, 19, 17,
-	17, 17, 17, 17, 13, 13, 13, 13, 13, 13,
-	22, 10, 11, 12, 12, 25, 25, 18, 18, 24,
-	24, 26, 26, 23, 23,
+	19, 19, 23, 23, 20, 20, 17, 17, 17, 17,
+	17, 17, 4, 4, 4, 4, 4, 22, 22, 24,
+	24, 25, 25, 5, 5, 5, 5, 5, 5, 5,
+	5, 5, 5, 5, 5, 5, 5, 26, 26, 29,
+	29, 29, 29, 29, 28, 28, 30, 30, 30, 30,
+	30, 27, 27, 31, 6, 6, 32, 32, 33, 33,
+	33, 33, 7, 7, 34, 34, 35, 8, 8, 36,
+	36, 37, 21, 21, 11, 11, 11, 11, 11, 11,
+	11, 38, 38, 40, 40, 40, 40, 40, 39, 39,
+	16, 16, 41, 41,
 }
 
 var yyR2 = [...]int8{
-	0, 3, 1, 3, 2, 2, 3, 6, 3, 6,
-	7, 7, 8, 8, 8, 8, 9, 9, 5, 1,
-	1, 2, 2, 2, 2, 4, 4, 4, 5, 5,
-	3, 6, 8, 8, 8, 8, 8, 8, 10, 3,
-	0, 1, 1, 1, 1, 3, 3, 3, 2, 3,
-	1, 3, 5, 1, 2, 3, 3, 5, 2, 2,
-	3, 3, 0, 1, 0, 1, 1, 1, 1, 2,
-	2, 3, 5, 4, 4, 1, 1, 1, 1, 0,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 3, 0, 1, 0, 1, 0, 1, 0,
-	1, 0, 1, 0, 1,
+	0, 0, 4, 1, 2, 1, 1, 1, 2, 1,
+	3, 2, 2, 3, 6, 3, 6, 7, 7, 8,
+	8, 8, 8, 9, 9, 5, 1, 2, 1, 1,
+	1, 2, 2, 2, 1, 3, 3, 4, 4, 5,
+	5, 6, 8, 8, 8, 8, 8, 8, 10, 3,
+	1, 2, 1, 1, 1, 2, 1, 1, 1, 1,
+	1, 1, 1, 2, 3, 2, 3, 0, 1, 1,
+	2, 1, 1, 2, 2, 3, 1, 3, 5, 1,
+	2, 3, 3, 5, 2, 2, 3, 1, 2, 1,
+	1, 1, 1, 1, 1, 2, 1, 1, 1, 1,
+	1, 1, 2, 1, 1, 2, 1, 2, 1, 1,
+	1, 1, 1, 2, 1, 2, 1, 1, 2, 1,
+	2, 1, 1, 1, 2, 2, 2, 3, 5, 4,
+	4, 1, 2, 1, 1, 1, 1, 1, 1, 1,
+	0, 1, 0, 1,
 }
 
 var yyChk = [...]int16{
-	-1000, -1, -10, -23, 31, -2, -3, 33, -8, -7,
-	36, -14, -15, -6, -4, -16, -9, -5, 9, 14,
-	27, 34, 35, -11, -12, -24, 7, 15, -8, -7,
-	36, -6, 35, 33, 36, 33, -13, 36, -19, -20,
-	5, 20, -22, 13, 24, 25, 28, 29, 30, 21,
-	22, 19, 27, 11, -3, 33, 36, -4, -5, -9,
-	-16, -6, 33, -13, -19, 33, -13, 13, 24, 33,
-	-6, -18, 36, 12, -17, 8, 13, 18, 24, -9,
-	-17, 26, 36, -19, 33, 13, 24, -3, -25, 10,
-	35, 7, -13, 33, -13, 35, 35, 7, 36, 36,
-	-21, 17, 36, -13, -17, -6, -6, -6, 35, -4,
-	-6, 33, -5, 36, -6, -5, -9, -9, 36, -6,
-	-26, 16, 33, 36, 36, -6, 33, -7, 36, -8,
-	36, 33, -19, -22, 5, 20, -9, 33, -13, -13,
-	33, -19, -7, 36, 33, 35, 35, -6, 33, -13,
-	36, 35, 36, 35, -16, -6, -16, -6, -13, -6,
-	35, -13, 36, 35, 35, 36, -13, 33, -6, -16,
-	33, -6, -16, -6, 36, -13, 33, 36, -6, 33,
-	33, -6, 33, 33, 33, 35, 36, 35, 33, 35,
-	35, 35, 35, 35, 35, -17, 35, 35, -9, 35,
+	-1000, -1, -2, -15, -3, -7, -10, -9, -6, -18,
+	-19, -4, -21, -11, -5, 35, 38, 33, -23, 28,
+	36, -38, -26, -8, 9, 15, -40, -29, 37, 8,
+	11, 19, 30, 13, 12, -12, -16, 7, -2, -18,
+	-10, -9, -6, -8, 38, -7, -6, -7, -17, -6,
+	-20, -28, -7, 14, 25, 26, 29, 31, 32, -30,
+	12, 22, 23, -3, -23, -7, -6, -20, -17, 14,
+	25, -7, -6, -22, -5, -24, -6, -7, -25, 14,
+	25, -21, 11, 30, -11, -24, -27, 38, -31, 27,
+	11, 15, 30, -34, -35, 12, -32, 5, 21, -39,
+	-33, 11, 22, 12, 20, 28, -11, -40, -5, -29,
+	-28, -7, 14, 25, -36, -37, 12, -2, -3, 37,
+	7, -17, -7, -20, -8, 22, 37, 7, -6, -6,
+	-17, -6, -30, -8, -6, -11, -4, -5, -6, -7,
+	-6, -5, -25, -6, -11, -11, -31, 22, -35, -33,
+	38, -6, -6, -37, -13, -14, 16, 10, 17, -7,
+	-6, -6, -6, -7, -9, -6, -10, -6, -7, -7,
+	-28, -24, -11, -20, -20, -7, -39, 5, 21, -28,
+	-14, -9, -6, -7, 37, 37, -6, -7, -17, -6,
+	37, -8, -21, -6, -21, -6, -20, 38, -6, 37,
+	-17, -6, 37, 37, -6, -17, -7, -6, -21, -7,
+	-6, -21, -6, -6, -17, -7, -6, -6, -7, -7,
+	-6, -7, -7, -7, 37, -6, 37, -7, 37, 37,
+	37, 37, 37, 37, -22, -24, 37, 37, -11, 37,
 }
 
-var yyDef = [...]int8{
-	103, -2, 0, 91, 104, -2, 2, 53, 0, 0,
-	-2, 0, 0, 0, 0, 97, 79, 44, 42, 43,
-	67, 68, 50, 1, 0, 95, 94, 100, 4, 0,
-	-2, 58, 54, 5, 22, 0, 0, 21, 0, 62,
-	69, 70, 0, 75, 77, 86, 87, 88, 89, 76,
-	78, 65, 66, 90, 23, 53, 64, 24, 44, 79,
-	97, 0, 53, 0, 0, 59, 0, 84, 85, 0,
-	0, 0, 64, 98, 0, 80, 81, 82, 83, 0,
-	0, 48, 0, 0, 0, 75, 77, 3, 101, 96,
-	6, 0, 0, 0, 0, 55, 8, 0, 0, 0,
-	61, 63, 71, 0, 0, 58, 0, 49, 56, 30,
-	0, 0, 47, 64, 0, 46, 39, 45, 51, 60,
-	92, 102, 0, 0, 0, 26, 0, 0, 19, 20,
-	0, 0, 0, 0, 73, 74, 25, 27, 0, 0,
-	59, 0, 0, 0, 0, 18, 28, 0, 0, 0,
-	0, 57, 72, 29, 0, 0, 0, 0, 0, 52,
-	7, 0, 0, 31, 9, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 10, 0, 11, 0, 0, 0,
-	0, 0, 0, 0, 79, 14, 12, 15, 13, 32,
-	33, 34, 35, 36, 37, 0, 16, 17, 0, 38,
+var yyDef = [...]int16{
+	0, -2, 1, 0, 9, 79, 0, 0, 0, 26,
+	0, 34, 90, 0, 62, 112, 104, 28, 50, 122,
+	123, 0, 0, 76, 52, 53, 131, 87, 117, 133,
+	-2, 136, -2, 89, 92, 0, 0, 141, 8, 26,
+	11, 0, -2, 80, 104, 12, 32, 0, 54, 31,
+	0, 0, 85, -2, -2, 58, 59, 60, 61, 94,
+	96, 98, 100, 33, 50, 79, 0, 0, 54, 56,
+	57, 0, 0, 0, 65, 0, 0, 79, 69, 71,
+	72, 90, 91, 93, 63, 0, 74, 0, 101, 103,
+	134, 135, 137, 113, 114, 116, 105, 125, 126, 0,
+	106, 138, 110, 108, 109, 111, 124, 131, 73, 87,
+	0, 0, 97, 99, 118, 119, 121, 140, 10, 13,
+	0, 54, 0, 0, 81, 110, 15, 0, 0, 0,
+	55, 75, 95, 82, 84, 35, 36, 62, 0, 0,
+	0, 66, 70, 84, 49, 64, 102, 139, 115, 107,
+	127, 77, 86, 120, 2, 3, 5, 6, 7, 0,
+	0, 0, 37, 0, 0, 29, 30, 0, 0, 38,
+	0, 0, 63, 0, 0, 0, 0, 129, 130, 0,
+	4, 0, 0, 0, 25, 39, 0, 0, 0, 0,
+	40, 83, 0, 0, 0, 0, 0, 128, 78, 14,
+	0, 0, 41, 16, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 17, 0, 18, 0, 0, 0, 0,
+	0, 0, 0, 67, 21, 19, 22, 20, 42, 43,
+	44, 45, 46, 47, 0, 68, 23, 24, 0, 48,
 }
 
 var yyTok1 = [...]int8{
@@ -262,7 +320,7 @@ var yyTok2 = [...]int8{
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 	22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-	32, 33, 34, 35, 36,
+	32, 33, 34, 35, 36, 37, 38,
 }
 
 var yyTok3 = [...]int8{
@@ -605,301 +663,331 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		yyDollar = yyS[yypt-3 : yypt+1]
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = yyDollar[1].DateTimeTZRanges
+		}
+	case 2:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRanges = yyDollar[1].DateTimeTZRanges
+		}
+	case 8:
+		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = yyDollar[2].DateTimeTZRanges
 		}
-	case 2:
+	case 9:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = &DateTimeTZRanges{Items: []*DateTimeTZRange{yyDollar[1].DateTimeTZRange}}
 		}
-	case 3:
+	case 10:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = AppendDateTimeTZRanges(yyDollar[1].DateTimeTZRanges, yyDollar[3].DateTimeTZRange)
 		}
-	case 4:
+	case 11:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, "")...)
 		}
-	case 5:
+	case 12:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, "")...)
 		}
-	case 6:
+	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, yyDollar[3].string)...)
 		}
-	case 7:
+	case 14:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(append(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, yyDollar[6].string), NewMDsYDates(yyDollar[4].string, yyDollar[5].strings, yyDollar[6].string)...)...)
 		}
-	case 8:
+	case 15:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, yyDollar[3].string)...)
 		}
-	case 9:
+	case 16:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(append(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, yyDollar[6].string), NewDsMYDates(yyDollar[4].strings, yyDollar[5].string, yyDollar[6].string)...)...)
 		}
-	case 10:
+	case 17:
 		yyDollar = yyS[yypt-7 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, "")), NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[5].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[7].string, "")))
 		}
-	case 11:
+	case 18:
 		yyDollar = yyS[yypt-7 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[7].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[7].string, "")), NewRangeWithStartEndDates(NewDMYDate(yyDollar[4].string, yyDollar[7].string, ""), NewDMYDate(yyDollar[6].string, yyDollar[7].string, "")))
 		}
-	case 12:
+	case 19:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, "")), NewRangeWithStartEndDates(NewMDYDate(yyDollar[5].string, yyDollar[6].string, ""), NewMDYDate(yyDollar[5].string, yyDollar[8].string, "")))
 		}
-	case 13:
+	case 20:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[4].string, "")), NewRangeWithStartEndDates(NewDMYDate(yyDollar[5].string, yyDollar[8].string, ""), NewDMYDate(yyDollar[7].string, yyDollar[8].string, "")))
 		}
-	case 14:
+	case 21:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[8].string)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[5].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string)))
 		}
-	case 15:
+	case 22:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[3].string, yyDollar[7].string, yyDollar[8].string)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[4].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string)))
 		}
-	case 16:
+	case 23:
 		yyDollar = yyS[yypt-9 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[9].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[9].string), NewMDYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string)))
 		}
-	case 17:
+	case 24:
 		yyDollar = yyS[yypt-9 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string), NewDMYDate(yyDollar[7].string, yyDollar[8].string, yyDollar[9].string)))
 		}
-	case 18:
+	case 25:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		{
 			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStart(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string)), NewRangeWithStart(NewMDYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string)))
 		}
-	case 19:
+	case 29:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.strings = []string{yyDollar[1].string}
 		}
-	case 21:
+	case 31:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.strings = []string{yyDollar[1].string, yyDollar[2].string}
 		}
-	case 22:
+	case 32:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.strings = append(yyDollar[1].strings, yyDollar[2].string)
 		}
-	case 23:
+	case 33:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = yyDollar[2].DateTimeTZRange
 		}
-	case 24:
-		yyDollar = yyS[yypt-2 : yypt+1]
+	case 34:
+		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[2].DateTimeTZ}
+			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[1].DateTimeTZ}
 		}
-	case 25:
-		yyDollar = yyS[yypt-4 : yypt+1]
+	case 35:
+		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(yyDollar[2].DateTimeTZ, NewDateTime(yyDollar[2].DateTimeTZ.Date, yyDollar[4].Time, ""))
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(yyDollar[1].DateTimeTZ, NewDateTime(yyDollar[1].DateTimeTZ.Date, yyDollar[3].Time, ""))
 		}
-	case 26:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, ""))
-		}
-	case 27:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[4].string, ""))
-		}
-	case 28:
-		yyDollar = yyS[yypt-5 : yypt+1]
-		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string))
-		}
-	case 29:
-		yyDollar = yyS[yypt-5 : yypt+1]
-		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string))
-		}
-	case 30:
+	case 36:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[1].DateTimeTZ, End: yyDollar[3].DateTimeTZ}
 		}
-	case 31:
+	case 37:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, ""), NewMDYDate(yyDollar[1].string, yyDollar[4].string, ""))
+		}
+	case 38:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, ""), NewDMYDate(yyDollar[3].string, yyDollar[4].string, ""))
+		}
+	case 39:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string))
+		}
+	case 40:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string))
+		}
+	case 41:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[6].string), NewMDYDate(yyDollar[4].string, yyDollar[5].string, yyDollar[6].string))
 		}
-	case 32:
+	case 42:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewMDYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
-	case 33:
+	case 43:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewDMYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
-	case 34:
+	case 44:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewDMYDate(yyDollar[5].string, yyDollar[7].string, yyDollar[8].string))
 		}
-	case 35:
+	case 45:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewMDYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
-	case 36:
+	case 46:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewDMYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
-	case 37:
+	case 47:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewDMYDate(yyDollar[5].string, yyDollar[7].string, yyDollar[8].string))
 		}
-	case 38:
+	case 48:
 		yyDollar = yyS[yypt-10 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTime(NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[10].string), yyDollar[1].Time, ""), NewDateTime(NewDMYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[10].string), yyDollar[9].Time, ""))
 		}
-	case 39:
+	case 49:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTime(yyDollar[1].Date, yyDollar[2].Time, ""), NewDateTime(yyDollar[1].Date, yyDollar[3].Time, ""))
 		}
-	case 44:
+	case 62:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.DateTimeTZ = NewDateTimeWithDate(yyDollar[1].Date)
 		}
-	case 45:
+	case 63:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		{
+			yyVAL.DateTimeTZ = NewDateTime(yyDollar[1].Date, yyDollar[2].Time, "")
+		}
+	case 64:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.DateTimeTZ = NewDateTime(yyDollar[1].Date, yyDollar[3].Time, "")
 		}
-	case 46:
+	case 65:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		{
+			yyVAL.DateTimeTZ = NewDateTime(yyDollar[2].Date, yyDollar[1].Time, "")
+		}
+	case 66:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.DateTimeTZ = NewDateTime(yyDollar[3].Date, yyDollar[1].Time, "")
 		}
-	case 47:
-		yyDollar = yyS[yypt-3 : yypt+1]
+	case 73:
+		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.Date = yyDollar[3].Date
+			yyVAL.Date = yyDollar[2].Date
 		}
-	case 49:
+	case 74:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		{
+			yyVAL.Date = yyDollar[1].Date
+		}
+	case 75:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.Date = NewAmbiguousDate(yyDollar[1].string, yyDollar[3].string, "")
 		}
-	case 50:
+	case 76:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.Date = NewDMYDate("", "", yyDollar[1].string)
 		}
-	case 51:
+	case 77:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.Date = NewDMYDate("", yyDollar[3].string, yyDollar[1].string)
 		}
-	case 52:
+	case 78:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		{
 			yyVAL.Date = NewDMYDate(yyDollar[5].string, yyDollar[3].string, yyDollar[1].string)
 		}
-	case 53:
+	case 79:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.Date = NewMDYDate(yyDollar[1].string, "", "")
 		}
-	case 54:
+	case 80:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.Date = NewMDYDate(yyDollar[1].string, "", yyDollar[2].string)
 		}
-	case 55:
+	case 81:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.Date = NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string)
 		}
-	case 56:
+	case 82:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.Date = NewDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string)
 		}
-	case 57:
+	case 83:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		{
 			yyVAL.Date = NewAmbiguousDate(yyDollar[1].string, yyDollar[3].string, yyDollar[5].string)
 		}
-	case 58:
+	case 84:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.Date = NewMDYDate(yyDollar[1].string, yyDollar[2].string, "")
 		}
-	case 59:
+	case 85:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.Date = NewDMYDate(yyDollar[1].string, yyDollar[2].string, "")
 		}
-	case 60:
+	case 86:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.Date = NewDMYDate(yyDollar[3].string, yyDollar[2].string, yyDollar[1].string)
 		}
-	case 69:
+	case 124:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		{
+			yyVAL.Time = yyDollar[2].Time
+		}
+	case 125:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.Time = NewTime(yyDollar[1].string, "", "", "")
 		}
-	case 70:
+	case 126:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
 			yyVAL.Time = NewTime((mustAtoi(yyDollar[1].string)%12)+12, "", "", "")
 		}
-	case 71:
+	case 127:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.Time = NewTime(yyDollar[1].string, yyDollar[3].string, "", "")
 		}
-	case 72:
+	case 128:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		{
 			yyVAL.Time = NewTime((mustAtoi(yyDollar[1].string)%12)+12, yyDollar[3].string, yyDollar[5].string, "")
 		}
-	case 73:
+	case 129:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
 			yyVAL.Time = NewTime(yyDollar[1].string, yyDollar[3].string, "", "")
 		}
-	case 74:
+	case 130:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
 			yyVAL.Time = NewTime((mustAtoi(yyDollar[1].string)%12)+12, yyDollar[3].string, "", "")

@@ -368,10 +368,19 @@ func readStates(p string) (*glr.ParseStates, error) {
 				return nil, fmt.Errorf("invalid conflict target at line %d: %q", lineNum, line)
 			}
 			slog.Debug("conflict reduce rule", "rule", rule)
-			actions["."] = append(actions["."], glr.Action{
+			new := glr.Action{
 				Type: "reduce",
 				Rule: rule,
-			})
+			}
+			found := false
+			for _, act := range actions["."] {
+				if act == new {
+					found = true
+				}
+			}
+			if !found {
+				actions["."] = append(actions["."], new)
+			}
 			continue
 		}
 
