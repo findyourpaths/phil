@@ -14,7 +14,8 @@ var parseDateMode string
 var parseYear int
 var parseTimeZone string
 
-// A DateTimeTZs represents a sequence of date and time ranges.
+// A DateTimeTZs represents a sequence of date and time ranges. It's the
+// expected result of parsing a string for datetimes.
 //
 // This type DOES include location information.
 type DateTimeTZRanges struct {

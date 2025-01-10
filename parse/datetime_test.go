@@ -27,6 +27,8 @@ var DateForFeb04 = civil.Date{Month: time.February, Day: 4}
 var DateForFeb05 = civil.Date{Month: time.February, Day: 5}
 var DateForMar02 = civil.Date{Month: time.March, Day: 2}
 var DateForMar03 = civil.Date{Month: time.March, Day: 3}
+var DateForMar04 = civil.Date{Month: time.March, Day: 4}
+var DateForApr03 = civil.Date{Month: time.April, Day: 3}
 
 var DateRangesForFeb03 = NewRangesWithStartDates(DateForFeb03)
 var DateRangesFromFeb03ToFeb04 = NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)
@@ -150,6 +152,7 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "Feb 1, 2, 3", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03)},
 		{in: "Feb 1, 2, 3, 4", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
 		{in: "Feb 1, 2, 3, 4, 5", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
+		// {in: "February 1, 2, March 2, 3, and 4, April 3.", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03, DateForMar04, DateForApr03)},
 		// DM
 		{in: "1, 2 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02)},
 		{in: "1, 2, 3 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03)},
@@ -320,6 +323,12 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// "Select date Tue 19 September 12:00pm Tue 19 September 2:00pm Tue 19 Sep 4:00pm (last few)" in expected(
 		// "Select date Thu 15 September 7:45pm 8:50pm Fri 16 September 7:45pm - 20:45 Sat 17 October 7:45pm to 21:10" in expected(
 
+		// Sat 5pm to 2am
+		// Sun/Thu 5pm–1am"
+		// Fri 5pm to 2am
+		// "Doors: 8PM / Show: 9PM / 21+"
+		// "12PM / 21+ / Free"
+		// "Doors: 8PM / Show: 9PM / 21+RSVP DOES NOT GUARANTEE ENTRY"
 	}
 
 	for i, tc := range tests {

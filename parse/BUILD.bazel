@@ -12,7 +12,7 @@ go_library(
         "parse.go",
     ],
     importpath = "github.com/findyourpaths/phil/parse",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//glr",
         "@com_github_kr_pretty//:pretty",

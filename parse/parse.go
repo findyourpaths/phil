@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/findyourpaths/phil/glr"
 	"github.com/kr/pretty"
@@ -44,12 +46,22 @@ var spacifyRE = regexp.MustCompile(`(?:^|\s*\b)(.|-)(?:\b\s*|$)`)
 
 var singletonTZ = timezone.New()
 
+var cache = map[[4]string]*DateTimeTZRanges{}
+var cacheMutex sync.RWMutex
+
 func ExtractDateTimeTZRanges(year int, dateMode, timeZone, in string) (*DateTimeTZRanges, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Warn("in ExtractDatetimeRanges(), got a panic trying to extract", "in", in, "err", err)
 		}
 	}()
+	key := [4]string{strconv.Itoa(year), dateMode, timeZone, in}
+	cacheMutex.RLock()
+	r, found := cache[key]
+	cacheMutex.RUnlock()
+	if found {
+		return r, nil
+	}
 
 	parseYear = year
 	debugf("parseYear: %d\n", parseYear)
@@ -98,7 +110,7 @@ func ExtractDateTimeTZRanges(year int, dateMode, timeZone, in string) (*DateTime
 		return nil, fmt.Errorf("no datetime ranges found in %q", in)
 	}
 
-	rngs := glr.GetParseNodeValue(g, forest[0], "").(*DateTimeTZRanges)
+	rs := glr.GetParseNodeValue(g, forest[0], "").(*DateTimeTZRanges)
 	// for _, rng := range rngs.Items {
 	// 	if rng.Start.TimeZone == "" {
 	// 		rng.Start.TimeZone = timeZone
@@ -108,6 +120,9 @@ func ExtractDateTimeTZRanges(year int, dateMode, timeZone, in string) (*DateTime
 	// 		rng.End.TimeZone = timeZone
 	// 	}
 	// }
-	debugf("rngs: %#v\n", rngs)
-	return rngs, nil
+	debugf("rs: %#v\n", rs)
+	cacheMutex.Lock()
+	cache[key] = rs
+	cacheMutex.Unlock()
+	return rs, nil
 }
