@@ -152,7 +152,7 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "Feb 1, 2, 3", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03)},
 		{in: "Feb 1, 2, 3, 4", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
 		{in: "Feb 1, 2, 3, 4, 5", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
-		// {in: "February 1, 2, March 2, 3, and 4, April 3.", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03, DateForMar04, DateForApr03)},
+		//		{in: "February 1, 2, March 2, 3, and 4, April 3.", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03, DateForMar04, DateForApr03)},
 		// DM
 		{in: "1, 2 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02)},
 		{in: "1, 2, 3 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03)},
@@ -329,6 +329,23 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// "Doors: 8PM / Show: 9PM / 21+"
 		// "12PM / 21+ / Free"
 		// "Doors: 8PM / Show: 9PM / 21+RSVP DOES NOT GUARANTEE ENTRY"
+
+		// FAILS
+		// "269-781-9094 x13"
+		// "1,095\u00a0Individuals (617 Park City, 478 Heber)"
+		// "Burlingame, 2300 Adeline Dr, Burlingame, CA 94010, USA"
+		// "317-270-4214"
+		// "CCPC Update (5/18/20)"
+		// "The Wisdom of the Enneagram Workshop: February 1-2, 2025 VIRTUAL | Enneagram Institute of Ohio"
+		// "January 31st from 9 am-12.30 pm PST."
+		// "January 28, 2025 @ 6:00 pm"
+		// "Updated: 04/18/2024"
+		// "We may request cookies to be set on your device."
+		// "Apr 25, 2024, 7:00 PM PDT – Apr 28, 2024, 3:00 PM PDT"
+		// "Winter Retreat for 6-12th graders!"
+		// "For 6th-12th grade students @ SpringHill Camp"
+		// "October 8th - 10.00am- 3pm\u00a0MST"
+		// "The Three Instincts Workshop: April 5-6, 2025  VIRTUAL"
 	}
 
 	for i, tc := range tests {

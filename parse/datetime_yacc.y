@@ -98,7 +98,7 @@ DateTimeTZRanges:
   RangesPrefixPlus DateTimeTZRanges {$$ = $2}
 
 | DateTimeTZRange {$$ = &DateTimeTZRanges{Items: []*DateTimeTZRange{$1}}}
-| DateTimeTZRanges AndOpt DateTimeTZRange {$$ = AppendDateTimeTZRanges($1, $3)}
+| DateTimeTZRanges RangesSepPlus DateTimeTZRange {$$ = AppendDateTimeTZRanges($1, $3)}
 
   // "Feb 3, 4"
 | Month DayPlus1 {$$ = NewRangesWithStartDates(NewMDsYDates($1, $2, "")...)}
@@ -145,6 +145,16 @@ RangesPrefixPlus:
 ;
 RangesPrefix:
   WHEN
+;
+
+
+RangesSepPlus:
+  RangesSep
+| RangesSepPlus RangesSep
+;
+RangesSep:
+  AND
+| COMMA
 ;
 
 
