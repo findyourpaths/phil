@@ -1,4 +1,4 @@
-module github.com/phil
+module github.com/findyourpaths/phil
 
 go 1.23.1
 
