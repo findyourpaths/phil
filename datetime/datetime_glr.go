@@ -1,4 +1,4 @@
-package parse
+package datetime
 
 import "github.com/findyourpaths/phil/glr"
 import "cloud.google.com/go/civil"

@@ -1,5 +1,5 @@
 %{
-package parse
+package datetime
 
 import "cloud.google.com/go/civil"
 %}

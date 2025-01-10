@@ -1,4 +1,4 @@
-package parse
+package datetime
 
 import (
 	"fmt"
@@ -350,7 +350,7 @@ func TestExtractDatetimesRanges(t *testing.T) {
 
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("%03d__%s", i, tc.in), func(t *testing.T) {
-			got, err := ExtractDateTimeTZRanges(tc.year, tc.dateMode, tc.timeZone, tc.in)
+			got, err := Parse(tc.year, tc.dateMode, tc.timeZone, tc.in)
 			if err != nil {
 				t.Fatalf("error: %v", err)
 			}

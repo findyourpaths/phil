@@ -33,3 +33,37 @@ go_test(
         "@org_golang_google_protobuf//testing/protocmp",
     ],
 )
+
+go_library(
+    name = "datetime",
+    srcs = [
+        "clean.go",
+        "datetime.go",
+        "datetime_glr.go",
+        "datetime_lex.go",
+        "datetime_parse.go",
+        "datetime_yacc.go",
+        "generate.go",
+    ],
+    importpath = "github.com/findyourpaths/phil/datetime",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//glr",
+        "@com_github_kr_pretty//:pretty",
+        "@com_github_microcosm_cc_bluemonday//:bluemonday",
+        "@com_github_tkuchiki_go_timezone//:go-timezone",
+        "@com_google_cloud_go//civil",
+    ],
+)
+
+go_test(
+    name = "datetime_test",
+    srcs = ["datetime_test.go"],
+    embed = [":datetime"],
+    deps = [
+        "//glr",
+        "@com_github_google_go_cmp//cmp",
+        "@com_google_cloud_go//civil",
+        "@org_golang_google_protobuf//testing/protocmp",
+    ],
+)

@@ -1,4 +1,4 @@
-package parse
+package datetime
 
 import (
 	"fmt"
@@ -49,7 +49,7 @@ var singletonTZ = timezone.New()
 var cache = map[[4]string]*DateTimeTZRanges{}
 var cacheMutex sync.RWMutex
 
-func ExtractDateTimeTZRanges(year int, dateMode, timeZone, in string) (*DateTimeTZRanges, error) {
+func Parse(year int, dateMode, timeZone, in string) (*DateTimeTZRanges, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Warn("in ExtractDatetimeRanges(), got a panic trying to extract", "in", in, "err", err)
