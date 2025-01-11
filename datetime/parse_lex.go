@@ -19,22 +19,6 @@ type datetimeLexer struct {
 	root    *DateTimeTZRanges
 }
 
-// // // ast is the abstract syntax tree for a label formula
-// type ast struct {
-// 	root *atetime_ranges
-// }
-
-// // node represents a node in abstract syntax tree
-// type datetime_ranges struct {
-// 	items []*datetime_range
-// }
-
-// // node represents a node in abstract syntax tree
-// type datetime_range struct {
-// 	start *civil.DateTime
-// 	end   *civil.DateTime
-// }
-
 func NewDatetimeLexer(input string) *datetimeLexer {
 	l := &datetimeLexer{
 		lval: &yySymType{},

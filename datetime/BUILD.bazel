@@ -3,13 +3,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "datetime",
     srcs = [
-        "clean.go",
         "datetime.go",
-        "datetime_glr.go",
-        "datetime_lex.go",
-        "datetime_parse.go",
-        "datetime_yacc.go",
         "generate.go",
+        "parse.go",
+        "parse_glr.go",
+        "parse_lex.go",
+        "parse_yacc.go",
     ],
     importpath = "github.com/findyourpaths/phil/datetime",
     visibility = ["//visibility:public"],
@@ -24,7 +23,7 @@ go_library(
 
 go_test(
     name = "datetime_test",
-    srcs = ["datetime_test.go"],
+    srcs = ["parse_test.go"],
     embed = [":datetime"],
     deps = [
         "//glr",
