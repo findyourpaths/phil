@@ -2,8 +2,9 @@ package datetime
 
 import (
 	"fmt"
+	"log"
+	"log/slog"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -26,7 +27,8 @@ func SetDebug(enabled bool) {
 // debugf prints debug messages if debug is enabled
 func debugf(format string, args ...any) {
 	if DoDebug {
-		fmt.Printf(format, args...)
+		// fmt.Printf(format, args...)
+		log.Printf(format, args...)
 	}
 }
 
@@ -46,17 +48,17 @@ var spacifyRE = regexp.MustCompile(`(?:^|\s*\b)(.|-)(?:\b\s*|$)`)
 
 var timezoneTZ = timezone.New()
 
-var cache = map[[4]string]*DateTimeTZRanges{}
+var cache = map[string]*DateTimeTZRanges{}
 var cacheMutex sync.RWMutex
 
 func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeTZRanges, error) {
-	// defer func() {
-	// 	if err := recover(); err != nil {
-	// 		slog.Warn("in Parse(), got a panic trying to extract", "in", in, "err", err)
-	// 	}
-	// }()
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Warn("in Parse(), got a panic trying to extract", "in", in, "err", err)
+		}
+	}()
 
-	key := [4]string{strconv.Itoa(year), dateMode, fmt.Sprintf("%#v", timeZone), in}
+	key := fmt.Sprintf("%d %q %#v %q", year, dateMode, timeZone, in)
 	cacheMutex.RLock()
 	r, found := cache[key]
 	cacheMutex.RUnlock()
@@ -108,7 +110,11 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 		return nil, fmt.Errorf("no datetime ranges found in %q", in)
 	}
 
-	rs := glr.GetParseNodeValue(g, forest[0], "").(*DateTimeTZRanges)
+	rsAny, err := glr.GetParseNodeValue(g, forest[0], "")
+	if err != nil {
+		return nil, err
+	}
+	rs := rsAny.(*DateTimeTZRanges)
 	// for _, rng := range rngs.Items {
 	// 	if rng.Start.TimeZone == "" {
 	// 		rng.Start.TimeZone = timeZone

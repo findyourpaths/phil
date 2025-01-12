@@ -153,6 +153,7 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "Updated: Feb 3", want: DateRangesForFeb03},
 		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na"},
 		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},
+		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 
 		//
 		// Dates

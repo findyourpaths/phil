@@ -2,7 +2,7 @@ package datetime
 
 import (
 	"fmt"
-	"reflect"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +14,8 @@ var parseDateMode string
 var parseYear int
 var parseTimeZone *TimeZone
 var parseTimeZoneAbbrev string
+
+func currentParseYear() int { return parseYear }
 
 // A DateTimeTZs represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
@@ -51,7 +53,7 @@ func NewRangesWithStartDateTimes(starts ...*DateTimeTZ) *DateTimeTZRanges {
 func NewRangesWithStartDates(starts ...civil.Date) *DateTimeTZRanges {
 	r := &DateTimeTZRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeWithDate(start)})
+		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeWithDate(start, nil)})
 	}
 	return r
 }
@@ -106,17 +108,13 @@ type DateTimeTZ struct {
 	TimeZone *TimeZone
 }
 
-func (dttz DateTimeTZ) String() string {
+func (dttz *DateTimeTZ) String() string {
+	if dttz == nil {
+		return ""
+	}
 	r := dttz.DateTime.String()
-	if dttz.TimeZone != nil {
-		if tz, _ := timezoneTZ.GetTzInfo(dttz.TimeZone.Name); tz != nil {
-			r += tz.StandardOffsetHHMM()
-		} else if tzs, _ := timezoneTZ.GetTzAbbreviationInfo(dttz.TimeZone.Abbrev); len(tzs) > 0 {
-			if len(tzs) > 1 {
-				panic(fmt.Sprintf("got multiple time zones for abbreviation: %q for %#v", dttz.TimeZone.Abbrev, dttz))
-			}
-			r += tzs[0].OffsetHHMM()
-		}
+	if tzStr := dttz.TimeZone.String(); tzStr != "" {
+		r += " " + tzStr
 	}
 	return r
 }
@@ -128,8 +126,11 @@ func NewDateTime(date civil.Date, time civil.Time, timeZone *TimeZone) *DateTime
 	return &DateTimeTZ{DateTime: civil.DateTime{Date: date, Time: time}, TimeZone: timeZone}
 }
 
-func NewDateTimeWithDate(date civil.Date) *DateTimeTZ {
-	return &DateTimeTZ{DateTime: civil.DateTime{Date: date}, TimeZone: parseTimeZone}
+func NewDateTimeWithDate(date civil.Date, timeZone *TimeZone) *DateTimeTZ {
+	if timeZone == nil {
+		timeZone = parseTimeZone
+	}
+	return &DateTimeTZ{DateTime: civil.DateTime{Date: date}, TimeZone: timeZone}
 }
 
 type TimeZone struct {
@@ -137,7 +138,27 @@ type TimeZone struct {
 	Abbrev string
 }
 
-func NewTimeZone(name string, abbrev string) *TimeZone {
+func (tz *TimeZone) String() string {
+	if tz, _ := timezoneTZ.GetTzInfo(tz.Name); tz != nil {
+		return tz.StandardOffsetHHMM()
+	}
+	tzs, _ := timezoneTZ.GetTzAbbreviationInfo(tz.Abbrev)
+	if len(tzs) < 0 {
+		return ""
+	}
+	if len(tzs) > 1 {
+		slog.Debug("got multiple time zones", "tz", fmt.Sprintf("%#v", tz), "tzs", tzs)
+	}
+	return tzs[0].OffsetHHMM()
+}
+
+func NewTimeZone(nameAny any, abbrevAny any) *TimeZone {
+	name, nok := nameAny.(string)
+	abbrev, aok := abbrevAny.(string)
+	if !nok && !aok {
+		slog.Debug("failed to make new time zone due to no name nor abbrev", "nameAny", nameAny, "abbrevAny", abbrevAny)
+		return nil
+	}
 	return &TimeZone{Name: name, Abbrev: abbrev}
 }
 
@@ -168,7 +189,7 @@ var weekdaysByNames = map[string]int{
 	"saturday": 6,
 }
 
-var monthsByNames = map[string]time.Month{
+var monthsByNames = map[string]int{
 	"jan":       1,
 	"january":   1,
 	"feb":       2,
@@ -202,28 +223,97 @@ var ordinals = map[string]bool{
 	// "th": true, recognize this separately because it also shortens Thursday
 }
 
-func mustAtoi(str string) int {
-	if str == "" {
+type timeUnit struct {
+	name          string
+	min           int
+	max           int
+	emptyVal      any
+	defaultFn     func() int
+	stringToIntFn func(string) int
+}
+
+var yearUnit = timeUnit{name: "year", min: 1900, max: 2100, defaultFn: currentParseYear}
+var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
+var dayUnit = timeUnit{name: "day", min: 1, max: 31}
+var hourUnit = timeUnit{name: "hour", min: 0, max: 24}
+var minuteUnit = timeUnit{name: "minute", min: 0, max: 59}
+var secondUnit = timeUnit{name: "second", min: 0, max: 59}
+var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
+
+var noTime = &civil.Time{}
+var noTimeZone = &TimeZone{}
+var noYear = 0
+var noMonth = 0
+var noDay = 0
+var noHour = 0
+var noMinute = 0
+var noSecond = 0
+var noNS = 0
+
+func findInt(tunit timeUnit, valAny any) int {
+	if valAny == nil {
 		return 0
 	}
-	r, err := strconv.Atoi(str)
-	if err != nil {
-		panic(err)
+	r := -1
+	switch valAny.(type) {
+	case int:
+		rInt, ok := valAny.(int)
+		if ok {
+			r = rInt
+		}
+	case *int:
+		rPtr, ok := valAny.(*int)
+		if ok {
+			r = *rPtr
+		}
+	case string:
+		rInt, err := strconv.Atoi(valAny.(string))
+		if err == nil {
+			r = rInt
+		} else {
+			if tunit.stringToIntFn != nil {
+				r = tunit.stringToIntFn(valAny.(string))
+			}
+		}
+	default:
+		panic(fmt.Sprintln("failed to find int", "tunit", tunit, "valAny", valAny))
+	}
+	if r == -1 && tunit.defaultFn != nil {
+		r = tunit.defaultFn()
+	}
+
+	if r < tunit.min || r > tunit.max {
+		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tunit, "valAny", valAny))
 	}
 	return r
 }
 
-func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
-	year := findInt("year", yearAny)
-	if year == 0 {
-		year = parseYear
+func monthNameToMonth(monthName string) int {
+	month, found := monthsByNames[strings.ToLower(monthName)]
+	if !found {
+		return -1
 	}
+	return month
+}
 
+// func mustAtoi(str string) *int {
+// 	if str == "" {
+// 		return nil
+// 	}
+// 	r, err := strconv.Atoi(str)
+// 	if err != nil {
+// 		return nil
+// 	}
+// 	return &r
+// }
+
+func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
+	year := findInt(yearUnit, yearAny)
 	// North American tends to parse dates as month-day-year.
 	if parseDateMode == "na" {
-		return civil.Date{Month: time.Month(mustAtoi(first)), Day: mustAtoi(second), Year: year}
+		return NewMDYDate(first, second, year)
 	}
-	return civil.Date{Day: mustAtoi(first), Month: time.Month(mustAtoi(second)), Year: year}
+	return NewDMYDate(first, second, year)
 }
 
 func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []civil.Date {
@@ -235,30 +325,10 @@ func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []civil.Date {
 }
 
 func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
-	day := findInt("day", dayAny)
-
-	var month time.Month
-	switch monthAny.(type) {
-	case int:
-		month = monthAny.(time.Month)
-	case time.Month:
-		month = monthAny.(time.Month)
-	case string:
-		var found bool
-		month, found = monthsByNames[strings.ToLower(monthAny.(string))]
-		if !found {
-			month = time.Month(mustAtoi(monthAny.(string)))
-		}
-	default:
-		panic(fmt.Sprintf("can't handle month %#v of unknown type: %s", monthAny, reflect.TypeOf(monthAny)))
-	}
-
-	year := findInt("year", yearAny)
-	if year == 0 {
-		year = parseYear
-	}
-
-	return civil.Date{Day: day, Month: month, Year: year}
+	day := findInt(dayUnit, dayAny)
+	month := findInt(monthUnit, monthAny)
+	year := findInt(yearUnit, yearAny)
+	return civil.Date{Day: day, Month: time.Month(month), Year: year}
 }
 
 func NewMDsYDates(monthAny any, daysAny []string, yearAny any) []civil.Date {
@@ -273,21 +343,28 @@ func NewMDYDate(monthAny any, dayAny any, yearAny any) civil.Date {
 	return NewDMYDate(dayAny, monthAny, yearAny)
 }
 
-func NewTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
-	hour := findInt("hour", hourAny)
-	minute := findInt("minute", minuteAny)
-	second := findInt("second", secondAny)
-	ns := findInt("ns", nsAny)
-	return civil.Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns}
+func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
+	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
+	if r.Hour > 12 {
+		panic(fmt.Sprintln("found hour but failed AM bounds check", "r.Hour", r.Hour))
+	}
+	r.Hour = r.Hour % 12
+	return r
 }
 
-func findInt(name string, valAny any) int {
-	switch valAny.(type) {
-	case int:
-		return valAny.(int)
-	case string:
-		return mustAtoi(valAny.(string))
-	default:
-		panic(fmt.Sprintf("can't handle %s in unknown format: %#v", name, valAny))
+func NewPMTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
+	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
+	if r.Hour > 12 {
+		panic(fmt.Sprintln("found hour but failed PM bounds check", "r.Hour", r.Hour))
 	}
+	r.Hour = (r.Hour % 12) + 12
+	return r
+}
+
+func NewTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
+	hour := findInt(hourUnit, hourAny)
+	minute := findInt(minuteUnit, minuteAny)
+	second := findInt(secondUnit, secondAny)
+	ns := findInt(nsUnit, nsAny)
+	return civil.Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns}
 }

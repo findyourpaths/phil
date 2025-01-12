@@ -1,6 +1,7 @@
 package glr
 
 import (
+	"errors"
 	"fmt"
 	"go/scanner"
 	"go/token"
@@ -104,36 +105,55 @@ func (n ParseNode) String() string {
 
 var space = "\u2758 "
 
-func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) any {
+func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 	debugf("%sgetting value for: %s\n", spaces, n)
 	if n.isAlt {
-		r := GetParseNodeValue(g, n.Children[0], spaces+space)
-		debugf("%sreturning first alternative\n", spaces)
-		return r
+		for i, c := range n.Children {
+			r, err := GetParseNodeValue(g, c, spaces+space)
+			if err == nil {
+				debugf("%sreturning alternative %d\n", spaces, i)
+				return r, nil
+			}
+		}
+		debugf("%sfailed to find alternative\n", spaces)
+		return nil, fmt.Errorf("failed to find alternative")
 	}
 	if n.Term != "" {
 		debugf("%sreturning term: %q\n", spaces, n.Term)
-		return n.Term
+		return n.Term, nil
 	}
 	if n.ruleID == 0 {
 		debugf("%sreturning empty rule result: %q\n", spaces, n.Term)
-		return ""
+		return "", nil
 	}
 
 	fn := reflect.ValueOf(g.Actions.Items[n.ruleID])
-	cs := n.Children
-	args := make([]reflect.Value, len(cs))
-	for i, c := range cs {
-		args[i] = reflect.ValueOf(GetParseNodeValue(g, c, spaces+space))
+	args := make([]reflect.Value, len(n.Children))
+	for i, c := range n.Children {
+		val, err := GetParseNodeValue(g, c, spaces+space)
+		if err != nil {
+			return nil, err
+		}
+		args[i] = reflect.ValueOf(val)
 		debugf("%sgot args[%d]: %#v\n", spaces, i, args[i])
 	}
+
 	debugf("%scalling rule %d fn with %d args\n", spaces, n.ruleID, len(args))
-	r := fn.Call(args)[0].Interface()
+	var err error
+	var r any
+	func() {
+		defer func() {
+			if e := recover(); e != nil {
+				err = errors.New(e.(string))
+			}
+		}()
+		r = fn.Call(args)[0].Interface()
+	}()
 	if spaces == "" {
 		pp.Default.SetColoringEnabled(false)
-		debugf("%sreturning computed value:\n%s\n", spaces, pp.Sprint(r))
+		debugf("%sreturning computed value:\n%s\n", spaces, pp.Sprint(r), err)
 	}
-	return r
+	return r, err
 }
 
 func setNodeChildrenAndScore(n *ParseNode, children []*ParseNode) {

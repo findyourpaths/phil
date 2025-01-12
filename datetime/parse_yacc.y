@@ -101,15 +101,15 @@ RootSuffix:
 
 
 DateTimeTZRanges:
-  RangesPrefixPlus DateTimeTZRanges {$$ = $2}
+  DateTimeTZRange {$$ = &DateTimeTZRanges{Items: []*DateTimeTZRange{$1}}}
 
-| DateTimeTZRange {$$ = &DateTimeTZRanges{Items: []*DateTimeTZRange{$1}}}
+| RangesPrefixPlus DateTimeTZRanges {$$ = $2}
 | DateTimeTZRanges RangesSepPlus DateTimeTZRange {$$ = AppendDateTimeTZRanges($1, $3)}
 
   // "Feb 3, 4"
-| Month DayPlus1 {$$ = NewRangesWithStartDates(NewMDsYDates($1, $2, "")...)}
+| Month DayPlus1 {$$ = NewRangesWithStartDates(NewMDsYDates($1, $2, nil)...)}
   // "3, 4 Feb"
-| DayPlus1 Month {$$ = NewRangesWithStartDates(NewDsMYDates($1, $2, "")...)}
+| DayPlus1 Month {$$ = NewRangesWithStartDates(NewDsMYDates($1, $2, nil)...)}
 
   // "Feb 3, 4 2023"
 | Month DayPlus1 YEAR {$$ = NewRangesWithStartDates(NewMDsYDates($1, $2, $3)...)}
@@ -121,14 +121,14 @@ DateTimeTZRanges:
 | DayPlus Month AND DayPlus Month YEAR {$$ = NewRangesWithStartDates(append(NewDsMYDates($1, $2, $6), NewDsMYDates($4, $5, $6)...)...)}
 
   // "Feb 1-2, 3-4"
-| Month Day RangeSep Day Day RangeSep Day {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, "")), NewRangeWithStartEndDates(NewMDYDate($1, $5, ""), NewMDYDate($1, $7, "")))}
+| Month Day RangeSep Day Day RangeSep Day {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, nil), NewMDYDate($1, $4, nil)), NewRangeWithStartEndDates(NewMDYDate($1, $5, nil), NewMDYDate($1, $7, nil)))}
   // "1-2, 3-4 Feb"
-| Day RangeSep Day Day RangeSep Day Month {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $7, ""), NewDMYDate($3, $7, "")), NewRangeWithStartEndDates(NewDMYDate($4, $7, ""), NewDMYDate($6, $7, "")))}
+| Day RangeSep Day Day RangeSep Day Month {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $7, nil), NewDMYDate($3, $7, nil)), NewRangeWithStartEndDates(NewDMYDate($4, $7, nil), NewDMYDate($6, $7, nil)))}
 
   // "Feb 1-2, Mar 3-4"
-| Month Day RangeSep Day Month Day RangeSep Day {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, "")), NewRangeWithStartEndDates(NewMDYDate($5, $6, ""), NewMDYDate($5, $8, "")))}
+| Month Day RangeSep Day Month Day RangeSep Day {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, nil), NewMDYDate($1, $4, nil)), NewRangeWithStartEndDates(NewMDYDate($5, $6, nil), NewMDYDate($5, $8, nil)))}
   // "1-2 Feb, 3-4 Mar"
-| Day RangeSep Day Month Day RangeSep Day Month {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $4, ""), NewDMYDate($3, $4, "")), NewRangeWithStartEndDates(NewDMYDate($5, $8, ""), NewDMYDate($7, $8, "")))}
+| Day RangeSep Day Month Day RangeSep Day Month {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $4, nil), NewDMYDate($3, $4, nil)), NewRangeWithStartEndDates(NewDMYDate($5, $8, nil), NewDMYDate($7, $8, nil)))}
 
   // "Feb 1-2, 3-4 2023"
 | Month Day RangeSep Day Day RangeSep Day YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewMDYDate($1, $2, $8), NewMDYDate($1, $4, $8)), NewRangeWithStartEndDates(NewMDYDate($1, $5, $8), NewMDYDate($1, $7, $8)))}
@@ -181,18 +181,18 @@ DayPlus1:
 //
 
 DateTimeTZRange:
-  RangePrefixPlus DateTimeTZRange {$$ = $2}
+  DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
 
-| DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
+| RangePrefixPlus DateTimeTZRange {$$ = $2}
 | DateTimeTZ RangeSepPlus Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, $4))}
 
   // "Feb 3, 2023 - Feb 4, 2023"
 | DateTimeTZ RangeSepPlus DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
 
   // "Feb 3-4"
-| Month Day RangeSepPlus Day {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, ""), NewMDYDate($1, $4, ""))}
+| Month Day RangeSepPlus Day {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, nil), NewMDYDate($1, $4, nil))}
   // "3-4 Feb"
-| Day RangeSepPlus Day Month {$$ = NewRangeWithStartEndDates(NewDMYDate($1, $4, ""), NewDMYDate($3, $4, ""))}
+| Day RangeSepPlus Day Month {$$ = NewRangeWithStartEndDates(NewDMYDate($1, $4, nil), NewDMYDate($3, $4, nil))}
 
   // "Feb 3-4, 2023"
 | Month Day RangeSepPlus Day YEAR {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, $5), NewMDYDate($1, $4, $5))}
@@ -258,7 +258,8 @@ RangeSep:
 //
 
 DateTimeTZ:
-  Date {$$ = NewDateTimeWithDate($1)}
+  Date {$$ = NewDateTimeWithDate($1, nil)}
+
 | Date Time TimeZoneOpt {$$ = NewDateTime($1, $2, $3)}
 | Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
 | Time TimeZoneOpt Date {$$ = NewDateTime($3, $1, $2)}
@@ -297,8 +298,8 @@ TimeZoneSep:
 | SUB
 ;
 TimeZone:
-  TIME_ZONE {$$ = NewTimeZone($1, "")}
-| TIME_ZONE_ABBREV {$$ = NewTimeZone("", $1)}
+  TIME_ZONE {$$ = NewTimeZone($1, nil)}
+| TIME_ZONE_ABBREV {$$ = NewTimeZone(nil, $1)}
 ;
 
 
@@ -312,17 +313,17 @@ Date:
 | Date DateSuffixPlus {$$ = $1}
 
   // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
-| Day DateSepPlus Day {$$ = NewAmbiguousDate($1, $3, "")}
+| Day DateSepPlus Day {$$ = NewAmbiguousDate($1, $3, nil)}
 
-| Year {$$ = NewDMYDate("", "", $1)}
-| Year DateSepPlus Day {$$ = NewDMYDate("", $3, $1)}
+| Year {$$ = NewDMYDate(nil, nil, $1)}
+| Year DateSepPlus Day {$$ = NewDMYDate(nil, $3, $1)}
 | Year DateSepPlus Day DateSepPlus Day {$$ = NewDMYDate($5, $3, $1)}
 
   // "Feb"
-| Month {$$ = NewMDYDate($1, "", "")}
+| Month {$$ = NewMDYDate($1, nil, nil)}
 
   // "Feb 2023"
-| Month Year {$$ = NewMDYDate($1, "", $2)}
+| Month Year {$$ = NewMDYDate($1, nil, $2)}
 
   // "Feb 3 2023"
 | Month Day Year {$$ = NewMDYDate($1, $2, $3)}
@@ -334,10 +335,10 @@ Date:
 | Day DateSepPlus Day DateSepPlus Year {$$ = NewAmbiguousDate($1, $3, $5)}
 
   // "Feb 3"
-| Month Day {$$ = NewMDYDate($1, $2, "")}
+| Month Day {$$ = NewMDYDate($1, $2, nil)}
 
   // "3 Feb"
-| Day Month {$$ = NewDMYDate($1, $2, "")}
+| Day Month {$$ = NewDMYDate($1, $2, nil)}
 
   // "2023 Feb 3"
 | Year Month Day {$$ = NewDMYDate($3, $2, $1)}
@@ -433,22 +434,22 @@ WeekDay:
 
 Time:
   TimePrefixPlus Time {$$ = $2}
-  /* INT {$$ = NewTime($1, "", "", "")} */
+  /* INT {$$ = NewTime($1, nil, nil, nil)} */
   // "11am"
-| INT AM {$$ = NewTime($1, "", "", "")}
-| INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, "", "", "")}
+| INT AM {$$ = NewAMTime($1, nil, nil, nil)}
+| INT PM {$$ = NewPMTime($1, nil, nil, nil)}
 
   // "12:00"
-| INT TimeSep INT {$$ = NewTime($1, $3, "", "")}
+| INT TimeSep INT {$$ = NewTime($1, $3, nil, nil)}
 
   // "12:00:00"
-| INT TimeSep INT TimeSep INT {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, $5, "")}
+| INT TimeSep INT TimeSep INT {$$ = NewTime($1, $3, $5, nil)}
 
   // "9:00 AM"
-| INT TimeSep INT AM {$$ = NewTime($1, $3, "", "")}
+| INT TimeSep INT AM {$$ = NewAMTime($1, $3, nil, nil)}
 
   // "12:00 PM"
-| INT TimeSep INT PM {$$ = NewTime((mustAtoi($1) % 12) + 12, $3, "", "")}
+| INT TimeSep INT PM {$$ = NewPMTime($1, $3, nil, nil)}
 
 /* // "Feb 3 2023 11am PST" */
 /* |   time TimeZoneOpt { */
