@@ -45,9 +45,7 @@ func (l *datetimeLexer) Error(msg string) {
 func (l *datetimeLexer) Lex(lval *yySymType) int {
 	for {
 		_, tok, lit := l.scanner.Scan()
-		// if yyDebug == 3 {
-		// fmt.Printf("tok: %q, lit: %q, tok == token.ILLEGAL: %t, tok == token.IDENT: %t\n", tok, lit, tok == token.ILLEGAL, tok == token.IDENT)
-		// }
+		debugf("tok: %q, lit: %q, tok == token.ILLEGAL: %t, tok == token.IDENT: %t\n", tok, lit, tok == token.ILLEGAL, tok == token.IDENT)
 
 		// Skip whitespace and semicolons
 		if tok == token.SEMICOLON {
@@ -83,6 +81,16 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			}
 
 		case token.IDENT:
+			upLit := strings.ToUpper(lit)
+			// tz, err := tzTimezone.GetTzAbbreviationInfo(upLit)
+			// fmt.Println("upLit", upLit, "tz", tz, "err", err)
+			if tz, _ := timezoneTZ.GetTzAbbreviationInfo(upLit); tz != nil {
+				return TIME_ZONE_ABBREV
+			}
+			if tz, _ := timezoneTZ.GetTzInfo(upLit); tz != nil {
+				return TIME_ZONE
+			}
+
 			lowLit := strings.ToLower(lit)
 			if _, found := monthsByNames[lowLit]; found {
 				return MONTH_NAME
@@ -115,6 +123,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return GOOGLE
 			case "ics":
 				return ICS
+			case "in":
+				return IN
 			case "of":
 				return OF
 			case "on":
@@ -159,10 +169,14 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			return COMMA
 		case token.DEC:
 			return DEC
+		case token.LPAREN:
+			return LPAREN
 		case token.PERIOD:
 			return PERIOD
 		case token.QUO:
 			return QUO
+		case token.RPAREN:
+			return RPAREN
 		case token.SEMICOLON:
 			return SEMICOLON
 		case token.SUB:

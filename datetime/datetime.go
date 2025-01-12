@@ -12,7 +12,8 @@ import (
 
 var parseDateMode string
 var parseYear int
-var parseTimeZone string
+var parseTimeZone *TimeZone
+var parseTimeZoneAbbrev string
 
 // A DateTimeTZs represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
@@ -102,33 +103,42 @@ func NewRangeWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTime
 // This type DOES include location information.
 type DateTimeTZ struct {
 	civil.DateTime
-	TimeZone string
+	TimeZone *TimeZone
 }
 
 func (dttz DateTimeTZ) String() string {
 	r := dttz.DateTime.String()
-	if dttz.TimeZone != "" {
-		tzs, err := singletonTZ.GetTzAbbreviationInfo(dttz.TimeZone)
-		if err != nil {
-			panic(fmt.Sprintf("got error looking up time zone for %#v: %v", dttz, err))
+	if dttz.TimeZone != nil {
+		if tz, _ := timezoneTZ.GetTzInfo(dttz.TimeZone.Name); tz != nil {
+			r += tz.StandardOffsetHHMM()
+		} else if tzs, _ := timezoneTZ.GetTzAbbreviationInfo(dttz.TimeZone.Abbrev); len(tzs) > 0 {
+			if len(tzs) > 1 {
+				panic(fmt.Sprintf("got multiple time zones for abbreviation: %q for %#v", dttz.TimeZone.Abbrev, dttz))
+			}
+			r += tzs[0].OffsetHHMM()
 		}
-		if len(tzs) > 1 {
-			panic(fmt.Sprintf("got multiple time zones for abbreviation: %q for %#v", dttz.TimeZone, dttz))
-		}
-		r += tzs[0].OffsetHHMM()
 	}
 	return r
 }
 
-func NewDateTime(date civil.Date, time civil.Time, tz string) *DateTimeTZ {
-	if tz == "" {
-		tz = parseTimeZone
+func NewDateTime(date civil.Date, time civil.Time, timeZone *TimeZone) *DateTimeTZ {
+	if timeZone == nil {
+		timeZone = parseTimeZone
 	}
-	return &DateTimeTZ{DateTime: civil.DateTime{Date: date, Time: time}, TimeZone: tz}
+	return &DateTimeTZ{DateTime: civil.DateTime{Date: date, Time: time}, TimeZone: timeZone}
 }
 
 func NewDateTimeWithDate(date civil.Date) *DateTimeTZ {
 	return &DateTimeTZ{DateTime: civil.DateTime{Date: date}, TimeZone: parseTimeZone}
+}
+
+type TimeZone struct {
+	Name   string
+	Abbrev string
+}
+
+func NewTimeZone(name string, abbrev string) *TimeZone {
+	return &TimeZone{Name: name, Abbrev: abbrev}
 }
 
 var weekdaysByNames = map[string]int{

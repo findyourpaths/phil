@@ -62,29 +62,34 @@ var DateTimeFor2023Feb03_12PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateF
 var DateTimeFor2023Feb03_03PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor03PM}}
 var DateTimeFor2023Feb04_03PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb04, Time: TimeFor03PM}}
 
-var DateTimeForFeb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: "PST"}
-var DateTimeForFeb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: "PST"}
+var DateTimeForFeb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: TimeZoneForPST}
+var DateTimeForFeb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: TimeZoneForPST}
 
-var DateTimeFor2023Feb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor09AM}, TimeZone: "PST"}
-var DateTimeFor2023Feb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: "PST"}
+var DateTimeForFeb03_12PM_LA = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: TimeZoneForLA}
+
+var DateTimeFor2023Feb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor09AM}, TimeZone: TimeZoneForPST}
+var DateTimeFor2023Feb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: TimeZoneForPST}
 
 var TimeFor09AM = civil.Time{Hour: 9}
 var TimeFor12PM = civil.Time{Hour: 12}
 var TimeFor03PM = civil.Time{Hour: 15}
 
+var TimeZoneForLA = &TimeZone{Name: "America/Los_Angeles"}
+var TimeZoneForPST = &TimeZone{Abbrev: "PST"}
+
+type test struct {
+	dateMode string
+	year     int
+	timeZone *TimeZone
+
+	in   string
+	want *DateTimeTZRanges
+}
+
 func TestExtractDatetimesRanges(t *testing.T) {
 	if os.Getenv("DEBUG") == "true" {
 		glr.DoDebug = true
 		DoDebug = true
-	}
-
-	type test struct {
-		dateMode string
-		year     int
-		timeZone string
-
-		in   string
-		want *DateTimeTZRanges
 	}
 
 	tests := []test{
@@ -142,6 +147,12 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest"},
 
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
+
+		// Extra tokens
+		{in: "Feb 3 Google Calendar ICS", want: DateRangesForFeb03},
+		{in: "Updated: Feb 3", want: DateRangesForFeb03},
+		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na"},
+		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},
 
 		//
 		// Dates
@@ -256,18 +267,26 @@ func TestExtractDatetimesRanges(t *testing.T) {
 
 		// MD
 		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST), timeZone: "PST"},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST), timeZone: "America/Los_Angeles"},
 		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "Date:Thu 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-
+		// MD TZ
+		{in: "Feb 3 12pm PST", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
+		{in: "Feb 3 12pm (PST)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
+		{in: "Feb 3 12pm - PST", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
+		{in: "Feb 3 12pm in PST", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
+		{in: "Feb 3 12pm America/Los_Angeles", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_LA)},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST), timeZone: TimeZoneForPST},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_LA), timeZone: TimeZoneForLA},
 		// DM
 		{in: "Date:Thu 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
 
 		// MDY
 		{in: "Feb. 3, 2023 12:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "Feb 3, 2023 @ 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 		{in: "Thursday, February 3rd 2023 from 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-
+		{in: "Feb. 3, 2023 12:00pm, 3:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM, DateTimeFor2023Feb03_03PM)},
+		// MDY TZ
+		{in: "Feb 3 2023 12pm PST", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_PST)},
 		// DMY
 		{in: "3rd Feb 2023 9:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_09AM)},
 		{in: "3rd Feb 2023 9:00am", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_09AM)},
@@ -275,25 +294,34 @@ func TestExtractDatetimesRanges(t *testing.T) {
 
 		//
 		// Date Time Ranges
-		//
 
+		// MD
 		{in: "Feb 3 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "Feb 3 @ 9:00 AM - Feb 3 @ 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "February, 3 9:00 - 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
-
-		{in: "Feb 3 2023 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "Th , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "na"},
-		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "rest"},
-
-		{in: "When 3 Feb 2023 9:00 AM - 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
-
-		{in: "Thursday, February 3, 2023 9:00 AM 12:00 PM Google Calendar ICS", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
-		{in: "Thursday, February 3rd 2023 from 9:00 AM to 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
-
+		{in: "Feb, 3rd from 9 am-3.00 pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
+		// MD TZ
+		{in: "Feb 3rd - 9.00 AM- 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_PST, DateTimeForFeb03_12PM_PST)},
+		{in: "Feb 3 2023 9am - 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
+		{in: "Feb 3 2023 9am PST to 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
+		{in: "Feb 3 @ 9:00 AM PST - Feb 3 @ 12:00 PM PST", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_PST, DateTimeForFeb03_12PM_PST)},
+		{in: "Feb 3, 2023, 9:00 AM PST - Feb 3, 2023, 12:00 PM PST", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
+		// DM
 		{in: "3 Feb 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 
+		// MDY
+		{in: "Feb 3 2023 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "Thursday, February 3, 2023 9:00 AM 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+		{in: "Thursday, February 3rd 2023 from 9:00 AM to 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+		// DMY
+		{in: "When 3 Feb 2023 9:00 AM - 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
 		{in: "9:00am 3rd Feb - 4th Feb 3:00pm 2023", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb04_03PM)},
 		{in: "9:00am on 3rd Feb - 4th Feb at 3:00pm 2023", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb04_03PM)},
+		{in: "(2 Feb 2023 - 3 Feb 2023) 09:00 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeFor2023Feb04_03PM)},
+
+		// Both
+		{in: "Th , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "na"},
+		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "rest"},
 
 		// # Straddling end of year
 		// ("25 Dec - 2 Jan 2016", "25/12/2015", "02/01/2016"),
@@ -304,19 +332,12 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// {in: "Feb 3 3:00 PM 15:00", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
 		// {in: "Feb 3 9:00 AM 09:00 Feb 3 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
 		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_03PM)},
-		// {in: "Feb 3 12pm PST", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_PST)},
-		// {in: "Feb 3 2023 12pm PST", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_PST)},
-		// {in: "Feb 3 2023 9am - 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
-		// {in: "Feb 3 2023 9am PST to 3pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
-		// {in: "Feb 3 @ 9:00 AM PST - Feb 3 @ 3:00 PM PST", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
 		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00"
 		// {in: "Feb 3 2023 9:00 AM 3:00 PM 09:00 15:00 Google Calendar ICS"
 		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00"
 		// {in: "Fri, Apr 14, 2023 9:00 AM 09:00 Sat, Apr 15, 2023 5:00 PM 17:00"
 
-		// "Sept. 10, 2017 11:00am, 3:00pm" in expected(
 		// "Saturday 24 Jun 6:45pm (doors) | 11pm (curfew)" in expected(
-		// "(1 Jan 2017 - 3 Jan 2017) 11:00 13:00" in expected(
 		// "(1 Jan 2017 - 3 Jan 2017) Tuesday 11:00 13:00" in expected(
 		// "(1 Jan 2016 - 4 Jan 2016) Monday 11:00 13:00 Tuesday 14:00 15:00 Friday 16:05 17:20 Sunday 19:30 20:45" in expected(
 		// "(3 Feb 2017) Friday 19:30 21:30" in expected(
@@ -336,28 +357,36 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// "1,095\u00a0Individuals (617 Park City, 478 Heber)"
 		// "Burlingame, 2300 Adeline Dr, Burlingame, CA 94010, USA"
 		// "317-270-4214"
-		// "CCPC Update (5/18/20)"
-		// "The Wisdom of the Enneagram Workshop: February 1-2, 2025 VIRTUAL | Enneagram Institute of Ohio"
-		// "January 31st from 9 am-12.30 pm PST."
-		// "January 28, 2025 @ 6:00 pm"
-		// "Updated: 04/18/2024"
 		// "We may request cookies to be set on your device."
-		// "Apr 25, 2024, 7:00 PM PDT – Apr 28, 2024, 3:00 PM PDT"
 		// "Winter Retreat for 6-12th graders!"
 		// "For 6th-12th grade students @ SpringHill Camp"
 		// "October 8th - 10.00am- 3pm\u00a0MST"
-		// "The Three Instincts Workshop: April 5-6, 2025  VIRTUAL"
 	}
 
+	failed := 0
 	for i, tc := range tests {
-		t.Run(fmt.Sprintf("%03d__%s", i, tc.in), func(t *testing.T) {
-			got, err := Parse(tc.year, tc.dateMode, tc.timeZone, tc.in)
-			if err != nil {
-				t.Fatalf("error: %v", err)
-			}
-			if diff := cmp.Diff(got, tc.want, protocmp.Transform()); diff != "" {
-				t.Errorf("unexpected difference:\n%v", diff)
-			}
-		})
+		if !t.Run(fmt.Sprintf("%03d__%s", i, tc.in), testParseFn(t, tc)) {
+			failed++
+		}
+	}
+
+	if len(tests) == 0 {
+		fmt.Println("No tests were run")
+		return
+	}
+
+	percent := float64(failed) / float64(len(tests)) * 100
+	fmt.Printf("TestExtractDatetimesRanges: %.2f%% of tests failed (%d/%d)\n", percent, failed, len(tests))
+}
+
+func testParseFn(t *testing.T, tc test) func(*testing.T) {
+	return func(t *testing.T) {
+		got, err := Parse(tc.year, tc.dateMode, tc.timeZone, tc.in)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if diff := cmp.Diff(got, tc.want, protocmp.Transform()); diff != "" {
+			t.Errorf("unexpected difference:\n%v", diff)
+		}
 	}
 }

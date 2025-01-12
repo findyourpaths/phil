@@ -19,12 +19,15 @@ import "cloud.google.com/go/civil"
 %token FROM
 %token GOOGLE
 %token ICS
+%token IN
+%token LPAREN
 %token OF
 %token ON
 %token ORD_IND
 %token PM
 %token PERIOD
 %token QUO
+%token RPAREN
 %token SEMICOLON
 %token SUB
 %token THROUGH
@@ -37,20 +40,22 @@ import "cloud.google.com/go/civil"
 %token WHEN
 
 %token <string> IDENT
+%token <string> INT
 %token <string> MONTH_NAME
+%token <string> TIME_ZONE
+%token <string> TIME_ZONE_ABBREV
 %token <string> WEEKDAY_NAME
 %token <string> YEAR
-%token <string> INT
 
 
  /* Type of each nonterminal. */
 %type <DateTimeTZRanges> root
 %type <DateTimeTZRanges> DateTimeTZRanges
 %type <DateTimeTZRange> DateTimeTZRange
-
 %type <DateTimeTZ> DateTimeTZ
-
 %type <Date> Date
+%type <TimeZone> TimeZone
+%type <TimeZone> TimeZoneOpt
 
 %type <string> Day
 %type <string> Month
@@ -71,6 +76,7 @@ import "cloud.google.com/go/civil"
     DateTimeTZ  *DateTimeTZ
     Date  civil.Date
     Time  civil.Time
+    TimeZone  *TimeZone
     string string
     strings []string
     }
@@ -178,7 +184,7 @@ DateTimeTZRange:
   RangePrefixPlus DateTimeTZRange {$$ = $2}
 
 | DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
-| DateTimeTZ RangeSepPlus Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, ""))}
+| DateTimeTZ RangeSepPlus Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, $4))}
 
   // "Feb 3, 2023 - Feb 4, 2023"
 | DateTimeTZ RangeSepPlus DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
@@ -215,11 +221,11 @@ DateTimeTZRange:
 | WeekDay Day Month RangeSepPlus Day WeekDay Month YEAR {$$ = NewRangeWithStartEndDates(NewDMYDate($2, $3, $8), NewDMYDate($5, $7, $8))}
 
   // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
-| Time DateTimeSepOpt Day Month RangeSepPlus Day Month DateTimeSepOpt Time YEAR {$$ = NewRangeWithStartEndDateTimes(NewDateTime(NewDMYDate($3, $4, $10), $1, ""), NewDateTime(NewDMYDate($6, $7, $10), $9, ""))}
+| Time TimeZoneOpt DateTimeSepOpt Day Month RangeSepPlus Day Month DateTimeSepOpt Time TimeZoneOpt YEAR {$$ = NewRangeWithStartEndDateTimes(NewDateTime(NewDMYDate($4, $5, $12), $1, $2), NewDateTime(NewDMYDate($7, $8, $12), $10, $11))}
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
-| Date Time Time {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1, $2, ""), NewDateTime($1, $3, ""))}
+| Date Time TimeZoneOpt Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1, $2, $3), NewDateTime($1, $4, $5))}
 ;
 
 
@@ -253,10 +259,10 @@ RangeSep:
 
 DateTimeTZ:
   Date {$$ = NewDateTimeWithDate($1)}
-| Date Time {$$ = NewDateTime($1, $2, "")}
-| Date DateTimeSepPlus Time {$$ = NewDateTime($1, $3, "")}
-| Time Date {$$ = NewDateTime($2, $1, "")}
-| Time DateTimeSepPlus Date {$$ = NewDateTime($3, $1, "")}
+| Date Time TimeZoneOpt {$$ = NewDateTime($1, $2, $3)}
+| Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
+| Time TimeZoneOpt Date {$$ = NewDateTime($3, $1, $2)}
+| Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTime($4, $1, $2)}
 ;
 
 
@@ -271,6 +277,28 @@ DateTimeSepPlus:
 DateTimeSep:
   DEC
 | SUB
+;
+
+
+TimeZoneOpt:
+  {$$ = nil}
+| TimeZone
+| TimeZonePrefix TimeZone TimeZoneSuffix {$$ = $2}
+| TimeZoneSep TimeZone {$$ = $2}
+;
+TimeZonePrefix:
+  LPAREN
+;
+TimeZoneSuffix:
+  RPAREN
+;
+TimeZoneSep:
+  IN
+| SUB
+;
+TimeZone:
+  TIME_ZONE {$$ = NewTimeZone($1, "")}
+| TIME_ZONE_ABBREV {$$ = NewTimeZone("", $1)}
 ;
 
 

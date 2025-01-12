@@ -2,7 +2,6 @@ package datetime
 
 import (
 	"fmt"
-	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
@@ -45,18 +44,19 @@ var boundaryRE2 = regexp.MustCompile(`([[:^alpha:]])([[:alpha:]])`)
 // var spacifyRE = regexp.MustCompile(`\s*\b(.|-)\b\s*`)
 var spacifyRE = regexp.MustCompile(`(?:^|\s*\b)(.|-)(?:\b\s*|$)`)
 
-var singletonTZ = timezone.New()
+var timezoneTZ = timezone.New()
 
 var cache = map[[4]string]*DateTimeTZRanges{}
 var cacheMutex sync.RWMutex
 
-func Parse(year int, dateMode, timeZone, in string) (*DateTimeTZRanges, error) {
-	defer func() {
-		if err := recover(); err != nil {
-			slog.Warn("in ExtractDatetimeRanges(), got a panic trying to extract", "in", in, "err", err)
-		}
-	}()
-	key := [4]string{strconv.Itoa(year), dateMode, timeZone, in}
+func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeTZRanges, error) {
+	// defer func() {
+	// 	if err := recover(); err != nil {
+	// 		slog.Warn("in Parse(), got a panic trying to extract", "in", in, "err", err)
+	// 	}
+	// }()
+
+	key := [4]string{strconv.Itoa(year), dateMode, fmt.Sprintf("%#v", timeZone), in}
 	cacheMutex.RLock()
 	r, found := cache[key]
 	cacheMutex.RUnlock()
@@ -68,7 +68,7 @@ func Parse(year int, dateMode, timeZone, in string) (*DateTimeTZRanges, error) {
 	debugf("parseYear: %d\n", parseYear)
 
 	if dateMode == "" {
-		if strings.HasPrefix(timeZone, "America/") {
+		if timeZone != nil && strings.HasPrefix(timeZone.Name, "America/") {
 			dateMode = "na"
 		} else {
 			dateMode = "rest"
@@ -77,9 +77,6 @@ func Parse(year int, dateMode, timeZone, in string) (*DateTimeTZRanges, error) {
 	parseDateMode = dateMode
 	debugf("parseDateMode: %q\n", parseDateMode)
 
-	if strings.Index(timeZone, "/") > 0 {
-		timeZone, _ = singletonTZ.GetTimezoneAbbreviation(timeZone)
-	}
 	parseTimeZone = timeZone
 	debugf("parseTimeZone: %q\n", parseTimeZone)
 
