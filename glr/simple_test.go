@@ -109,7 +109,11 @@ func TestGLRParser(t *testing.T) {
 			}
 
 			// Get the root node (last node in result)
-			got := GetParseNodeValue(g, results[0], "")
+			got, err := GetParseNodeValue(g, results[0], "")
+			if err != nil {
+				t.Errorf("error getting parse node value: %v", err)
+				return
+			}
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Errorf("Parse() got rule = %#v, want %#v", got, tc.want)
 			}

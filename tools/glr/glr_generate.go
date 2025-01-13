@@ -109,8 +109,8 @@ func main() {
 	for stateNum, state := range states.Items {
 		for _, actions := range state.Actions {
 			for _, action := range actions {
-				if action.Type == "reduce" && action.Rule >= len(rls.Items) {
-					panic(fmt.Sprintf("state %d references invalid rule number %d", stateNum, action.Rule))
+				if action.Type == "reduce" && action.RuleID >= len(rls.Items) {
+					panic(fmt.Sprintf("state %d references invalid rule number %d", stateNum, action.RuleID))
 				}
 			}
 		}
@@ -344,8 +344,8 @@ func readStates(p string) (*glr.ParseStates, error) {
 	scanner := bufio.NewScanner(f)
 	lineNum := 0
 
-	srConflictRE := regexp.MustCompile(`^\d+: shift\/reduce conflict \(shift \d+\(\d+\), red'n (\d+)\(\d+\)\) on \S+$`)
-	rrConflictRE := regexp.MustCompile(`^\s*\d+: reduce\/reduce conflict  \(red'ns \d+ and (\d+)\) on \S+$`)
+	srConflictRE := regexp.MustCompile(`^\d+: shift\/reduce conflict \(shift \d+\(\d+\), red'n (\d+)\(\d+\)\) on ([A-Z_]+)$`)
+	rrConflictRE := regexp.MustCompile(`^\s*\d+: reduce\/reduce conflict  \(red'ns \d+ and (\d+)\) on [A-Z_]+$`)
 
 	actions := map[string][]glr.Action{}
 
@@ -358,8 +358,14 @@ func readStates(p string) (*glr.ParseStates, error) {
 		}
 
 		match := srConflictRE.FindStringSubmatch(line)
+		// if len(match) > 1 {
+		// 	slog.Debug("got shift/reduce conflict", "line", line)
+		// }
 		if len(match) == 0 {
 			match = rrConflictRE.FindStringSubmatch(line)
+			// if len(match) > 1 {
+			// 	slog.Debug("got reduce/reduce conflict", "line", line)
+			// }
 		}
 
 		if len(match) > 1 {
@@ -367,19 +373,23 @@ func readStates(p string) (*glr.ParseStates, error) {
 			if err != nil {
 				return nil, fmt.Errorf("invalid conflict target at line %d: %q", lineNum, line)
 			}
-			slog.Debug("conflict reduce rule", "rule", rule)
 			new := glr.Action{
-				Type: "reduce",
-				Rule: rule,
+				Type:   "reduce",
+				RuleID: rule,
 			}
+			sym := "."
+			if len(match) > 2 {
+				sym = match[2]
+			}
+			slog.Debug("conflict reduce rule", "rule", rule, "sym", sym)
 			found := false
-			for _, act := range actions["."] {
+			for _, act := range actions[sym] {
 				if act == new {
 					found = true
 				}
 			}
 			if !found {
-				actions["."] = append(actions["."], new)
+				actions[sym] = append(actions[sym], new)
 			}
 			continue
 		}
@@ -431,8 +441,8 @@ func readStates(p string) (*glr.ParseStates, error) {
 				return nil, fmt.Errorf("invalid shift target at line %d: %q", lineNum, line)
 			}
 			rs.Items[currentState].Actions[sym] = append(rs.Items[currentState].Actions[sym], glr.Action{
-				Type:  "shift",
-				State: state,
+				Type:    "shift",
+				StateID: state,
 			})
 		case "reduce":
 			rule, err := parseTarget(fields[2])
@@ -440,8 +450,8 @@ func readStates(p string) (*glr.ParseStates, error) {
 				return nil, fmt.Errorf("invalid reduce target at line %d: %q", lineNum, line)
 			}
 			rs.Items[currentState].Actions[sym] = append(rs.Items[currentState].Actions[sym], glr.Action{
-				Type: "reduce",
-				Rule: rule,
+				Type:   "reduce",
+				RuleID: rule,
 			})
 		case "goto":
 			target, err := parseTarget(fields[2])
