@@ -45,7 +45,7 @@ func (l *datetimeLexer) Error(msg string) {
 func (l *datetimeLexer) Lex(lval *yySymType) int {
 	for {
 		_, tok, lit := l.scanner.Scan()
-		debugf("tok: %q, lit: %q\n", tok, lit) //, tok == token.ILLEGAL: %t, tok == token.IDENT: %t\n", tok, lit, tok == token.ILLEGAL, tok == token.IDENT)
+		debugf("scanned literal: %q as token: %q\n", lit, tok)
 
 		// Skip whitespace and semicolons
 		if tok == token.SEMICOLON {

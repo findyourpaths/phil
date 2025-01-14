@@ -15,8 +15,6 @@ var parseYear int
 var parseTimeZone *TimeZone
 var parseTimeZoneAbbrev string
 
-func currentParseYear() int { return parseYear }
-
 // A DateTimeTZs represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
 //
@@ -120,6 +118,7 @@ func (dttz *DateTimeTZ) String() string {
 }
 
 func NewDateTime(date civil.Date, time civil.Time, timeZone *TimeZone) *DateTimeTZ {
+	// fmt.Printf("NewDateTime(date: %#v, time: %#v, timeZone: %#v)\n", date, time, timeZone)
 	if timeZone == nil {
 		timeZone = parseTimeZone
 	}
@@ -228,11 +227,11 @@ type timeUnit struct {
 	min           int
 	max           int
 	emptyVal      any
-	defaultFn     func() int
+	fixFn         func(int) (int, bool)
 	stringToIntFn func(string) int
 }
 
-var yearUnit = timeUnit{name: "year", min: 1900, max: 2100, defaultFn: currentParseYear}
+var yearUnit = timeUnit{name: "year", fixFn: fixYear}
 var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
 var dayUnit = timeUnit{name: "day", min: 1, max: 31}
 var hourUnit = timeUnit{name: "hour", min: 0, max: 24}
@@ -278,14 +277,28 @@ func findInt(tunit timeUnit, valAny any) int {
 	default:
 		panic(fmt.Sprintln("failed to find int", "tunit", tunit, "valAny", valAny))
 	}
-	if r == -1 && tunit.defaultFn != nil {
-		r = tunit.defaultFn()
-	}
 
-	if r < tunit.min || r > tunit.max {
+	var ok bool
+	if tunit.fixFn != nil {
+		r, ok = tunit.fixFn(r)
+	}
+	// debugf("in findInt(), r: %d, ok: %t\n", r, ok)
+	if !ok && (r < tunit.min || r > tunit.max) {
 		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tunit, "valAny", valAny))
 	}
+	// debugf("in findInt(), returning: %d\n", r)
 	return r
+}
+
+func fixYear(year int) (int, bool) {
+	// debugf("fixYear(year: %d)\n", year)
+	if parseYear != 0 && year == -1 {
+		return parseYear, true
+	}
+	if parseYear != 0 && year >= 0 && year <= 99 {
+		return 100*(parseYear/100) + year, true
+	}
+	return year, (year >= 1900 && year <= 2100)
 }
 
 func monthNameToMonth(monthName string) int {

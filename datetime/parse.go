@@ -2,7 +2,6 @@ package datetime
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"regexp"
 	"strings"
@@ -27,8 +26,8 @@ func SetDebug(enabled bool) {
 // debugf prints debug messages if debug is enabled
 func debugf(format string, args ...any) {
 	if DoDebug {
-		// fmt.Printf(format, args...)
-		log.Printf(format, args...)
+		fmt.Printf(format, args...)
+		// log.Printf(format, args...)
 	}
 }
 
@@ -114,7 +113,7 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 	if err != nil {
 		return nil, err
 	}
-	rs := rsAny.(*DateTimeTZRanges)
+
 	// for _, rng := range rngs.Items {
 	// 	if rng.Start.TimeZone == "" {
 	// 		rng.Start.TimeZone = timeZone
@@ -124,6 +123,11 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 	// 		rng.End.TimeZone = timeZone
 	// 	}
 	// }
+
+	var rs *DateTimeTZRanges
+	if rsAny != nil {
+		rs = rsAny.(*DateTimeTZRanges)
+	}
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
 	cache[key] = rs

@@ -121,7 +121,7 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 			}
 		}
 		debugf("%sfailed to find alternative\n", spaces)
-		return nil, fmt.Errorf("failed to find alternative")
+		return nil, nil // fmt.Errorf("failed to find alternative")
 	}
 	if n.Term != "" {
 		debugf("%sreturning term: %q\n", spaces, n.Term)
@@ -139,8 +139,11 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+		if val == nil {
+			return nil, nil
+		}
 		args[i] = reflect.ValueOf(val)
-		debugf("%sgot args[%d]: %#v\n", spaces, i, args[i])
+		debugf("%sgot rule %d args[%d]: %#v\n", spaces, n.ruleID, i, args[i])
 	}
 
 	debugf("%scalling rule %d fn with %d args\n", spaces, n.ruleID, len(args))
@@ -150,6 +153,7 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 		defer func() {
 			if e := recover(); e != nil {
 				err = errors.New(e.(string))
+				debugf("%sgot err: %v", spaces, err)
 			}
 		}()
 		r = fn.Call(args)[0].Interface()
@@ -382,6 +386,8 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	debugf("initialized with start state 0\n")
 
 	for {
+		debugf("\n")
+
 		// Create parse node for token
 		sym, val, hasMore := l.NextToken(s.position)
 		term := &ParseNode{
@@ -449,7 +455,7 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 }
 
 func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
-	debugf(fmt.Sprintf("\nparsing term: %#v\n", term))
+	debugf(fmt.Sprintf("parsing term: %#v\n", term))
 	printAllParsers(s, nil)
 
 	s.lookahead = term

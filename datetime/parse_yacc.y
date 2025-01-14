@@ -140,6 +140,8 @@ DateTimeTZRanges:
   // "1-2 Feb, 3-4 Mar 2023"
 | Day RangeSep Day Month Day RangeSep Day Month YEAR {$$ = NewRanges(NewRangeWithStartEndDates(NewDMYDate($1, $4, $9), NewDMYDate($3, $4, $9)), NewRangeWithStartEndDates(NewDMYDate($5, $8, $9), NewDMYDate($7, $8, $9)))}
 
+  // "Feb 3, Mar 4"
+| Month Day Month Day {$$ = NewRanges(NewRangeWithStart(NewMDYDate($1, $2, nil)), NewRangeWithStart(NewMDYDate($3, $4, nil)))}
   // "Feb 3, Mar 4 2023"
 | Month Day Month Day YEAR {$$ = NewRanges(NewRangeWithStart(NewMDYDate($1, $2, $5)), NewRangeWithStart(NewMDYDate($3, $4, $5)))}
 ;
@@ -184,7 +186,9 @@ DateTimeTZRange:
   DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
 
 | RangePrefixPlus DateTimeTZRange {$$ = $2}
-| DateTimeTZ RangeSepPlus Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, $4))}
+| DateTimeTZ RangeSepPlus Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, $1.TimeZone))}
+| DateTimeTZ RangeSepPlus Time TimeZone {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1.Date, $1.Time, $4), NewDateTime($1.Date, $3, $4))}
+| Time RangeSepPlus DateTimeTZ {$$ = NewRangeWithStartEndDateTimes(NewDateTime($3.Date, $1, $3.TimeZone), $3)}
 
   // "Feb 3, 2023 - Feb 4, 2023"
 | DateTimeTZ RangeSepPlus DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
@@ -221,7 +225,7 @@ DateTimeTZRange:
 | WeekDay Day Month RangeSepPlus Day WeekDay Month YEAR {$$ = NewRangeWithStartEndDates(NewDMYDate($2, $3, $8), NewDMYDate($5, $7, $8))}
 
   // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
-| Time TimeZoneOpt DateTimeSepOpt Day Month RangeSepPlus Day Month DateTimeSepOpt Time TimeZoneOpt YEAR {$$ = NewRangeWithStartEndDateTimes(NewDateTime(NewDMYDate($4, $5, $12), $1, $2), NewDateTime(NewDMYDate($7, $8, $12), $10, $11))}
+| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt YEAR {$$ = NewRangeWithStartEndDateTimes(NewDateTime(NewDMYDate($4, $6, $14), $1, $2), NewDateTime(NewDMYDate($8, $10, $14), $12, $13))}
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
@@ -354,10 +358,15 @@ DatePrefix:
 | WeekDay
 | COLON
 | COMMA
+| ON
 | TIME
 ;
 
 
+DateSepOpt:
+
+| DateSepPlus
+;
 DateSepPlus:
   DateSep
 | DateSepPlus DateSep
@@ -411,7 +420,8 @@ MonthSuffix:
 
 Year:
   YEAR
-| YEAR YearSuffixPlus
+| INT
+| Year YearSuffixPlus
 ;
 YearSuffixPlus:
   YearSuffix
