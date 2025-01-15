@@ -62,20 +62,20 @@ var DateTimeFor2023Feb03_12PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateF
 var DateTimeFor2023Feb03_03PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor03PM}}
 var DateTimeFor2023Feb04_03PM = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb04, Time: TimeFor03PM}}
 
-var DateTimeForFeb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor09AM}, TimeZone: TimeZoneForPST}
-var DateTimeForFeb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: TimeZoneForPST}
+var DateTimeForFeb03_09AM_ET = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor09AM}, TimeZone: TimeZoneForET}
+var DateTimeForFeb03_12PM_ET = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: TimeZoneForET}
 
-var DateTimeForFeb03_12PM_LA = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: TimeZoneForLA}
+var DateTimeForFeb03_12PM_East = &DateTimeTZ{DateTime: civil.DateTime{Date: DateForFeb03, Time: TimeFor12PM}, TimeZone: TimeZoneForEast}
 
-var DateTimeFor2023Feb03_09AM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor09AM}, TimeZone: TimeZoneForPST}
-var DateTimeFor2023Feb03_12PM_PST = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: TimeZoneForPST}
+var DateTimeFor2023Feb03_09AM_ET = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor09AM}, TimeZone: TimeZoneForET}
+var DateTimeFor2023Feb03_12PM_ET = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: TimeZoneForET}
 
 var TimeFor09AM = civil.Time{Hour: 9}
 var TimeFor12PM = civil.Time{Hour: 12}
 var TimeFor03PM = civil.Time{Hour: 15}
 
-var TimeZoneForLA = &TimeZone{Name: "America/Los_Angeles"}
-var TimeZoneForPST = &TimeZone{Abbrev: "PST"}
+var TimeZoneForEast = &TimeZone{Name: "US/Eastern"}
+var TimeZoneForET = &TimeZone{Abbrev: "ET"}
 
 type test struct {
 	dateMode string
@@ -108,6 +108,7 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "2023-02-03T", want: DateRangesFor2023Feb03},
 		// {in: "2023-02-03T12", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 		{in: "2023-02-03T12:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "2023-02-03T12:00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 		{in: "2023-02-03T12:00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 
 		//
@@ -271,14 +272,14 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "Date:Thu 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		// MD TZ
-		{in: "Feb 3 12pm PST", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
-		{in: "Feb 3 12pm (PST)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
-		{in: "Feb 3 12pm - PST", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
-		{in: "Feb 3 12pm in PST", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST)},
+		{in: "Feb 3 12pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
+		{in: "Feb 3 12pm (ET)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
+		{in: "Feb 3 12pm - ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
+		{in: "Feb 3 12pm in ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		// Need to update lexer for multiple tokens like this.
-		// {in: "Feb 3 12pm America/Los_Angeles", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_LA)},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_PST), timeZone: TimeZoneForPST},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_LA), timeZone: TimeZoneForLA},
+		// {in: "Feb 3 12pm US/Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East)},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), timeZone: TimeZoneForET},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), timeZone: TimeZoneForEast},
 		// DM
 		{in: "Date:Thu 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
 		{in: "Thursday 3 Feb 3:00pm (doors) | 11pm (curfew)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
@@ -290,7 +291,7 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		// Not sure if this is a range or multiple.
 		// {in: "Feb. 3, 2023 12:00pm, 3:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM, DateTimeFor2023Feb03_03PM)},
 		// MDY TZ
-		{in: "Feb 3 2023 12pm PST", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_PST)},
+		{in: "Feb 3 2023 12pm ET", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET)},
 		// DMY
 		{in: "3rd Feb 2023 9:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_09AM)},
 		{in: "3rd Feb 2023 9:00am", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_09AM)},
@@ -305,11 +306,11 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "February, 3 9:00 - 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
 		{in: "Feb, 3rd from 9 am-3.00 pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
 		// MD TZ
-		{in: "Feb 3rd - 9.00 AM- 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_PST, DateTimeForFeb03_12PM_PST)},
-		{in: "Feb 3 2023 9am - 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
-		{in: "Feb 3 2023 9am PST to 12pm PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
-		{in: "Feb 3 @ 9:00 AM PST - Feb 3 @ 12:00 PM PST", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_PST, DateTimeForFeb03_12PM_PST)},
-		{in: "Feb 3, 2023, 9:00 AM PST - Feb 3, 2023, 12:00 PM PST", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_PST, DateTimeFor2023Feb03_12PM_PST)},
+		{in: "Feb 3rd - 9.00 AM- 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
+		{in: "Feb 3 2023 9am - 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
+		{in: "Feb 3 2023 9am ET to 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
+		{in: "Feb 3 @ 9:00 AM ET - Feb 3 @ 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
+		{in: "Feb 3, 2023, 9:00 AM ET - Feb 3, 2023, 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
 		// DM
 		{in: "3 Feb 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 
