@@ -112,7 +112,7 @@ func (dttz *DateTimeTZ) String() string {
 	}
 	r := dttz.DateTime.String()
 	if tzStr := dttz.TimeZone.String(); tzStr != "" {
-		r += " " + tzStr
+		r += tzStr
 	}
 	return r
 }
@@ -135,30 +135,46 @@ func NewDateTimeWithDate(date civil.Date, timeZone *TimeZone) *DateTimeTZ {
 type TimeZone struct {
 	Name   string
 	Abbrev string
+	Offset string
 }
 
 func (tz *TimeZone) String() string {
-	if tz, _ := timezoneTZ.GetTzInfo(tz.Name); tz != nil {
-		return tz.StandardOffsetHHMM()
+	if tz == nil {
+		return "Z"
 	}
-	tzs, _ := timezoneTZ.GetTzAbbreviationInfo(tz.Abbrev)
-	if len(tzs) < 0 {
-		return ""
+	if tz.Offset != "" {
+		return tz.Offset
 	}
-	if len(tzs) > 1 {
-		slog.Debug("got multiple time zones", "tz", fmt.Sprintf("%#v", tz), "tzs", tzs)
+	if tz.Name != "" {
+		if tz, _ := timezoneTZ.GetTzInfo(tz.Name); tz != nil {
+			return tz.StandardOffsetHHMM()
+		}
 	}
-	return tzs[0].OffsetHHMM()
+	if tz.Abbrev != "" {
+		tzs, _ := timezoneTZ.GetTzAbbreviationInfo(tz.Abbrev)
+		if len(tzs) < 0 {
+			return ""
+		}
+		if len(tzs) > 1 {
+			slog.Debug("got multiple time zones", "tz", fmt.Sprintf("%#v", tz), "tzs", tzs)
+		}
+		return tzs[0].OffsetHHMM()
+	}
+	return ""
 }
 
-func NewTimeZone(nameAny any, abbrevAny any) *TimeZone {
+func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 	name, nok := nameAny.(string)
 	abbrev, aok := abbrevAny.(string)
-	if !nok && !aok {
-		slog.Debug("failed to make new time zone due to no name nor abbrev", "nameAny", nameAny, "abbrevAny", abbrevAny)
+	offset, ook := offsetAny.(string)
+	if !nok && !aok && !ook {
+		slog.Debug("didn't make new time zone because of failure to parse name or abbrev or offset", "nameAny", nameAny, "abbrevAny", abbrevAny, "offsetAny", offsetAny)
 		return nil
 	}
-	return &TimeZone{Name: name, Abbrev: abbrev}
+	if name == "" && abbrev == "" && offset == "" {
+		return nil
+	}
+	return &TimeZone{Name: name, Abbrev: abbrev, Offset: offset}
 }
 
 var weekdaysByNames = map[string]int{
@@ -248,6 +264,30 @@ var noHour = 0
 var noMinute = 0
 var noSecond = 0
 var noNS = 0
+
+// func findFloat(valAny any) (float32, bool) {
+// 	if valAny == nil {
+// 		return 0.0, true
+// 	}
+// 	var r float32
+// 	switch valAny.(type) {
+// 	case float32:
+// 		rFloat, ok := valAny.(float32)
+// 		if ok {
+// 			r = rFloat
+// 		}
+// 	case string:
+// 		rFloat, err := strconv.ParseFloat(valAny.(string), 32)
+// 		if err == nil {
+// 			r = float32(rFloat)
+// 		}
+// 	default:
+// 		// panic(fmt.Sprintln("failed to find float", "valAny", valAny))
+// 		return r, false
+// 	}
+
+// 	return r, true
+// }
 
 func findInt(tunit timeUnit, valAny any) int {
 	if valAny == nil {

@@ -6,6 +6,7 @@ import "cloud.google.com/go/civil"
 
 %token ILLEGAL
 
+%token ADD
 %token AM
 %token AMP
 %token AND
@@ -38,6 +39,7 @@ import "cloud.google.com/go/civil"
 %token TO
 %token UNTIL
 %token WHEN
+%token Z
 
 %token <string> IDENT
 %token <string> INT
@@ -53,9 +55,14 @@ import "cloud.google.com/go/civil"
 %type <DateTimeTZRanges> DateTimeTZRanges
 %type <DateTimeTZRange> DateTimeTZRange
 %type <DateTimeTZ> DateTimeTZ
+%type <DateTimeTZ> RFC3339DateTimeTZ
 %type <Date> Date
+%type <Date> RFC3339Date
+%type <Time> Time
+%type <Time> RFC3339Time
 %type <TimeZone> TimeZone
 %type <TimeZone> TimeZoneOpt
+%type <TimeZone> RFC3339TimeZone
 
 %type <string> Day
 %type <string> Month
@@ -63,7 +70,7 @@ import "cloud.google.com/go/civil"
 %type <strings> DayPlus
 %type <strings> DayPlus1
 
-%type <Time> Time
+
 
 
 %start root
@@ -71,11 +78,11 @@ import "cloud.google.com/go/civil"
 
  /* Type of each nonterminal. */
 %union {
-    DateTimeTZRanges  *DateTimeTZRanges
-    DateTimeTZRange  *DateTimeTZRange
-    DateTimeTZ  *DateTimeTZ
-    Date  civil.Date
-    Time  civil.Time
+    DateTimeTZRanges *DateTimeTZRanges
+    DateTimeTZRange *DateTimeTZRange
+    DateTimeTZ *DateTimeTZ
+    Date civil.Date
+    Time civil.Time
     TimeZone  *TimeZone
     string string
     strings []string
@@ -268,6 +275,7 @@ DateTimeTZ:
 | Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
 | Time TimeZoneOpt Date {$$ = NewDateTime($3, $1, $2)}
 | Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTime($4, $1, $2)}
+| RFC3339DateTimeTZ
 ;
 
 
@@ -282,6 +290,7 @@ DateTimeSepPlus:
 DateTimeSep:
   DEC
 | SUB
+| T
 ;
 
 
@@ -290,6 +299,7 @@ TimeZoneOpt:
 | TimeZone
 | TimeZonePrefix TimeZone TimeZoneSuffix {$$ = $2}
 | TimeZoneSep TimeZone {$$ = $2}
+| Z {$$ = nil}
 ;
 TimeZonePrefix:
   LPAREN
@@ -302,8 +312,33 @@ TimeZoneSep:
 | SUB
 ;
 TimeZone:
-  TIME_ZONE {$$ = NewTimeZone($1, nil)}
-| TIME_ZONE_ABBREV {$$ = NewTimeZone(nil, $1)}
+  TIME_ZONE {$$ = NewTimeZone($1, nil, nil)}
+| TIME_ZONE_ABBREV {$$ = NewTimeZone(nil, $1, nil)}
+;
+
+
+//
+// RDC3339 DateTimeTZ
+//
+
+RFC3339DateTimeTZ:
+  RFC3339Date {$$ = NewDateTimeWithDate($1, nil)}
+| RFC3339Date RFC3339Time {$$ = NewDateTime($1, $2, nil)}
+| RFC3339Date RFC3339Time RFC3339TimeZone {$$ = NewDateTime($1, $2, $3)}
+;
+
+RFC3339Date:
+  Year SUB INT SUB INT {$$ = NewDMYDate($5, $3, $1)}
+;
+
+RFC3339Time:
+  T INT COLON INT COLON INT {$$ = NewTime($2, $4, $6, nil)}
+;
+
+RFC3339TimeZone:
+  Z {$$ = nil}
+| ADD INT COLON INT {$$ = NewTimeZone(nil, nil, "+" + $2 + ":" + $4)}
+| SUB INT COLON INT {$$ = NewTimeZone(nil, nil, "-" + $2 + ":" + $4)}
 ;
 
 
@@ -313,8 +348,6 @@ TimeZone:
 
 Date:
   DatePrefixPlus Date {$$ = $2}
-  // "2006-01-02 T 15:04:05Z07:00"
-| Date DateSuffixPlus {$$ = $1}
 
   // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
 | Day DateSepPlus Day {$$ = NewAmbiguousDate($1, $3, nil)}
@@ -377,15 +410,6 @@ DateSep:
 | PERIOD
 | SUB
 | QUO
-;
-
-
-DateSuffixPlus:
-  DateSuffix
-| DateSuffixPlus DateSuffix
-;
-DateSuffix:
-  T
 ;
 
 
@@ -484,52 +508,3 @@ TimeSep:
   COLON
 | PERIOD
 ;
-
-
-/* All optional terminals */
-
-AndOpt:
-
-| AND
-;
-
-
-/* CalendarOpt: */
-
-/* | CALENDAR */
-/* ; */
-
-
-/* ColonOpt: */
-/*   COLON */
-/* ; */
-
-
-/* CommaOpt: */
-
-/* | COMMA */
-/* ; */
-
-
-/* GoogleOpt: */
-
-/* | GOOGLE */
-/* ; */
-
-
-/* ICSOpt: */
-
-/* | ICS */
-/* ; */
-
-
-OfOpt:
-
-| OF
-;
-
-
-/* WhenOpt: */
-
-/* | WHEN */
-/* ; */

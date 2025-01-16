@@ -69,6 +69,9 @@ var DateTimeForFeb03_12PM_East = &DateTimeTZ{DateTime: civil.DateTime{Date: Date
 
 var DateTimeFor2023Feb03_09AM_ET = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor09AM}, TimeZone: TimeZoneForET}
 var DateTimeFor2023Feb03_12PM_ET = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: TimeZoneForET}
+var DateTimeFor2023Feb03_12PM_ADD0 = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: TimeZoneForADD0}
+var DateTimeFor2023Feb03_12PM_SUB0 = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: TimeZoneForSUB0}
+var DateTimeFor2023Feb03_12PM_SUB5 = &DateTimeTZ{DateTime: civil.DateTime{Date: DateFor2023Feb03, Time: TimeFor12PM}, TimeZone: TimeZoneForSUB5}
 
 var TimeFor09AM = civil.Time{Hour: 9}
 var TimeFor12PM = civil.Time{Hour: 12}
@@ -76,8 +79,11 @@ var TimeFor03PM = civil.Time{Hour: 15}
 
 var TimeZoneForEast = &TimeZone{Name: "US/Eastern"}
 var TimeZoneForET = &TimeZone{Abbrev: "ET"}
+var TimeZoneForADD0 = &TimeZone{Offset: "+00:00"}
+var TimeZoneForSUB0 = &TimeZone{Offset: "-00:00"}
+var TimeZoneForSUB5 = &TimeZone{Offset: "-05:00"}
 
-type test struct {
+type parseTest struct {
 	dateMode string
 	year     int
 	timeZone *TimeZone
@@ -86,13 +92,13 @@ type test struct {
 	want *DateTimeTZRanges
 }
 
-func TestExtractDatetimesRanges(t *testing.T) {
+func TestParse(t *testing.T) {
 	if os.Getenv("DEBUG") == "true" {
 		glr.DoDebug = true
 		DoDebug = true
 	}
 
-	tests := []test{
+	tests := []parseTest{
 
 		// Adapts tests from:
 		// https://github.com/robintw/daterangeparser/blob/master/daterangeparser/test.py
@@ -110,6 +116,10 @@ func TestExtractDatetimesRanges(t *testing.T) {
 		{in: "2023-02-03T12:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 		{in: "2023-02-03T12:00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 		{in: "2023-02-03T12:00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "2023-02-03T12:00:00Z", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "2023-02-03T12:00:00+00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ADD0)},
+		{in: "2023-02-03T12:00:00-00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB0)},
+		{in: "2023-02-03T12:00:00-05:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB5)},
 
 		//
 		// Date
@@ -386,10 +396,10 @@ func TestExtractDatetimesRanges(t *testing.T) {
 	}
 
 	percent := float64(failed) / float64(len(tests)) * 100
-	fmt.Printf("TestExtractDatetimesRanges: %.2f%% of tests failed (%d/%d)\n", percent, failed, len(tests))
+	fmt.Printf("TestParse: %.2f%% of tests failed (%d/%d)\n", percent, failed, len(tests))
 }
 
-func testParseFn(t *testing.T, tc test) func(*testing.T) {
+func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 	return func(t *testing.T) {
 		got, err := Parse(tc.year, tc.dateMode, tc.timeZone, tc.in)
 		if err != nil {

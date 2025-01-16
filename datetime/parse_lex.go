@@ -45,7 +45,14 @@ func (l *datetimeLexer) Error(msg string) {
 func (l *datetimeLexer) Lex(lval *yySymType) int {
 	for {
 		_, tok, lit := l.scanner.Scan()
-		debugf("scanned literal: %q as token: %q\n", lit, tok)
+		features := ""
+		if tok == token.ILLEGAL {
+			features += " ILLEGAL"
+		}
+		if tok == token.IDENT {
+			features += " IDENT"
+		}
+		debugf("scanned literal: %q as token: %q%s\n", lit, tok, features)
 
 		// Skip whitespace and semicolons
 		if tok == token.SEMICOLON {
@@ -81,29 +88,7 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			}
 
 		case token.IDENT:
-			upLit := strings.ToUpper(lit)
-			// tz, err := tzTimezone.GetTzAbbreviationInfo(upLit)
-			// fmt.Println("upLit", upLit, "tz", tz, "err", err)
-			if tz, _ := timezoneTZ.GetTzAbbreviationInfo(upLit); tz != nil {
-				return TIME_ZONE_ABBREV
-			}
-			if tz, _ := timezoneTZ.GetTzInfo(upLit); tz != nil {
-				return TIME_ZONE
-			}
-
 			lowLit := strings.ToLower(lit)
-			if _, found := monthsByNames[lowLit]; found {
-				return MONTH_NAME
-			}
-
-			if _, found := weekdaysByNames[lowLit]; found {
-				return WEEKDAY_NAME
-			}
-
-			if ordinals[lowLit] {
-				return ORD_IND
-			}
-
 			switch lowLit {
 			case "am":
 				return AM
@@ -147,8 +132,32 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return UNTIL
 			case "when":
 				return WHEN
+			case "z":
+				return Z
 
 			default:
+				if _, found := monthsByNames[lowLit]; found {
+					return MONTH_NAME
+				}
+
+				if _, found := weekdaysByNames[lowLit]; found {
+					return WEEKDAY_NAME
+				}
+
+				if ordinals[lowLit] {
+					return ORD_IND
+				}
+
+				upLit := strings.ToUpper(lit)
+				// tz, err := tzTimezone.GetTzAbbreviationInfo(upLit)
+				// fmt.Println("upLit", upLit, "tz", tz, "err", err)
+				if tz, _ := timezoneTZ.GetTzAbbreviationInfo(upLit); tz != nil {
+					return TIME_ZONE_ABBREV
+				}
+				if tz, _ := timezoneTZ.GetTzInfo(upLit); tz != nil {
+					return TIME_ZONE
+				}
+
 				return IDENT
 			}
 
@@ -163,6 +172,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			}
 			return INT
 
+		case token.ADD:
+			return ADD
 		case token.COLON:
 			return COLON
 		case token.COMMA:
