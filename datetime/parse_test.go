@@ -297,6 +297,8 @@ func TestParse(t *testing.T) {
 		// DM
 		{in: "Date:Thu 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
 		{in: "Thursday 3 Feb 3:00pm (doors) | 11pm (curfew)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
+		// Need to update sorting algorithm for this.
+		// {in: "Thu, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
 
 		// MDY
 		{in: "Feb. 3, 2023 12:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},

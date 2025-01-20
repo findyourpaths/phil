@@ -152,7 +152,7 @@ func (tz *TimeZone) String() string {
 	}
 	if tz.Abbrev != "" {
 		tzs, _ := timezoneTZ.GetTzAbbreviationInfo(tz.Abbrev)
-		if len(tzs) < 0 {
+		if len(tzs) == 0 {
 			return ""
 		}
 		if len(tzs) > 1 {
