@@ -243,7 +243,7 @@ type timeUnit struct {
 	min           int
 	max           int
 	emptyVal      any
-	fixFn         func(int) (int, bool)
+	fixFn         func(any, int) (int, bool)
 	stringToIntFn func(string) int
 }
 
@@ -290,38 +290,39 @@ var noNS = 0
 // }
 
 func findInt(tunit timeUnit, valAny any) int {
-	if valAny == nil {
-		return 0
-	}
 	r := -1
-	switch valAny.(type) {
-	case int:
-		rInt, ok := valAny.(int)
-		if ok {
-			r = rInt
-		}
-	case *int:
-		rPtr, ok := valAny.(*int)
-		if ok {
-			r = *rPtr
-		}
-	case string:
-		rInt, err := strconv.Atoi(valAny.(string))
-		if err == nil {
-			r = rInt
-		} else {
-			if tunit.stringToIntFn != nil {
-				r = tunit.stringToIntFn(valAny.(string))
+	if valAny != nil {
+		switch valAny.(type) {
+		case int:
+			rInt, ok := valAny.(int)
+			if ok {
+				r = rInt
+			}
+		case *int:
+			rPtr, ok := valAny.(*int)
+			if ok {
+				r = *rPtr
+			}
+		case string:
+			rInt, err := strconv.Atoi(valAny.(string))
+			if err == nil {
+				r = rInt
+			} else {
+				if tunit.stringToIntFn != nil {
+					r = tunit.stringToIntFn(valAny.(string))
+				}
 			}
 		}
-	default:
-		panic(fmt.Sprintln("failed to find int", "tunit", tunit, "valAny", valAny))
 	}
 
 	var ok bool
 	if tunit.fixFn != nil {
-		r, ok = tunit.fixFn(r)
+		r, ok = tunit.fixFn(valAny, r)
+		// fmt.Println("r", r, "ok", ok)
+	} else if valAny == nil {
+		return 0
 	}
+
 	// debugf("in findInt(), r: %d, ok: %t\n", r, ok)
 	if !ok && (r < tunit.min || r > tunit.max) {
 		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tunit, "valAny", valAny))
@@ -330,15 +331,18 @@ func findInt(tunit timeUnit, valAny any) int {
 	return r
 }
 
-func fixYear(year int) (int, bool) {
-	// debugf("fixYear(year: %d)\n", year)
+func fixYear(yearAny any, year int) (int, bool) {
+	// fmt.Printf("fixYear(yearAny: %#v, year: %d), parseYear: %d\n", yearAny, year, parseYear)
 	if parseYear != 0 && year == -1 {
 		return parseYear, true
 	}
 	if parseYear != 0 && year >= 0 && year <= 99 {
 		return 100*(parseYear/100) + year, true
 	}
-	return year, (year >= 1900 && year <= 2100)
+	if yearAny == nil {
+		return 0, true
+	}
+	return year, (year >= 1700 && year <= 2100)
 }
 
 func monthNameToMonth(monthName string) int {
@@ -361,12 +365,11 @@ func monthNameToMonth(monthName string) int {
 // }
 
 func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
-	year := findInt(yearUnit, yearAny)
 	// North American tends to parse dates as month-day-year.
 	if parseDateMode == "na" {
-		return NewMDYDate(first, second, year)
+		return NewMDYDate(first, second, yearAny)
 	}
-	return NewDMYDate(first, second, year)
+	return NewDMYDate(first, second, yearAny)
 }
 
 func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []civil.Date {
@@ -378,6 +381,7 @@ func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []civil.Date {
 }
 
 func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
+	// fmt.Printf("NewDMYDate(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)

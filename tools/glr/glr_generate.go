@@ -57,7 +57,7 @@ func main() {
 
 	r += fmt.Sprintf("var %sRules = &%sRules{Items:[]%sRule{", pkg, glrPkg, glrPkg)
 	for i, rule := range rls.Items {
-		r += fmt.Sprintf("\n  /* %3d */ %#v,", i, rule)
+		r += fmt.Sprintf("\n  /* Rule %03d */ %#v,", i, rule)
 		if i == 0 {
 			r += " // ignored because rule-numbering starts at 1"
 		}
@@ -74,10 +74,10 @@ func main() {
 		slog.Debug("", "i", i, "action", action)
 		// rule := rls.Items[i]
 		if action == nil {
-			r += fmt.Sprintf("\n  /* %3d */ nil, // empty action", i)
+			r += fmt.Sprintf("\n  /* Action %03d */ nil, // empty action", i)
 			continue
 		}
-		r += fmt.Sprintf("\n  /* %3d */ %s,", i, action.(string))
+		r += fmt.Sprintf("\n  /* Action %03d */ %s,", i, action.(string))
 		// r += fmt.Sprintf("func %sSemanticAction%d(node *%sParseNode) %s {\n", pkg, i, glrPkg, rule.Type)
 		// r += fmt.Sprintf("  return %s\n", action.Action)
 		// r += "}\n\n"
@@ -86,7 +86,7 @@ func main() {
 
 	r += fmt.Sprintf("var %sStates = &%sParseStates{Items:[]%sParseState{", pkg, glrPkg, glrPkg)
 	for i, state := range states.Items {
-		r += fmt.Sprintf("\n  /* %3d */ %#v,", i, state)
+		r += fmt.Sprintf("\n  /* State %03d */ %#v,", i, state)
 	}
 	r += "\n}}\n\n"
 	if glrPkg == "" {

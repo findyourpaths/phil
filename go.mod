@@ -1,11 +1,10 @@
 module github.com/findyourpaths/phil
 
-go 1.23.1
+go 1.23.5
 
 require (
 	cloud.google.com/go v0.118.0
 	github.com/arran4/golang-ical v0.3.1
-	github.com/findyourpaths/phil v0.0.0-20250106185930-83e0a6bb4e95
 	github.com/google/go-cmp v0.6.0
 	github.com/k0kubun/pp/v3 v3.4.1
 	github.com/kr/pretty v0.3.1
@@ -22,8 +21,8 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

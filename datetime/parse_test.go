@@ -152,8 +152,12 @@ func TestParse(t *testing.T) {
 		// Both
 		{in: "02.03", want: DateRangesForFeb03, dateMode: "na"},
 		{in: "02.03", want: NewRangesWithStartDates(DateForMar02), dateMode: "rest"},
+		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", year: 2023},
+		{in: "02.03", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest", year: 2023},
 		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},
 		{in: "02.03.", want: NewRangesWithStartDates(DateForMar02), dateMode: "rest"},
+		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", year: 2023},
+		{in: "02.03.", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest", year: 2023},
 		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},
 		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest"},
 
