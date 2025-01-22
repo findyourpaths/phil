@@ -64,6 +64,14 @@ func NewRangesWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTim
 	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDateTimes(start, end)}}
 }
 
+func HasStartMonthAndDay(rngs *DateTimeTZRanges) bool {
+	return rngs != nil &&
+		len(rngs.Items) > 0 &&
+		rngs.Items[0].Start != nil &&
+		rngs.Items[0].Start.Date.Month > 0 &&
+		rngs.Items[0].Start.Date.Day > 0
+}
+
 // A DateTimeTZRange represents a range of dates and times with time zones.
 //
 // This type DOES include location information.

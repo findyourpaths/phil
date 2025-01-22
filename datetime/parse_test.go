@@ -127,6 +127,7 @@ func TestParse(t *testing.T) {
 
 		// MD
 		{in: "Feb 3", want: DateRangesForFeb03},
+		{in: "February 3", want: DateRangesForFeb03},
 		{in: "Thu Feb 3", want: DateRangesForFeb03},
 		{in: "Thu 3 Feb", want: DateRangesForFeb03},
 		// DM
@@ -148,6 +149,8 @@ func TestParse(t *testing.T) {
 		{in: "3rd Feb 2023", want: DateRangesFor2023Feb03},
 		{in: "3 February, 2023", want: DateRangesFor2023Feb03},
 		{in: "Thursday 3rd Feb 2023", want: DateRangesFor2023Feb03},
+		// MY
+		{in: "Feb 2023", want: DateRangesFor2023Feb},
 
 		// Both
 		{in: "02.03", want: DateRangesForFeb03, dateMode: "na"},
@@ -284,6 +287,7 @@ func TestParse(t *testing.T) {
 		// MD
 		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+		{in: "February 3 @ 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "Date:Thu 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		// MD TZ
 		{in: "Feb 3 12pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
@@ -317,6 +321,8 @@ func TestParse(t *testing.T) {
 		// Date Time Ranges
 
 		// MD
+		// Need to fix parser for this.
+		// {in: "February 3: 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "Feb 3 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "Feb 3 @ 9:00 AM - Feb 3 @ 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "February, 3 9:00 - 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
@@ -408,6 +414,9 @@ func TestParse(t *testing.T) {
 func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 	return func(t *testing.T) {
 		got, err := Parse(tc.year, tc.dateMode, tc.timeZone, tc.in)
+		if got == nil && tc.want == nil {
+			return
+		}
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
