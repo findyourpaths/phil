@@ -2,6 +2,7 @@ package datetime
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 
 	"go/scanner"
@@ -19,7 +20,25 @@ type datetimeLexer struct {
 	root    *DateTimeTZRanges
 }
 
+// Match a digit on one side and a letter on another. Used to separate `12pm`.
+var boundaryRE1 = regexp.MustCompile(`([[:alpha:]])([[:^alpha:]])`)
+var boundaryRE2 = regexp.MustCompile(`([[:^alpha:]])([[:alpha:]])`)
+
+// var spacifyRE = regexp.MustCompile(`\s*\b(.|-)\b\s*`)
+var spacifyRE = regexp.MustCompile(`(?:^|\s*\b)(.|-)(?:\b\s*|$)`)
+
 func NewDatetimeLexer(input string) *datetimeLexer {
+	// yyDebug = 3
+	debugf("in before processing: %q\n", input)
+	// input = daysRE.ReplaceAllString(input, ``)
+	input = boundaryRE1.ReplaceAllString(input, `$1 $2`)
+	input = boundaryRE2.ReplaceAllString(input, `$1 $2`)
+	input = spacifyRE.ReplaceAllString(input, ` $1 `)
+	// input = strings.TrimPrefix(input, "When ")
+	// input = strings.TrimPrefix(input, "when ")
+	input = CleanTextLine(input)
+	debugf("input after processing: %q\n", input)
+
 	l := &datetimeLexer{
 		lval: &yySymType{},
 	}

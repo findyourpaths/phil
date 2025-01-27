@@ -361,7 +361,7 @@ Date:
 | Month {$$ = NewMDYDate($1, nil, nil)}
 
   // "Feb 2023"
-| Month Year {$$ = NewMDYDate($1, nil, $2)}
+| Month FullYear {$$ = NewMDYDate($1, nil, $2)}
 
   // "Feb 3 2023"
 | Month Day Year {$$ = NewMDYDate($1, $2, $3)}

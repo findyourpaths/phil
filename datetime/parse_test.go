@@ -172,6 +172,10 @@ func TestParse(t *testing.T) {
 		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", year: 2023},
 		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
+		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
+		// Need to replace scanner for these.
+		// {in: "http://musicvenue.de/event/id/2023/02/03", want: DateRangesFor2023Feb03},
+		// {in: "http://beatricechestnut.com/calendar/skills-mar-2021-5pnfs", want: DateRangesFor2023Feb03},
 
 		//
 		// Dates

@@ -153,7 +153,7 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 		defer func() {
 			if e := recover(); e != nil {
 				err = errors.New(e.(string))
-				debugf("%sgot error: %v", spaces, err)
+				debugf("%sgot err: %v", spaces, err)
 			}
 		}()
 		r = fn.Call(args)[0].Interface()
@@ -361,6 +361,7 @@ type Lexer interface {
 }
 
 func NewLexerScanner(l Lexer, input string) scanner.Scanner {
+	input = strings.Replace(input, "//", "/ /", -1)
 	inputBs := []byte(input)
 	var s scanner.Scanner
 	fset := token.NewFileSet()                          // positions are relative to fset

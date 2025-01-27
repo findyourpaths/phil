@@ -38,19 +38,13 @@ func debugf(format string, args ...any) {
 // 		"sun", "mon", "tue", "wed", "thu", "fri", "sat",
 // 	}, `\b|\b`) + `\b,?)`)
 
-// Match a digit on one side and a letter on another. Used to separate `12pm`.
-var boundaryRE1 = regexp.MustCompile(`([[:alpha:]])([[:^alpha:]])`)
-var boundaryRE2 = regexp.MustCompile(`([[:^alpha:]])([[:alpha:]])`)
-
-// var spacifyRE = regexp.MustCompile(`\s*\b(.|-)\b\s*`)
-var spacifyRE = regexp.MustCompile(`(?:^|\s*\b)(.|-)(?:\b\s*|$)`)
-
 var timezoneTZ = timezone.New()
 
 var cache = map[string]*DateTimeTZRanges{}
 var cacheMutex sync.RWMutex
 
 func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeTZRanges, error) {
+	// fmt.Printf("datetime.Parse(year: %d, dateMode: %q, timeZone: %#v, in: %q)\n", year, dateMode, timeZone, in)
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Warn("in Parse(), got a panic trying to extract", "in", in, "err", err)
@@ -81,37 +75,31 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 	parseTimeZone = timeZone
 	debugf("parseTimeZone: %q\n", parseTimeZone)
 
-	// yyDebug = 3
-	debugf("in before processing: %q\n", in)
-	// in = daysRE.ReplaceAllString(in, ``)
-	in = boundaryRE1.ReplaceAllString(in, `$1 $2`)
-	in = boundaryRE2.ReplaceAllString(in, `$1 $2`)
-	in = spacifyRE.ReplaceAllString(in, ` $1 `)
-	// in = strings.TrimPrefix(in, "When ")
-	// in = strings.TrimPrefix(in, "when ")
-	in = CleanTextLine(in)
-	debugf("in after processing: %q\n", in)
-
 	g := &glr.Grammar{
 		Rules:   datetimeRules,
 		Actions: datetimeActions,
 		States:  datetimeStates,
 	}
-	forest, err := glr.Parse(g, NewDatetimeLexer(in))
+	roots, err := glr.Parse(g, NewDatetimeLexer(in))
 	if yyDebug == 3 {
-		fmt.Printf("tree:\n%# v\n", pretty.Formatter(forest))
+		fmt.Printf("tree:\n%# v\n", pretty.Formatter(roots))
 		fmt.Printf("err: %v\n", err)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse datetime ranges from %q", in)
 	}
-	if len(forest) == 0 || len(forest[0].Children) == 0 {
+	if len(roots) == 0 || len(roots[0].Children) == 0 {
 		return nil, fmt.Errorf("no datetime ranges found in %q", in)
 	}
 
-	rsAny, err := glr.GetParseNodeValue(g, forest[0], "")
-	if err != nil {
-		return nil, err
+	var rsAny any
+	for _, root := range roots {
+		var err error
+		rsAny, err = glr.GetParseNodeValue(g, root, "")
+		if err == nil {
+			break
+		}
+		// return nil, err
 	}
 
 	// for _, rng := range rngs.Items {
@@ -125,9 +113,12 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 	// }
 
 	var rs *DateTimeTZRanges
-	if rsAny != nil {
-		rs = rsAny.(*DateTimeTZRanges)
+	if rsAny == nil {
+		return nil, fmt.Errorf("no parse tree passed semantic checks")
 	}
+
+	rs = rsAny.(*DateTimeTZRanges)
+	// fmt.Printf("in datetime.Parse(), rs: %#q\n", rs.String())
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
 	cache[key] = rs
