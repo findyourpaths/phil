@@ -258,7 +258,7 @@ type timeUnit struct {
 var yearUnit = timeUnit{name: "year", fixFn: fixYear}
 var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
 var dayUnit = timeUnit{name: "day", min: 1, max: 31}
-var hourUnit = timeUnit{name: "hour", min: 0, max: 24}
+var hourUnit = timeUnit{name: "hour", min: 0, max: 24, stringToIntFn: hourNameToHour}
 var minuteUnit = timeUnit{name: "minute", min: 0, max: 59}
 var secondUnit = timeUnit{name: "second", min: 0, max: 59}
 var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
@@ -359,6 +359,17 @@ func monthNameToMonth(monthName string) int {
 		return -1
 	}
 	return month
+}
+
+func hourNameToHour(hourName string) int {
+	l := strings.ToLower(hourName)
+	if l == "noon" {
+		return 12
+	}
+	if l == "midnight" {
+		return 0
+	}
+	return -1
 }
 
 // func mustAtoi(str string) *int {

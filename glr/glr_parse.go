@@ -386,6 +386,7 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	s.activeParsers = []*StackNode{firstParser}
 	debugf("initialized with start state 0\n")
 
+	vals := []string{}
 	for {
 		debugf("\n")
 
@@ -397,6 +398,7 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 			startPos: s.position,
 			endPos:   s.position + 1,
 		}
+		vals = append(vals, val)
 		setNodeChildrenAndScore(term, nil)
 		s.position++
 		if sym == "" {
@@ -441,7 +443,7 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	debugf("ended with %d accepting parsers and %d partial results\n", len(aps), len(prs))
 	alts := append(aps, prs...)
 	if len(alts) == 0 {
-		debugf("found no results\n")
+		debugf("found no results for %#v\n", vals)
 		return nil, nil
 	}
 	all := &ParseNode{isAlt: true}

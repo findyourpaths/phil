@@ -129,6 +129,10 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return ICS
 			case "in":
 				return IN
+			case "midnight":
+				return TIME_NAME
+			case "noon":
+				return TIME_NAME
 			case "of":
 				return OF
 			case "on":

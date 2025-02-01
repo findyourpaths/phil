@@ -44,6 +44,7 @@ import "cloud.google.com/go/civil"
 %token <string> IDENT
 %token <string> INT
 %token <string> MONTH_NAME
+%token <string> TIME_NAME
 %token <string> TIME_ZONE
 %token <string> TIME_ZONE_ABBREV
 %token <string> WEEKDAY_NAME
@@ -237,7 +238,8 @@ DateTimeTZRange:
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
-| Date Time TimeZoneOpt Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1, $2, $3), NewDateTime($1, $4, $5))}
+  // "February 3rd, 9-12pm ET"
+| Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1, $2, $3), NewDateTime($1, $5, $6))}
 ;
 
 
@@ -251,6 +253,10 @@ RangePrefix:
 ;
 
 
+RangeSepOpt:
+
+| RangeSepPlus
+;
 RangeSepPlus:
   RangeSep
 | RangeSepPlus RangeSep
@@ -478,6 +484,9 @@ Time:
 | INT AM {$$ = NewAMTime($1, nil, nil, nil)}
 | INT PM {$$ = NewPMTime($1, nil, nil, nil)}
 
+  // "12"
+| INT {$$ = NewTime($1, nil, nil, nil)}
+
   // "12:00"
 | INT TimeSep INT {$$ = NewTime($1, $3, nil, nil)}
 
@@ -489,6 +498,8 @@ Time:
 
   // "12:00 PM"
 | INT TimeSep INT PM {$$ = NewPMTime($1, $3, nil, nil)}
+
+| TIME_NAME {$$ = NewTime($1, nil, nil, nil)}
 
 /* // "Feb 3 2023 11am PST" */
 /* |   time TimeZoneOpt { */
