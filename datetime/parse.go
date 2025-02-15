@@ -3,13 +3,11 @@ package datetime
 import (
 	"fmt"
 	"log/slog"
-	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/findyourpaths/phil/glr"
 	"github.com/kr/pretty"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/tkuchiki/go-timezone"
 )
 
@@ -60,6 +58,9 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 	}
 
 	parseYear = year
+	// if parseYear == 0 {
+	// 	parseYear = time.Now().Year()
+	// }
 	debugf("parseYear: %d\n", parseYear)
 
 	if dateMode == "" {
@@ -124,14 +125,4 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 	cache[key] = rs
 	cacheMutex.Unlock()
 	return rs, nil
-}
-
-var whitespacesRE = regexp.MustCompile(`\s+`)
-
-func CleanTextLine(s string) string {
-	r := bluemonday.StrictPolicy().AddSpaceWhenStrippingTag(true).Sanitize(s)
-	r = strings.ReplaceAll(r, "\u00a0", " ")
-	r = whitespacesRE.ReplaceAllString(r, " ")
-	r = strings.TrimSpace(r)
-	return r
 }

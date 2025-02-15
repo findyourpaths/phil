@@ -11,6 +11,8 @@ root:
   ABC
 root:
   BCD
+root:
+  BCDEF
 ABCD:
   A B C D
 ABC:
@@ -21,6 +23,8 @@ BCD:
   B C WrapD
 BCD:
   B WrapC D
+BCDEF:
+  B C D E F
 WrapC:
   C
 OptD:
@@ -36,15 +40,17 @@ var glrRules = &Rules{Items:[]Rule{
   /* Rule 001 */ Rule{Nonterminal:"root", RHS:[]string{"ABCD"}, Type:"*Alphabet"},
   /* Rule 002 */ Rule{Nonterminal:"root", RHS:[]string{"ABC"}, Type:"*Alphabet"},
   /* Rule 003 */ Rule{Nonterminal:"root", RHS:[]string{"BCD"}, Type:"*Alphabet"},
-  /* Rule 004 */ Rule{Nonterminal:"ABCD", RHS:[]string{"A", "B", "C", "D"}, Type:"*ABCD"},
-  /* Rule 005 */ Rule{Nonterminal:"ABC", RHS:[]string{"A", "B", "C"}, Type:"*ABC"},
-  /* Rule 006 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "OptD"}, Type:"*BCD"},
-  /* Rule 007 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "WrapD"}, Type:"*BCD"},
-  /* Rule 008 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "WrapC", "D"}, Type:"*BCD"},
-  /* Rule 009 */ Rule{Nonterminal:"WrapC", RHS:[]string{"C"}, Type:"string"},
-  /* Rule 010 */ Rule{Nonterminal:"OptD", RHS:[]string(nil), Type:"string"},
-  /* Rule 011 */ Rule{Nonterminal:"OptD", RHS:[]string{"D"}, Type:"string"},
-  /* Rule 012 */ Rule{Nonterminal:"WrapD", RHS:[]string{"D"}, Type:"string"},
+  /* Rule 004 */ Rule{Nonterminal:"root", RHS:[]string{"BCDEF"}, Type:"*Alphabet"},
+  /* Rule 005 */ Rule{Nonterminal:"ABCD", RHS:[]string{"A", "B", "C", "D"}, Type:"*ABCD"},
+  /* Rule 006 */ Rule{Nonterminal:"ABC", RHS:[]string{"A", "B", "C"}, Type:"*ABC"},
+  /* Rule 007 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "OptD"}, Type:"*BCD"},
+  /* Rule 008 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "C", "WrapD"}, Type:"*BCD"},
+  /* Rule 009 */ Rule{Nonterminal:"BCD", RHS:[]string{"B", "WrapC", "D"}, Type:"*BCD"},
+  /* Rule 010 */ Rule{Nonterminal:"BCDEF", RHS:[]string{"B", "C", "D", "E", "F"}, Type:"*BCDEF"},
+  /* Rule 011 */ Rule{Nonterminal:"WrapC", RHS:[]string{"C"}, Type:"string"},
+  /* Rule 012 */ Rule{Nonterminal:"OptD", RHS:[]string(nil), Type:"string"},
+  /* Rule 013 */ Rule{Nonterminal:"OptD", RHS:[]string{"D"}, Type:"string"},
+  /* Rule 014 */ Rule{Nonterminal:"WrapD", RHS:[]string{"D"}, Type:"string"},
 }}
 
 // Semantic action functions
@@ -54,33 +60,38 @@ var glrActions = &SemanticActions{Items:[]any{
   /* Action 001 */ func (ABCD1 *ABCD) *Alphabet {return &Alphabet{ABCD: ABCD1}},
   /* Action 002 */ func (ABC1 *ABC) *Alphabet {return &Alphabet{ABC: ABC1}},
   /* Action 003 */ func (BCD1 *BCD) *Alphabet {return &Alphabet{BCD: BCD1}},
-  /* Action 004 */ func (A1 string, B1 string, C1 string, D1 string) *ABCD {return &ABCD{A: A1, B: B1, C: C1, D: D1}},
-  /* Action 005 */ func (A1 string, B1 string, C1 string) *ABC {return &ABC{A: A1, B: B1, C: C1}},
-  /* Action 006 */ func (B1 string, C1 string, OptD1 string) *BCD {return &BCD{B: B1, C: C1, D: OptD1}},
-  /* Action 007 */ func (B1 string, C1 string, WrapD1 string) *BCD {return &BCD{B: B1, C: C1, D: WrapD1}},
-  /* Action 008 */ func (B1 string, WrapC1 string, D1 string) *BCD {return &BCD{B: B1, C: WrapC1, D: D1}},
-  /* Action 009 */ func (C1 string) string {return C1},
-  /* Action 010 */ func () string {return ""},
-  /* Action 011 */ func (D1 string) string {return D1},
-  /* Action 012 */ func (D1 string) string {return D1},
+  /* Action 004 */ func (BCDEF1 *BCDEF) *Alphabet {return &Alphabet{BCDEF: BCDEF1}},
+  /* Action 005 */ func (A1 string, B1 string, C1 string, D1 string) *ABCD {return &ABCD{A: A1, B: B1, C: C1, D: D1}},
+  /* Action 006 */ func (A1 string, B1 string, C1 string) *ABC {return &ABC{A: A1, B: B1, C: C1}},
+  /* Action 007 */ func (B1 string, C1 string, OptD1 string) *BCD {return &BCD{B: B1, C: C1, D: OptD1}},
+  /* Action 008 */ func (B1 string, C1 string, WrapD1 string) *BCD {return &BCD{B: B1, C: C1, D: WrapD1}},
+  /* Action 009 */ func (B1 string, WrapC1 string, D1 string) *BCD {return &BCD{B: B1, C: WrapC1, D: D1}},
+  /* Action 010 */ func (B1 string, C1 string, D1 string, E1 string, F1 string) *BCDEF {return &BCDEF{B: B1, C: C1, D: D1, E: E1, F: F1}},
+  /* Action 011 */ func (C1 string) string {return C1},
+  /* Action 012 */ func () string {return ""},
+  /* Action 013 */ func (D1 string) string {return D1},
+  /* Action 014 */ func (D1 string) string {return D1},
 }}
 
 var glrStates = &ParseStates{Items:[]ParseState{
-  /* State 000 */ ParseState{Actions:map[string][]Action{"A":[]Action{Action{Type:"shift", StateID:5, RuleID:0}}, "B":[]Action{Action{Type:"shift", StateID:6, RuleID:0}}}, Gotos:map[string]int{"ABC":3, "ABCD":2, "BCD":4, "root":1}},
-  /* State 001 */ ParseState{Actions:map[string][]Action{"$end":[]Action{Action{Type:"accept", StateID:0, RuleID:0}}}, Gotos:map[string]int{}},
-  /* State 002 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:1}}}, Gotos:map[string]int{}},
-  /* State 003 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:2}}}, Gotos:map[string]int{}},
-  /* State 004 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:3}}}, Gotos:map[string]int{}},
-  /* State 005 */ ParseState{Actions:map[string][]Action{"B":[]Action{Action{Type:"shift", StateID:7, RuleID:0}}}, Gotos:map[string]int{}},
-  /* State 006 */ ParseState{Actions:map[string][]Action{"C":[]Action{Action{Type:"shift", StateID:8, RuleID:0}}}, Gotos:map[string]int{"WrapC":9}},
-  /* State 007 */ ParseState{Actions:map[string][]Action{"C":[]Action{Action{Type:"shift", StateID:10, RuleID:0}}}, Gotos:map[string]int{}},
-  /* State 008 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:10}}, "D":[]Action{Action{Type:"reduce", StateID:0, RuleID:9}, Action{Type:"shift", StateID:13, RuleID:0}}}, Gotos:map[string]int{"OptD":11, "WrapD":12}},
-  /* State 009 */ ParseState{Actions:map[string][]Action{"D":[]Action{Action{Type:"shift", StateID:14, RuleID:0}}}, Gotos:map[string]int{}},
-  /* State 010 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:5}}, "D":[]Action{Action{Type:"shift", StateID:15, RuleID:0}}}, Gotos:map[string]int{}},
-  /* State 011 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:6}}}, Gotos:map[string]int{}},
-  /* State 012 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:7}}}, Gotos:map[string]int{}},
-  /* State 013 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:11}}}, Gotos:map[string]int{}},
-  /* State 014 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:8}}}, Gotos:map[string]int{}},
-  /* State 015 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"reduce", StateID:0, RuleID:4}}}, Gotos:map[string]int{}},
+  /* State 000 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:0, RuleID:0}}, "A":[]Action{Action{Type:"shift", StateID:6, RuleID:0}}, "B":[]Action{Action{Type:"shift", StateID:7, RuleID:0}}}, Gotos:map[string]int{"ABC":3, "ABCD":2, "BCD":4, "BCDEF":5, "root":1}},
+  /* State 001 */ ParseState{Actions:map[string][]Action{"$end":[]Action{Action{Type:"accept", StateID:0, RuleID:0}}, ".":[]Action{Action{Type:"shift", StateID:1, RuleID:0}}}, Gotos:map[string]int{}},
+  /* State 002 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:2, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:1}}}, Gotos:map[string]int{}},
+  /* State 003 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:3, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:2}}}, Gotos:map[string]int{}},
+  /* State 004 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:4, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:3}}}, Gotos:map[string]int{}},
+  /* State 005 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:5, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:4}}}, Gotos:map[string]int{}},
+  /* State 006 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:6, RuleID:0}}, "B":[]Action{Action{Type:"shift", StateID:8, RuleID:0}}}, Gotos:map[string]int{}},
+  /* State 007 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:7, RuleID:0}}, "C":[]Action{Action{Type:"shift", StateID:9, RuleID:0}}}, Gotos:map[string]int{"WrapC":10}},
+  /* State 008 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:8, RuleID:0}}, "C":[]Action{Action{Type:"shift", StateID:11, RuleID:0}}}, Gotos:map[string]int{}},
+  /* State 009 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:9, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:12}}, "D":[]Action{Action{Type:"reduce", StateID:0, RuleID:11}, Action{Type:"shift", StateID:14, RuleID:0}}}, Gotos:map[string]int{"OptD":12, "WrapD":13}},
+  /* State 010 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:10, RuleID:0}}, "D":[]Action{Action{Type:"shift", StateID:15, RuleID:0}}}, Gotos:map[string]int{}},
+  /* State 011 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:11, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:6}}, "D":[]Action{Action{Type:"shift", StateID:16, RuleID:0}}}, Gotos:map[string]int{}},
+  /* State 012 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:12, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:7}}}, Gotos:map[string]int{}},
+  /* State 013 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:13, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:8}}}, Gotos:map[string]int{}},
+  /* State 014 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:14, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:13}}, "E":[]Action{Action{Type:"shift", StateID:17, RuleID:0}}}, Gotos:map[string]int{}},
+  /* State 015 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:15, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:9}}}, Gotos:map[string]int{}},
+  /* State 016 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:16, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:5}}}, Gotos:map[string]int{}},
+  /* State 017 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:17, RuleID:0}}, "F":[]Action{Action{Type:"shift", StateID:18, RuleID:0}}}, Gotos:map[string]int{}},
+  /* State 018 */ ParseState{Actions:map[string][]Action{".":[]Action{Action{Type:"shift", StateID:18, RuleID:0}, Action{Type:"reduce", StateID:0, RuleID:10}}}, Gotos:map[string]int{}},
 }}
 

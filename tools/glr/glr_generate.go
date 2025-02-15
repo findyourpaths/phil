@@ -402,12 +402,16 @@ func readStates(p string) (*glr.ParseStates, error) {
 			}
 			currentState = newState
 			// Ensure states slice has enough capacity
-			for len(rs.Items) <= currentState {
-				rs.Items = append(rs.Items, glr.ParseState{
-					Actions: actions,
-					Gotos:   make(map[string]int),
-				})
-			}
+			// for len(rs.Items) <= currentState {
+			rs.Items = append(rs.Items, glr.ParseState{
+				Actions: actions,
+				Gotos:   make(map[string]int),
+			})
+			// Add shift state to ignore next token, in case it's erroneous.
+			rs.Items[currentState].Actions["."] = append(rs.Items[currentState].Actions["."], glr.Action{
+				Type:    "shift",
+				StateID: currentState,
+			})
 			actions = map[string][]glr.Action{}
 			continue
 		}

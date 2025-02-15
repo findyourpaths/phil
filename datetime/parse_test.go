@@ -150,6 +150,7 @@ func TestParse(t *testing.T) {
 		{in: "3rd Feb 2023", want: DateRangesFor2023Feb03},
 		{in: "3 February, 2023", want: DateRangesFor2023Feb03},
 		{in: "Thursday 3rd Feb 2023", want: DateRangesFor2023Feb03},
+
 		// MY
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
 
@@ -188,6 +189,8 @@ func TestParse(t *testing.T) {
 		{in: "Feb 1, 2, 3, 4", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
 		{in: "Feb 1, 2, 3, 4, 5", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
 		//		{in: "February 1, 2, March 2, 3, and 4, April 3.", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03, DateForMar04, DateForApr03)},
+		{in: "Feb 3 Mar 2", want: NewRangesWithStartDates(DateForFeb03, DateForMar02)},
+		{in: "Our next cohort kicks off on March 2nd and we're accepting applications through February 1st.", want: NewRangesWithStartDates(DateForMar02, DateForFeb01)},
 		// DM
 		{in: "1, 2 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02)},
 		{in: "1, 2, 3 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03)},
@@ -201,6 +204,7 @@ func TestParse(t *testing.T) {
 		{in: "Feb 1, 2, 3, 4 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04)},
 		{in: "Feb 1, 2, 3, 4, 5 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04, DateFor2023Feb05)},
 		{in: "Feb 1, 2, 3 and Mar 2 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Mar02)},
+		{in: "Feb 3 Mar 2 2023", want: NewRangesWithStartDates(DateFor2023Feb03, DateFor2023Mar02)},
 		// DMY
 		{in: "1, 2 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02)},
 		{in: "1, 2, 3 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03)},
@@ -208,25 +212,15 @@ func TestParse(t *testing.T) {
 		{in: "1, 2, 3, 4, 5 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04, DateFor2023Feb05)},
 		{in: "1, 2, 3 Feb and 2 Mar 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Mar02)},
 
-		// MD
-		{in: "Feb 3 Mar 2", want: NewRangesWithStartDates(DateForFeb03, DateForMar02)},
-		// MDY
-		{in: "Feb 3 Mar 2 2023", want: NewRangesWithStartDates(DateFor2023Feb03, DateFor2023Mar02)},
-
 		//
 		// Date Range
 		//
-
-		{in: "2023 - 2024", want: NewRangesWithStartEndDates(DateFor2023, DateFor2024)},
-		{in: "Feb - Mar", want: NewRangesWithStartEndDates(DateForFeb, DateForMar)},
-		{in: "Feb 2023 - Mar 2023", want: NewRangesWithStartEndDates(DateFor2023Feb, DateFor2023Mar)},
 
 		// MD
 		{in: "Feb 3rd-4th", want: DateRangesFromFeb03ToFeb04},
 		{in: "Feb 3 - Mar 2", want: NewRangesWithStartEndDates(DateForFeb03, DateForMar02)},
 		{in: "Feb 3 to Mar 2", want: NewRangesWithStartEndDates(DateForFeb03, DateForMar02)},
 		{in: "February 2 - 5 (TH-SU)", want: DateRangesFromFeb02ToFeb05},
-
 		// DM
 		{in: "3-4 Feb", want: DateRangesFromFeb03ToFeb04},
 		{in: "3 Feb - 4 Feb", want: DateRangesFromFeb03ToFeb04},
@@ -257,6 +251,7 @@ func TestParse(t *testing.T) {
 		{in: "Fri 3rd Feb - 4th Sat February 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "Fri Feb 3rd - 4th Sat February 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "February 3 - March 2, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Mar02)},
+		{in: "SAVE THE DATES: Feb 3-4, 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		// DMY
 		{in: "3-4 Feb 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "3-4 Feb. 2023", want: DateRangesFrom2023Feb03To2023Feb04},
@@ -266,6 +261,12 @@ func TestParse(t *testing.T) {
 		{in: "From 3rd to 4th, Feb 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "beginning 3rd to 4th Feb 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 
+		// M
+		{in: "Feb - Mar", want: NewRangesWithStartEndDates(DateForFeb, DateForMar)},
+		// Y
+		{in: "2023 - 2024", want: NewRangesWithStartEndDates(DateFor2023, DateFor2024)},
+		// MY
+		{in: "Feb 2023 - Mar 2023", want: NewRangesWithStartEndDates(DateFor2023Feb, DateFor2023Mar)},
 		// YMD
 		{in: "2023, Feb 3 - 2023, Feb 4", want: DateRangesFrom2023Feb03To2023Feb04},
 
@@ -286,6 +287,7 @@ func TestParse(t *testing.T) {
 		{in: "Feb 1-2; Mar 2-3 2023", want: NewRanges(NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEndDates(DateFor2023Mar02, DateFor2023Mar03))},
 		// DMY
 		{in: "1-2 Feb; 2-3 Mar 2023", want: NewRanges(NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEndDates(DateFor2023Mar02, DateFor2023Mar03))},
+		{in: "Part 1: 1st-2nd February 2023", want: NewRanges(NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb02))},
 
 		//
 		// Date Times
@@ -346,7 +348,6 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3 @ 9:00 AM ET - Feb 3 @ 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3, 2023, 9:00 AM ET - Feb 3, 2023, 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
 		{in: "February 3, 2023 from 9:00 am to noon ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
-
 		// DM
 		{in: "3 Feb 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 
@@ -385,6 +386,16 @@ func TestParse(t *testing.T) {
 		// TODO
 		//
 
+		// Tuesdays 7 to 9 pm ET
+		// April 14 - 25 (M-W-F; M-W-F)
+		// Weekly on Mondays
+		// Fridays 3:00 - 5:00 pm EASTERN
+		// Fridays, February 7 - December 5, 2025 (45 sessions)
+		// 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
+		// Online 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
+		// 1/16/2025
+		// 3/14/2025
+		// Sunday, February 16th, 2025\n17:00 - 19:00 CET / 16:00 - 18:00 UTC (Find your local start time here)
 		// Beginning February 7, 2025, Fridays 3:00 - 5:00 pm EASTERN"
 		// October 20 - 31 (M-W-F; M-W-F)"
 		// Starting 2nd and 4th Tuesdays 7 to 9 pm ET"

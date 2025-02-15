@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGLRParser(t *testing.T) {
+func TestParse(t *testing.T) {
 	if os.Getenv("DEBUG") == "true" {
 		DoDebug = true
 	}
@@ -20,75 +20,74 @@ func TestGLRParser(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Simple ABC",
-			input:   "a b c",
-			want:    &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
-			wantErr: false,
+			name:  "Simple ABC",
+			input: "a b c",
+			want:  &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
 		},
 		{
-			name:    "Simple BCD",
-			input:   "b c d",
-			want:    &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
-			wantErr: false,
+			name:  "Simple BCD",
+			input: "b c d",
+			want:  &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
 		},
 		{
-			name:    "Short BCD",
-			input:   "b c",
-			want:    &Alphabet{BCD: &BCD{B: "b", C: "c"}},
-			wantErr: false,
+			name:  "Simple BCDEF",
+			input: "b c d e f",
+			want:  &Alphabet{BCDEF: &BCDEF{B: "b", C: "c", D: "d", E: "e", F: "f"}},
 		},
 		{
-			name:    "Simple ABCD",
-			input:   "a b c d",
-			want:    &Alphabet{ABCD: &ABCD{A: "a", B: "b", C: "c", D: "d"}},
-			wantErr: false,
+			name:  "Short BCD",
+			input: "b c",
+			want:  &Alphabet{BCD: &BCD{B: "b", C: "c"}},
 		},
 		{
-			name:    "ABC with extra A",
-			input:   "a a b c",
-			want:    &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
-			wantErr: false,
+			name:  "Simple ABCD",
+			input: "a b c d",
+			want:  &Alphabet{ABCD: &ABCD{A: "a", B: "b", C: "c", D: "d"}},
 		},
 		{
-			name:    "ABC with noise",
-			input:   "a b x c",
-			want:    &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
-			wantErr: false,
+			name:  "ABC with extra A",
+			input: "a a b c",
+			want:  &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
 		},
 		{
-			name:    "Long BCD with noise",
-			input:   "x b y c d",
-			want:    &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
-			wantErr: false,
+			name:  "ABC with noise",
+			input: "a b x c",
+			want:  &Alphabet{ABC: &ABC{A: "a", B: "b", C: "c"}},
 		},
 		{
-			name:    "Long BCD with noise after",
-			input:   "x b y c d y",
-			want:    &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
-			wantErr: false,
+			name:  "Long BCD with noise",
+			input: "x b y c d",
+			want:  &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
 		},
 		{
-			name:    "Short BCD with noise",
-			input:   "x b y c",
-			want:    &Alphabet{BCD: &BCD{B: "b", C: "c"}},
-			wantErr: false,
+			name:  "Long BCD with noise after",
+			input: "x b y c d y",
+			want:  &Alphabet{BCD: &BCD{B: "b", C: "c", D: "d"}},
 		},
 		{
-			name:    "Short BCD with noise after",
-			input:   "x b y c y",
-			want:    &Alphabet{BCD: &BCD{B: "b", C: "c"}},
-			wantErr: false,
+			name:  "Short BCD with noise",
+			input: "x b y c",
+			want:  &Alphabet{BCD: &BCD{B: "b", C: "c"}},
 		},
 		{
-			name:    "ABCD with noise",
-			input:   "x a y b c d x",
-			want:    &Alphabet{ABCD: &ABCD{A: "a", B: "b", C: "c", D: "d"}},
-			wantErr: false,
+			name:  "Short BCD with noise after",
+			input: "x b y c y",
+			want:  &Alphabet{BCD: &BCD{B: "b", C: "c"}},
 		},
 		{
-			name:    "Invalid input",
-			input:   "x y",
-			wantErr: false,
+			name:  "ABCD with noise",
+			input: "x a y b c d x",
+			want:  &Alphabet{ABCD: &ABCD{A: "a", B: "b", C: "c", D: "d"}},
+		},
+		{
+			// Greedy garden-path fails here.
+			name:  "BCDEF with noise",
+			input: "a b c d e f",
+			want:  &Alphabet{BCDEF: &BCDEF{B: "b", C: "c", D: "d", E: "e", F: "f"}},
+		},
+		{
+			name:  "Invalid input",
+			input: "x y",
 		},
 	}
 
@@ -104,7 +103,10 @@ func TestGLRParser(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if len(results) == 0 && tc.want == nil {
+			if len(results) == 0 {
+				if tc.want != nil {
+					t.Errorf("error: no results found")
+				}
 				return
 			}
 
@@ -115,7 +117,7 @@ func TestGLRParser(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("Parse() got rule = %#v, want %#v", got, tc.want)
+				t.Errorf("Parse() got rule = %#v\nwant %#v", got, tc.want)
 			}
 
 			// Verify the parse tree structure

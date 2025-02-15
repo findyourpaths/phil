@@ -2,14 +2,15 @@
 state 0
 	$accept: .root $end 
 
-	A  shift 5
-	B  shift 6
+	A  shift 6
+	B  shift 7
 	.  error
 
 	root  goto 1
 	ABCD  goto 2
 	ABC  goto 3
 	BCD  goto 4
+	BCDEF  goto 5
 
 state 1
 	$accept:  root.$end 
@@ -21,118 +22,141 @@ state 1
 state 2
 	root:  ABCD.    (1)
 
-	.  reduce 1 (src line 28)
+	.  reduce 1 (src line 30)
 
 
 state 3
 	root:  ABC.    (2)
 
-	.  reduce 2 (src line 30)
+	.  reduce 2 (src line 32)
 
 
 state 4
 	root:  BCD.    (3)
 
-	.  reduce 3 (src line 31)
+	.  reduce 3 (src line 33)
 
 
 state 5
-	ABCD:  A.B C D 
-	ABC:  A.B C 
+	root:  BCDEF.    (4)
 
-	B  shift 7
-	.  error
+	.  reduce 4 (src line 34)
 
 
 state 6
+	ABCD:  A.B C D 
+	ABC:  A.B C 
+
+	B  shift 8
+	.  error
+
+
+state 7
 	BCD:  B.C OptD 
 	BCD:  B.C WrapD 
 	BCD:  B.WrapC D 
+	BCDEF:  B.C D E F 
 
-	C  shift 8
+	C  shift 9
 	.  error
 
-	WrapC  goto 9
+	WrapC  goto 10
 
-state 7
+state 8
 	ABCD:  A B.C D 
 	ABC:  A B.C 
 
-	C  shift 10
+	C  shift 11
 	.  error
 
 
-8: shift/reduce conflict (shift 13(0), red'n 9(0)) on D
-state 8
+9: shift/reduce conflict (shift 14(0), red'n 11(0)) on D
+state 9
 	BCD:  B C.OptD 
 	BCD:  B C.WrapD 
-	WrapC:  C.    (9)
-	OptD: .    (10)
-
-	D  shift 13
-	.  reduce 10 (src line 52)
-
-	OptD  goto 11
-	WrapD  goto 12
-
-state 9
-	BCD:  B WrapC.D 
+	BCDEF:  B C.D E F 
+	WrapC:  C.    (11)
+	OptD: .    (12)
 
 	D  shift 14
-	.  error
+	.  reduce 12 (src line 59)
 
+	OptD  goto 12
+	WrapD  goto 13
 
 state 10
-	ABCD:  A B C.D 
-	ABC:  A B C.    (5)
+	BCD:  B WrapC.D 
 
 	D  shift 15
-	.  reduce 5 (src line 38)
+	.  error
 
 
 state 11
-	BCD:  B C OptD.    (6)
+	ABCD:  A B C.D 
+	ABC:  A B C.    (6)
 
-	.  reduce 6 (src line 42)
+	D  shift 16
+	.  reduce 6 (src line 41)
 
 
 state 12
-	BCD:  B C WrapD.    (7)
+	BCD:  B C OptD.    (7)
 
-	.  reduce 7 (src line 44)
+	.  reduce 7 (src line 45)
 
 
- 13: reduce/reduce conflict  (red'ns 11 and 12) on $end
 state 13
-	OptD:  D.    (11)
-	WrapD:  D.    (12)
+	BCD:  B C WrapD.    (8)
 
-	.  reduce 11 (src line 54)
+	.  reduce 8 (src line 47)
 
 
+ 14: reduce/reduce conflict  (red'ns 13 and 14) on $end
 state 14
-	BCD:  B WrapC D.    (8)
+	BCDEF:  B C D.E F 
+	OptD:  D.    (13)
+	WrapD:  D.    (14)
 
-	.  reduce 8 (src line 45)
+	E  shift 17
+	.  reduce 13 (src line 61)
 
 
 state 15
-	ABCD:  A B C D.    (4)
+	BCD:  B WrapC D.    (9)
 
-	.  reduce 4 (src line 34)
+	.  reduce 9 (src line 48)
+
+
+state 16
+	ABCD:  A B C D.    (5)
+
+	.  reduce 5 (src line 37)
+
+
+state 17
+	BCDEF:  B C D E.F 
+
+	F  shift 18
+	.  error
+
+
+state 18
+	BCDEF:  B C D E F.    (10)
+
+	.  reduce 10 (src line 51)
 
 Rule not reduced: WrapC:  C 
 Rule not reduced: WrapD:  D 
 
-10 terminals, 8 nonterminals
-13 grammar rules, 16/16000 states
+12 terminals, 9 nonterminals
+15 grammar rules, 19/16000 states
 1 shift/reduce, 1 reduce/reduce conflicts reported
-57 working sets used
-memory: parser 6/240000
+58 working sets used
+memory: parser 7/240000
 0 extra closures
-8 shift entries, 1 exceptions
-7 goto entries
+10 shift entries, 1 exceptions
+8 goto entries
 0 entries saved by goto default
-Optimizer space used: output 15/240000
-15 table entries, 0 zero
-maximum spread: 7, maximum offset: 7
+Optimizer space used: output 18/240000
+18 table entries, 0 zero
+maximum spread: 9, maximum offset: 9

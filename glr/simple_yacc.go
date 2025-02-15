@@ -10,15 +10,18 @@ type yySymType struct {
 	ABCD     *ABCD
 	ABC      *ABC
 	BCD      *BCD
+	BCDEF    *BCDEF
 }
 
 const A = 57346
 const B = 57347
 const C = 57348
 const D = 57349
-const X = 57350
-const Y = 57351
-const ILLEGAL = 57352
+const E = 57350
+const F = 57351
+const X = 57352
+const Y = 57353
+const ILLEGAL = 57354
 
 var yyToknames = [...]string{
 	"$end",
@@ -28,6 +31,8 @@ var yyToknames = [...]string{
 	"B",
 	"C",
 	"D",
+	"E",
+	"F",
 	"X",
 	"Y",
 	"ILLEGAL",
@@ -47,40 +52,40 @@ var yyExca = [...]int8{
 
 const yyPrivate = 57344
 
-const yyLast = 15
+const yyLast = 18
 
 var yyAct = [...]int8{
-	15, 14, 13, 10, 8, 5, 6, 7, 12, 11,
-	9, 4, 3, 2, 1,
+	18, 17, 16, 15, 14, 11, 9, 6, 7, 8,
+	13, 12, 10, 5, 4, 3, 2, 1,
 }
 
 var yyPact = [...]int16{
-	1, -1000, -1000, -1000, -1000, 2, -2, -3, -5, -6,
-	-7, -1000, -1000, -1000, -1000, -1000,
+	3, -1000, -1000, -1000, -1000, -1000, 4, 0, -1, -3,
+	-4, -5, -1000, -1000, -7, -1000, -1000, -9, -1000,
 }
 
 var yyPgo = [...]int8{
-	0, 14, 13, 12, 11, 10, 9, 8,
+	0, 17, 16, 15, 14, 13, 12, 11, 10,
 }
 
 var yyR1 = [...]int8{
-	0, 1, 1, 1, 2, 3, 4, 4, 4, 5,
-	6, 6, 7,
+	0, 1, 1, 1, 1, 2, 3, 4, 4, 4,
+	5, 6, 7, 7, 8,
 }
 
 var yyR2 = [...]int8{
-	0, 1, 1, 1, 4, 3, 3, 3, 3, 1,
-	0, 1, 1,
+	0, 1, 1, 1, 1, 4, 3, 3, 3, 3,
+	5, 1, 0, 1, 1,
 }
 
 var yyChk = [...]int16{
-	-1000, -1, -2, -3, -4, 4, 5, 5, 6, -5,
-	6, -6, -7, 7, 7, 7,
+	-1000, -1, -2, -3, -4, -5, 4, 5, 5, 6,
+	-6, 6, -7, -8, 7, 7, 7, 8, 9,
 }
 
 var yyDef = [...]int8{
-	0, -2, 1, 2, 3, 0, 0, 0, 10, 0,
-	5, 6, 7, 11, 8, 4,
+	0, -2, 1, 2, 3, 4, 0, 0, 0, 12,
+	0, 6, 7, 8, 13, 9, 5, 0, 10,
 }
 
 var yyTok1 = [...]int8{
@@ -88,7 +93,8 @@ var yyTok1 = [...]int8{
 }
 
 var yyTok2 = [...]int8{
-	2, 3, 4, 5, 6, 7, 8, 9, 10,
+	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+	12,
 }
 
 var yyTok3 = [...]int8{
@@ -446,19 +452,19 @@ yydefault:
 			yyVAL.Alphabet = &Alphabet{BCD: yyDollar[1].BCD}
 		}
 	case 4:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.Alphabet = &Alphabet{BCDEF: yyDollar[1].BCDEF}
+		}
+	case 5:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
 			yyVAL.ABCD = &ABCD{A: yyDollar[1].string, B: yyDollar[2].string, C: yyDollar[3].string, D: yyDollar[4].string}
 		}
-	case 5:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.ABC = &ABC{A: yyDollar[1].string, B: yyDollar[2].string, C: yyDollar[3].string}
-		}
 	case 6:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.BCD = &BCD{B: yyDollar[1].string, C: yyDollar[2].string, D: yyDollar[3].string}
+			yyVAL.ABC = &ABC{A: yyDollar[1].string, B: yyDollar[2].string, C: yyDollar[3].string}
 		}
 	case 7:
 		yyDollar = yyS[yypt-3 : yypt+1]
@@ -470,7 +476,17 @@ yydefault:
 		{
 			yyVAL.BCD = &BCD{B: yyDollar[1].string, C: yyDollar[2].string, D: yyDollar[3].string}
 		}
+	case 9:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.BCD = &BCD{B: yyDollar[1].string, C: yyDollar[2].string, D: yyDollar[3].string}
+		}
 	case 10:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		{
+			yyVAL.BCDEF = &BCDEF{B: yyDollar[1].string, C: yyDollar[2].string, D: yyDollar[3].string, E: yyDollar[4].string, F: yyDollar[5].string}
+		}
+	case 12:
 		yyDollar = yyS[yypt-0 : yypt+1]
 		{
 			yyVAL.string = ""

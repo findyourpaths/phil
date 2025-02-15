@@ -13,6 +13,14 @@ import (
 	"github.com/k0kubun/pp/v3"
 )
 
+// EnableShiftToSameState is an experimental flag. It allows the "BCDEF with
+// noise" simple test to pass, along with "SAVE THE DATES: Feb 3-4, 2023"
+// datetime test by alloing parsers to skip a token. In the datetime case, the
+// colon before "Feb" is interpreted as part of a datetime, which prevents the
+// rest of the string from being parsed correctly. However this setting is much
+// slower and uses much more memory.
+var EnableShiftToSameState = false
+
 // Debug flags
 // var DoDebug = true
 
@@ -143,7 +151,7 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 			return nil, nil
 		}
 		args[i] = reflect.ValueOf(val)
-		debugf("%sgot rule %d args[%d]: %#v\n", spaces, n.ruleID, i, args[i])
+		debugf("%sgot value for %s rule %d args[%d]: %#v\n", spaces, n, n.ruleID, i, args[i])
 	}
 
 	debugf("%scalling rule %d fn with %d args\n", spaces, n.ruleID, len(args))
@@ -239,9 +247,6 @@ func (s parseNodeScore) String() string {
 func printNodes(ns []*ParseNode, spaces string) {
 	if !DoDebug {
 		return
-	}
-	for _, n := range ns {
-		debugf("%s%s\n", spaces, n)
 	}
 }
 
@@ -416,9 +421,12 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 
 	aps := []*ParseNode{}
 	for _, parser := range s.acceptingParsers {
-		if len(parser.backlinks) > 0 {
-			aps = append(aps, parser.backlinks[0].node)
+		for _, bl := range parser.backlinks {
+			aps = append(aps, bl.node)
 		}
+		// if len(parser.backlinks) > 0 {
+		// 	aps = append(aps, parser.backlinks[0].node)
+		// }
 	}
 	prs := []*ParseNode{}
 	for _, pr := range s.partialResults {
@@ -500,6 +508,9 @@ func actor(g *Grammar, s *GLRState, p *StackNode) {
 
 		switch a.Type {
 		case "shift":
+			if !EnableShiftToSameState && p.state == a.StateID {
+				continue
+			}
 			debugf("  shifting to state: %d\n", a.StateID)
 			s.parsersToShift = append(s.parsersToShift, p)
 			s.statesToShiftTo = append(s.statesToShiftTo, a.StateID)
@@ -521,6 +532,7 @@ func getActions(g *Grammar, state int, sym string) []Action {
 }
 
 func doReductions(g *Grammar, s *GLRState, p *StackNode, rlID int, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
+	// fmt.Printf("doReductions(g, sState, p.state: %d, rlID: %d, length %d, len(kids): %d, linkToSee, linkSeen: %t)\n", p.state, rlID, length, len(kids), linkSeen)
 	if length == 0 {
 		if linkSeen {
 			reducer(g, s, p, rlID, kids)
@@ -530,6 +542,10 @@ func doReductions(g *Grammar, s *GLRState, p *StackNode, rlID int, length int, k
 
 	for _, link := range p.backlinks {
 		newLinkSeen := linkSeen || link == linkToSee
+		if link.stackNode.state == p.state {
+			doReductions(g, s, link.stackNode, rlID, length, kids, linkToSee, newLinkSeen)
+			continue
+		}
 		doReductions(g, s, link.stackNode, rlID, length-1, append([]*ParseNode{link.node}, kids...), linkToSee, newLinkSeen)
 	}
 }
@@ -541,7 +557,7 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 
 	gotoState, ok := g.States.Items[p.state].Gotos[rl.Nonterminal]
 	if !ok {
-		debugf("sts[%v].Gotos[%q]: %v, %t\n", p.state, rl.Nonterminal, gotoState, ok)
+		debugf("error? sts[%v].Gotos[%q]: %v, %t\n", p.state, rl.Nonterminal, gotoState, ok)
 		return
 	}
 
