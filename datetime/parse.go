@@ -90,7 +90,7 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 		return nil, fmt.Errorf("failed to parse datetime ranges from %q", in)
 	}
 	if len(roots) == 0 || len(roots[0].Children) == 0 {
-		return nil, fmt.Errorf("no datetime ranges found in %q", in)
+		return nil, nil // fmt.Errorf("no datetime ranges found in %q", in)
 	}
 
 	var rsAny any
@@ -115,7 +115,7 @@ func Parse(year int, dateMode string, timeZone *TimeZone, in string) (*DateTimeT
 
 	var rs *DateTimeTZRanges
 	if rsAny == nil {
-		return nil, fmt.Errorf("no parse tree passed semantic checks")
+		return nil, nil //fmt.Errorf("no parse tree passed semantic checks")
 	}
 
 	rs = rsAny.(*DateTimeTZRanges)

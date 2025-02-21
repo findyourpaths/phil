@@ -3,15 +3,13 @@ package datetime
 
 import __yyfmt__ "fmt"
 
-import "cloud.google.com/go/civil"
-
 type yySymType struct {
 	yys              int
 	DateTimeTZRanges *DateTimeTZRanges
 	DateTimeTZRange  *DateTimeTZRange
 	DateTimeTZ       *DateTimeTZ
-	Date             civil.Date
-	Time             civil.Time
+	Date             *Date
+	Time             *Time
 	TimeZone         *TimeZone
 	string           string
 	strings          []string
@@ -913,17 +911,17 @@ yydefault:
 	case 40:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(yyDollar[1].DateTimeTZ, NewDateTime(yyDollar[1].DateTimeTZ.Date, yyDollar[3].Time, yyDollar[1].DateTimeTZ.TimeZone))
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(yyDollar[1].DateTimeTZ, NewDateTimeTZ(yyDollar[1].DateTimeTZ.Date, yyDollar[3].Time, yyDollar[1].DateTimeTZ.TimeZone))
 		}
 	case 41:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTime(yyDollar[1].DateTimeTZ.Date, yyDollar[1].DateTimeTZ.Time, yyDollar[4].TimeZone), NewDateTime(yyDollar[1].DateTimeTZ.Date, yyDollar[3].Time, yyDollar[4].TimeZone))
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTimeTZ(yyDollar[1].DateTimeTZ.Date, yyDollar[1].DateTimeTZ.Time, yyDollar[4].TimeZone), NewDateTimeTZ(yyDollar[1].DateTimeTZ.Date, yyDollar[3].Time, yyDollar[4].TimeZone))
 		}
 	case 42:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTime(yyDollar[3].DateTimeTZ.Date, yyDollar[1].Time, yyDollar[3].DateTimeTZ.TimeZone), yyDollar[3].DateTimeTZ)
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTimeTZ(yyDollar[3].DateTimeTZ.Date, yyDollar[1].Time, yyDollar[3].DateTimeTZ.TimeZone), yyDollar[3].DateTimeTZ)
 		}
 	case 43:
 		yyDollar = yyS[yypt-3 : yypt+1]
@@ -988,37 +986,37 @@ yydefault:
 	case 55:
 		yyDollar = yyS[yypt-14 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTime(NewDMYDate(yyDollar[4].string, yyDollar[6].string, yyDollar[14].string), yyDollar[1].Time, yyDollar[2].TimeZone), NewDateTime(NewDMYDate(yyDollar[8].string, yyDollar[10].string, yyDollar[14].string), yyDollar[12].Time, yyDollar[13].TimeZone))
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTimeTZ(NewDMYDate(yyDollar[4].string, yyDollar[6].string, yyDollar[14].string), yyDollar[1].Time, yyDollar[2].TimeZone), NewDateTimeTZ(NewDMYDate(yyDollar[8].string, yyDollar[10].string, yyDollar[14].string), yyDollar[12].Time, yyDollar[13].TimeZone))
 		}
 	case 56:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTime(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone), NewDateTime(yyDollar[1].Date, yyDollar[5].Time, yyDollar[6].TimeZone))
+			yyVAL.DateTimeTZRange = NewRangeWithStartEndDateTimes(NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone), NewDateTimeTZ(yyDollar[1].Date, yyDollar[5].Time, yyDollar[6].TimeZone))
 		}
 	case 71:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeWithDate(yyDollar[1].Date, nil)
+			yyVAL.DateTimeTZ = NewDateTimeTZWithDate(yyDollar[1].Date, nil)
 		}
 	case 72:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTime(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
+			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
 		}
 	case 73:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTime(yyDollar[1].Date, yyDollar[3].Time, yyDollar[4].TimeZone)
+			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[3].Time, yyDollar[4].TimeZone)
 		}
 	case 74:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTime(yyDollar[3].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
+			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[3].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
 		}
 	case 75:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTime(yyDollar[4].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
+			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[4].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
 		}
 	case 84:
 		yyDollar = yyS[yypt-0 : yypt+1]
@@ -1053,17 +1051,17 @@ yydefault:
 	case 95:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeWithDate(yyDollar[1].Date, nil)
+			yyVAL.DateTimeTZ = NewDateTimeTZWithDate(yyDollar[1].Date, nil)
 		}
 	case 96:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTime(yyDollar[1].Date, yyDollar[2].Time, nil)
+			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, nil)
 		}
 	case 97:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTime(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
+			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
 		}
 	case 98:
 		yyDollar = yyS[yypt-5 : yypt+1]

@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"cloud.google.com/go/civil"
 )
 
 var parseDateMode string
@@ -48,15 +46,15 @@ func NewRangesWithStartDateTimes(starts ...*DateTimeTZ) *DateTimeTZRanges {
 	return r
 }
 
-func NewRangesWithStartDates(starts ...civil.Date) *DateTimeTZRanges {
+func NewRangesWithStartDates(starts ...*Date) *DateTimeTZRanges {
 	r := &DateTimeTZRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeWithDate(start, nil)})
+		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeTZWithDate(start, nil)})
 	}
 	return r
 }
 
-func NewRangesWithStartEndDates(start civil.Date, end civil.Date) *DateTimeTZRanges {
+func NewRangesWithStartEndDates(start *Date, end *Date) *DateTimeTZRanges {
 	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDates(start, end)}}
 }
 
@@ -88,14 +86,14 @@ func (rng DateTimeTZRange) String() string {
 	return r
 }
 
-func NewRangeWithStart(start civil.Date) *DateTimeTZRange {
-	return &DateTimeTZRange{Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}}}
+func NewRangeWithStart(start *Date) *DateTimeTZRange {
+	return &DateTimeTZRange{Start: &DateTimeTZ{Date: start}}
 }
 
-func NewRangeWithStartEndDates(start civil.Date, end civil.Date) *DateTimeTZRange {
+func NewRangeWithStartEndDates(start *Date, end *Date) *DateTimeTZRange {
 	return &DateTimeTZRange{
-		Start: &DateTimeTZ{DateTime: civil.DateTime{Date: start}},
-		End:   &DateTimeTZ{DateTime: civil.DateTime{Date: end}},
+		Start: &DateTimeTZ{Date: start},
+		End:   &DateTimeTZ{Date: end},
 	}
 }
 
@@ -110,7 +108,8 @@ func NewRangeWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTime
 //
 // This type DOES include location information.
 type DateTimeTZ struct {
-	civil.DateTime
+	Date     *Date
+	Time     *Time
 	TimeZone *TimeZone
 }
 
@@ -118,26 +117,67 @@ func (dttz *DateTimeTZ) String() string {
 	if dttz == nil {
 		return ""
 	}
-	r := dttz.DateTime.String()
+	r := dttz.Date.String() + "T" + dttz.Time.String()
 	if tzStr := dttz.TimeZone.String(); tzStr != "" {
 		r += tzStr
 	}
 	return r
 }
 
-func NewDateTime(date civil.Date, time civil.Time, timeZone *TimeZone) *DateTimeTZ {
+func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
 	// fmt.Printf("NewDateTime(date: %#v, time: %#v, timeZone: %#v)\n", date, time, timeZone)
 	if timeZone == nil {
 		timeZone = parseTimeZone
 	}
-	return &DateTimeTZ{DateTime: civil.DateTime{Date: date, Time: time}, TimeZone: timeZone}
+	return &DateTimeTZ{Date: date, Time: time, TimeZone: timeZone}
 }
 
-func NewDateTimeWithDate(date civil.Date, timeZone *TimeZone) *DateTimeTZ {
+func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
 	if timeZone == nil {
 		timeZone = parseTimeZone
 	}
-	return &DateTimeTZ{DateTime: civil.DateTime{Date: date}, TimeZone: timeZone}
+	return &DateTimeTZ{Date: date, TimeZone: timeZone}
+}
+
+// A Date represents a date (year, month, day, weekday).
+//
+// This type does not include location information, and therefore does not
+// describe a unique 24-hour timespan.
+type Date struct {
+	Year    int        // Year (e.g., 2014).
+	Month   time.Month // Month of the year (January = 1, ...).
+	Day     int        // Day of the month, starting at 1.
+	Weekday int        // Weekday, starting at 1
+}
+
+// String returns the date in RFC3339 full-date format.
+func (d Date) String() string {
+	return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day)
+}
+
+// A Time represents a time with nanosecond precision.
+//
+// This type does not include location information, and therefore does not
+// describe a unique moment in time.
+//
+// This type exists to represent the TIME type in storage-based APIs like BigQuery.
+// Most operations on Times are unlikely to be meaningful. Prefer the DateTime type.
+type Time struct {
+	Hour       int // The hour of the day in 24-hour format; range [0-23]
+	Minute     int // The minute of the hour; range [0-59]
+	Second     int // The second of the minute; range [0-59]
+	Nanosecond int // The nanosecond of the second; range [0-999999999]
+}
+
+// String returns the date in the format described in ParseTime. If Nanoseconds
+// is zero, no fractional part will be generated. Otherwise, the result will
+// end with a fractional part consisting of a decimal point and nine digits.
+func (t Time) String() string {
+	s := fmt.Sprintf("%02d:%02d:%02d", t.Hour, t.Minute, t.Second)
+	if t.Nanosecond == 0 {
+		return s
+	}
+	return s + fmt.Sprintf(".%09d", t.Nanosecond)
 }
 
 type TimeZone struct {
@@ -186,30 +226,30 @@ func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 }
 
 var weekdaysByNames = map[string]int{
-	"su":        0,
-	"sun":       0,
-	"sunday":    0,
-	"mo":        1,
-	"mon":       1,
-	"monday":    1,
-	"tu":        2,
-	"tue":       2,
-	"tues":      2,
-	"tuesday":   2,
-	"we":        3,
-	"wed":       3,
-	"weds":      3,
-	"wednesday": 3,
+	"su":        1,
+	"sun":       1,
+	"sunday":    1,
+	"mo":        2,
+	"mon":       2,
+	"monday":    2,
+	"tu":        3,
+	"tue":       3,
+	"tues":      3,
+	"tuesday":   3,
+	"we":        4,
+	"wed":       4,
+	"weds":      4,
+	"wednesday": 4,
 	//	"th":        4, recognize this separately because it also appears in "4th"
-	"thu":      4,
-	"thus":     4,
-	"thursday": 4,
-	"fr":       5,
-	"fri":      5,
-	"friday":   5,
-	"sa":       6,
-	"sat":      6,
-	"saturday": 6,
+	"thu":      5,
+	"thus":     5,
+	"thursday": 5,
+	"fr":       6,
+	"fri":      6,
+	"friday":   6,
+	"sa":       7,
+	"sat":      7,
+	"saturday": 7,
 }
 
 var monthsByNames = map[string]int{
@@ -258,12 +298,13 @@ type timeUnit struct {
 var yearUnit = timeUnit{name: "year", fixFn: fixYear}
 var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
 var dayUnit = timeUnit{name: "day", min: 1, max: 31}
+var weekdayUnit = timeUnit{name: "weekday", min: 1, max: 7}
 var hourUnit = timeUnit{name: "hour", min: 0, max: 24, stringToIntFn: hourNameToHour}
 var minuteUnit = timeUnit{name: "minute", min: 0, max: 59}
 var secondUnit = timeUnit{name: "second", min: 0, max: 59}
 var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
 
-var noTime = &civil.Time{}
+var noTime = &Time{}
 var noTimeZone = &TimeZone{}
 var noYear = 0
 var noMonth = 0
@@ -383,7 +424,7 @@ func hourNameToHour(hourName string) int {
 // 	return &r
 // }
 
-func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
+func NewAmbiguousDate(first string, second string, yearAny any) *Date {
 	// North American tends to parse dates as month-day-year.
 	if parseDateMode == "na" {
 		return NewMDYDate(first, second, yearAny)
@@ -391,35 +432,48 @@ func NewAmbiguousDate(first string, second string, yearAny any) civil.Date {
 	return NewDMYDate(first, second, yearAny)
 }
 
-func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []civil.Date {
-	rs := []civil.Date{}
+func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []*Date {
+	rs := []*Date{}
 	for _, dayAny := range daysAny {
 		rs = append(rs, NewDMYDate(dayAny, monthAny, yearAny))
 	}
 	return rs
 }
 
-func NewDMYDate(dayAny any, monthAny any, yearAny any) civil.Date {
+func NewDMYDate(dayAny any, monthAny any, yearAny any) *Date {
 	// fmt.Printf("NewDMYDate(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	return civil.Date{Day: day, Month: time.Month(month), Year: year}
+	return &Date{Day: day, Month: time.Month(month), Year: year}
 }
 
-func NewMDsYDates(monthAny any, daysAny []string, yearAny any) []civil.Date {
-	rs := []civil.Date{}
+func NewDMYWDate(dayAny any, monthAny any, yearAny any, weekdayAny any) *Date {
+	// fmt.Printf("NewDMYDate(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
+	day := findInt(dayUnit, dayAny)
+	month := findInt(monthUnit, monthAny)
+	year := findInt(yearUnit, yearAny)
+	weekday := findInt(weekdayUnit, weekdayAny)
+	return &Date{Day: day, Month: time.Month(month), Year: year, Weekday: weekday}
+}
+
+func NewMDsYDates(monthAny any, daysAny []string, yearAny any) []*Date {
+	rs := []*Date{}
 	for _, dayAny := range daysAny {
 		rs = append(rs, NewMDYDate(monthAny, dayAny, yearAny))
 	}
 	return rs
 }
 
-func NewMDYDate(monthAny any, dayAny any, yearAny any) civil.Date {
+func NewMDYDate(monthAny any, dayAny any, yearAny any) *Date {
 	return NewDMYDate(dayAny, monthAny, yearAny)
 }
 
-func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
+func NewMDYWDate(monthAny any, dayAny any, yearAny any, weekdayAny any) *Date {
+	return NewDMYWDate(dayAny, monthAny, yearAny, weekdayAny)
+}
+
+func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
 	if r.Hour > 12 {
 		panic(fmt.Sprintln("found hour but failed AM bounds check", "r.Hour", r.Hour))
@@ -428,7 +482,7 @@ func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time 
 	return r
 }
 
-func NewPMTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
+func NewPMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
 	if r.Hour > 12 {
 		panic(fmt.Sprintln("found hour but failed PM bounds check", "r.Hour", r.Hour))
@@ -437,10 +491,10 @@ func NewPMTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time 
 	return r
 }
 
-func NewTime(hourAny any, minuteAny any, secondAny any, nsAny any) civil.Time {
+func NewTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	hour := findInt(hourUnit, hourAny)
 	minute := findInt(minuteUnit, minuteAny)
 	second := findInt(secondUnit, secondAny)
 	ns := findInt(nsUnit, nsAny)
-	return civil.Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns}
+	return &Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns}
 }

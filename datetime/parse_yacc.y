@@ -1,7 +1,5 @@
 %{
 package datetime
-
-import "cloud.google.com/go/civil"
 %}
 
 %token ILLEGAL
@@ -83,8 +81,8 @@ import "cloud.google.com/go/civil"
     DateTimeTZRanges *DateTimeTZRanges
     DateTimeTZRange *DateTimeTZRange
     DateTimeTZ *DateTimeTZ
-    Date civil.Date
-    Time civil.Time
+    Date *Date
+    Time *Time
     TimeZone  *TimeZone
     string string
     strings []string
@@ -195,9 +193,9 @@ DateTimeTZRange:
   DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
 
 | RangePrefixPlus DateTimeTZRange {$$ = $2}
-| DateTimeTZ RangeSepPlus Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTime($1.Date, $3, $1.TimeZone))}
-| DateTimeTZ RangeSepPlus Time TimeZone {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1.Date, $1.Time, $4), NewDateTime($1.Date, $3, $4))}
-| Time RangeSepPlus DateTimeTZ {$$ = NewRangeWithStartEndDateTimes(NewDateTime($3.Date, $1, $3.TimeZone), $3)}
+| DateTimeTZ RangeSepPlus Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTimeTZ($1.Date, $3, $1.TimeZone))}
+| DateTimeTZ RangeSepPlus Time TimeZone {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ($1.Date, $1.Time, $4), NewDateTimeTZ($1.Date, $3, $4))}
+| Time RangeSepPlus DateTimeTZ {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ($3.Date, $1, $3.TimeZone), $3)}
 
   // "Feb 3, 2023 - Feb 4, 2023"
 | DateTimeTZ RangeSepPlus DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
@@ -234,12 +232,12 @@ DateTimeTZRange:
 | WeekDay Day Month RangeSepPlus Day WeekDay Month Year {$$ = NewRangeWithStartEndDates(NewDMYDate($2, $3, $8), NewDMYDate($5, $7, $8))}
 
   // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
-| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRangeWithStartEndDateTimes(NewDateTime(NewDMYDate($4, $6, $14), $1, $2), NewDateTime(NewDMYDate($8, $10, $14), $12, $13))}
+| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ(NewDMYDate($4, $6, $14), $1, $2), NewDateTimeTZ(NewDMYDate($8, $10, $14), $12, $13))}
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
   // "February 3rd, 9-12pm ET"
-| Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes(NewDateTime($1, $2, $3), NewDateTime($1, $5, $6))}
+| Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ($1, $2, $3), NewDateTimeTZ($1, $5, $6))}
 ;
 
 
@@ -276,12 +274,12 @@ RangeSep:
 //
 
 DateTimeTZ:
-  Date {$$ = NewDateTimeWithDate($1, nil)}
+  Date {$$ = NewDateTimeTZWithDate($1, nil)}
 
-| Date Time TimeZoneOpt {$$ = NewDateTime($1, $2, $3)}
-| Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
-| Time TimeZoneOpt Date {$$ = NewDateTime($3, $1, $2)}
-| Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTime($4, $1, $2)}
+| Date Time TimeZoneOpt {$$ = NewDateTimeTZ($1, $2, $3)}
+| Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTimeTZ($1, $3, $4)}
+| Time TimeZoneOpt Date {$$ = NewDateTimeTZ($3, $1, $2)}
+| Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTimeTZ($4, $1, $2)}
 | RFC3339DateTimeTZ
 ;
 
@@ -329,9 +327,9 @@ TimeZone:
 //
 
 RFC3339DateTimeTZ:
-  RFC3339Date {$$ = NewDateTimeWithDate($1, nil)}
-| RFC3339Date RFC3339Time {$$ = NewDateTime($1, $2, nil)}
-| RFC3339Date RFC3339Time RFC3339TimeZone {$$ = NewDateTime($1, $2, $3)}
+  RFC3339Date {$$ = NewDateTimeTZWithDate($1, nil)}
+| RFC3339Date RFC3339Time {$$ = NewDateTimeTZ($1, $2, nil)}
+| RFC3339Date RFC3339Time RFC3339TimeZone {$$ = NewDateTimeTZ($1, $2, $3)}
 ;
 
 RFC3339Date:
