@@ -18,40 +18,40 @@ var acceptBrokenTests = true
 // time go test -v ./...
 // DEBUG=true time go test -v -run '^TestExtractDatetimesRanges/102'
 
-var DateForFeb = &Date{Month: time.February}
-var DateForMar = &Date{Month: time.March}
+var DateForFeb = NewDate(&Date{Month: time.February})
+var DateForMar = NewDate(&Date{Month: time.March})
 
-var DateForFeb01 = &Date{Month: time.February, Day: 1}
-var DateForFeb02 = &Date{Month: time.February, Day: 2}
-var DateForFeb03 = &Date{Month: time.February, Day: 3}
-var DateForFeb04 = &Date{Month: time.February, Day: 4}
-var DateForFeb05 = &Date{Month: time.February, Day: 5}
-var DateForMar02 = &Date{Month: time.March, Day: 2}
-var DateForMar03 = &Date{Month: time.March, Day: 3}
-var DateForMar04 = &Date{Month: time.March, Day: 4}
-var DateForApr03 = &Date{Month: time.April, Day: 3}
+var DateForFeb01 = NewDate(&Date{Month: time.February, Day: 1})
+var DateForFeb02 = NewDate(&Date{Month: time.February, Day: 2})
+var DateForFeb03 = NewDate(&Date{Month: time.February, Day: 3})
+var DateForFeb04 = NewDate(&Date{Month: time.February, Day: 4})
+var DateForFeb05 = NewDate(&Date{Month: time.February, Day: 5})
+var DateForMar02 = NewDate(&Date{Month: time.March, Day: 2})
+var DateForMar03 = NewDate(&Date{Month: time.March, Day: 3})
+var DateForMar04 = NewDate(&Date{Month: time.March, Day: 4})
+var DateForApr03 = NewDate(&Date{Month: time.April, Day: 3})
 
 var DateRangesForFeb03 = NewRangesWithStartDates(DateForFeb03)
 var DateRangesFromFeb02ToFeb05 = NewRangesWithStartEndDates(DateForFeb02, DateForFeb05)
 var DateRangesFromFeb03ToFeb04 = NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)
 
-var DateFor2023 = &Date{Year: 2023}
-var DateFor2024 = &Date{Year: 2024}
+var DateFor2023 = NewDate(&Date{Year: 2023})
+var DateFor2024 = NewDate(&Date{Year: 2024})
 
-var DateFor2023Feb = &Date{Year: 2023, Month: time.February}
-var DateFor2023Mar = &Date{Year: 2023, Month: time.March}
+var DateFor2023Feb = NewDate(&Date{Year: 2023, Month: time.February})
+var DateFor2023Mar = NewDate(&Date{Year: 2023, Month: time.March})
 
 var DateRangesFor2023Feb = NewRangesWithStartDates(DateFor2023Feb)
 
 var DateRangesFor2023Feb03 = NewRangesWithStartDates(DateFor2023Feb03)
 
-var DateFor2023Feb01 = &Date{Year: 2023, Month: time.February, Day: 1}
-var DateFor2023Feb02 = &Date{Year: 2023, Month: time.February, Day: 2}
-var DateFor2023Feb03 = &Date{Year: 2023, Month: time.February, Day: 3}
-var DateFor2023Feb04 = &Date{Year: 2023, Month: time.February, Day: 4}
-var DateFor2023Feb05 = &Date{Year: 2023, Month: time.February, Day: 5}
-var DateFor2023Mar02 = &Date{Year: 2023, Month: time.March, Day: 2}
-var DateFor2023Mar03 = &Date{Year: 2023, Month: time.March, Day: 3}
+var DateFor2023Feb01 = NewDate(&Date{Year: 2023, Month: time.February, Day: 1})
+var DateFor2023Feb02 = NewDate(&Date{Year: 2023, Month: time.February, Day: 2})
+var DateFor2023Feb03 = NewDate(&Date{Year: 2023, Month: time.February, Day: 3})
+var DateFor2023Feb04 = NewDate(&Date{Year: 2023, Month: time.February, Day: 4})
+var DateFor2023Feb05 = NewDate(&Date{Year: 2023, Month: time.February, Day: 5})
+var DateFor2023Mar02 = NewDate(&Date{Year: 2023, Month: time.March, Day: 2})
+var DateFor2023Mar03 = NewDate(&Date{Year: 2023, Month: time.March, Day: 3})
 
 var DateRangesFrom2023Feb03To2023Feb04 = NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)
 
@@ -133,6 +133,7 @@ func TestParse(t *testing.T) {
 		{in: "February 3", want: DateRangesForFeb03},
 		{in: "Thu Feb 3", want: DateRangesForFeb03},
 		{in: "Thu 3 Feb", want: DateRangesForFeb03},
+		{in: "Fri 3 Feb", want: DateRangesForFeb03},
 		// DM
 		{in: "3 Feb", want: DateRangesForFeb03},
 		{in: "3, Feb", want: DateRangesForFeb03},
@@ -388,6 +389,29 @@ func TestParse(t *testing.T) {
 		// TODO
 		//
 
+		// September 11th & 18th 10am - 10:45am Pacific time
+		// 24-26 October (in person) & Weds 31st Integration eve (online)
+		// March 19th - 22nd 10am - 5:30pm PT each day
+		// Tuesdays January 7th & 21st 6:30p-8:30p
+		// Sep 18, 2024 11:30 AM Eastern Time (US and Canada)
+		// September 28th, 8:00-10:00am Pacific (California) time
+		// Saturday, September 21st from 7 - 11 pm
+		// Every Tuesday beginning September 10th from 12:30 - 2 pm
+		// September 19 - October 24, every Thursday from 12 - 2 pm EST
+		// October 12 + 13, 10 am - 7 pm each day
+		// November 9 + 10, 10 am - 7 pm each day
+		// September 11th & 18th 10am - 10:45am Pacific time
+		// September 4 - 12 \n Courses Begin September 17
+		// SEPTEMBER 1ST 1 PM MT, ON SUNDAY
+		// THIS Thursday: August 29 \n 7-9:30pm
+		// September 6, 2024 / 11:00 AM - 12:00 PM MT
+		// 13-15 & 18 September
+		// Sunday, October 6, 9am - 4pm Pacific Time
+		// NEW Sundays at 9 am ET - Starts October 20
+		// Sa. 9. Nov. 2024, 10:00-ca.15:00
+		// September 12 4 p.m.
+		// 12:00 am MT September 17th
+		// Monday, September 2 \n PT (AZ): 10:30 am, MT: 11:30 am, CT: 12:30 pm, ET: 1:30 pm, London: 5:30 pm, Sweden and France: 6:30 pm, Israel: 7:30 pm
 		// Tuesdays – March 18, 25, and April 1, 8, 15, 22 10:00 AM – 12:30 PM PST
 		// Tuesdays, March 4th, 11th, and 18th 12:00pm - 1:00pm (ET)
 		// Starts Tuesday 1/28 at 9:30 am MT

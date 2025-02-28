@@ -21,7 +21,10 @@ type DateTimeTZRanges struct {
 	Items []*DateTimeTZRange
 }
 
-func (rngs DateTimeTZRanges) String() string {
+func (rngs *DateTimeTZRanges) String() string {
+	if rngs == nil {
+		return ""
+	}
 	rs := []string{}
 	for _, elt := range rngs.Items {
 		rs = append(rs, elt.String())
@@ -117,11 +120,20 @@ func (dttz *DateTimeTZ) String() string {
 	if dttz == nil {
 		return ""
 	}
-	r := dttz.Date.String() + "T" + dttz.Time.String()
-	if tzStr := dttz.TimeZone.String(); tzStr != "" {
-		r += tzStr
-	}
-	return r
+	// if dttz.Date != nil {
+	// 	r += dttz.Date.String()
+	// }
+	// r := "T"
+	// if dttz.Time != nil {
+	// 	r += dttz.Time.String()
+	// }
+	// if dttz.TimeZone != nil {
+	// 	r += dttz.TimeZone.String()
+	// }
+	// // if tzStr := dttz.TimeZone.String(); tzStr != "" {
+	// // 	r += tzStr
+	// // }
+	return dttz.Date.String() + dttz.Time.String() + dttz.TimeZone.String()
 }
 
 func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
@@ -147,12 +159,32 @@ type Date struct {
 	Year    int        // Year (e.g., 2014).
 	Month   time.Month // Month of the year (January = 1, ...).
 	Day     int        // Day of the month, starting at 1.
-	Weekday int        // Weekday, starting at 1
+	Weekday int        // Day of the week, starting at 1 for Sunday
 }
 
 // String returns the date in RFC3339 full-date format.
-func (d Date) String() string {
+func (d *Date) String() string {
+	if d == nil {
+		return ""
+	}
 	return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day)
+}
+
+func NewDate(date *Date) *Date {
+	return date
+	if date.Year == 0 || date.Month == 0 || date.Day == 0 {
+		return date
+	}
+	t := time.Date(date.Year, date.Month, date.Day, 0, 0, 0, 0, time.UTC)
+	tw := weekdaysByNames[strings.ToLower(t.Weekday().String())]
+	if date.Weekday == 0 {
+		date.Weekday = tw
+		return date
+	}
+	if date.Weekday != tw {
+		panic(fmt.Sprintf("extracted weekday of %q doesn't actual match weekday of %q for %4d-%2d-%2d", weekdayNames[tw], weekdayNames[date.Weekday], date.Year, date.Month, date.Day))
+	}
+	return date
 }
 
 // A Time represents a time with nanosecond precision.
@@ -172,8 +204,11 @@ type Time struct {
 // String returns the date in the format described in ParseTime. If Nanoseconds
 // is zero, no fractional part will be generated. Otherwise, the result will
 // end with a fractional part consisting of a decimal point and nine digits.
-func (t Time) String() string {
-	s := fmt.Sprintf("%02d:%02d:%02d", t.Hour, t.Minute, t.Second)
+func (t *Time) String() string {
+	if t == nil {
+		return "T"
+	}
+	s := fmt.Sprintf("T%02d:%02d:%02d", t.Hour, t.Minute, t.Second)
 	if t.Nanosecond == 0 {
 		return s
 	}
@@ -225,6 +260,83 @@ func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 	return &TimeZone{Name: name, Abbrev: abbrev, Offset: offset}
 }
 
+func findInt(tunit timeUnit, valAny any) int {
+	// fmt.Printf("findInt(tunit: %#v, valAny: %#v)\n", tunit, valAny)
+	r := -1
+	var ok bool
+	if valAny != nil {
+		switch valAny.(type) {
+		case int:
+			rInt, ok := valAny.(int)
+			if ok {
+				r = rInt
+			}
+		case *int:
+			rPtr, ok := valAny.(*int)
+			if ok {
+				r = *rPtr
+			}
+		case string:
+			if valAny.(string) == "" {
+				ok = false
+				r = 0
+				break
+			}
+			rInt, err := strconv.Atoi(valAny.(string))
+			if err == nil {
+				r = rInt
+			} else {
+				if tunit.stringToIntFn != nil {
+					r = tunit.stringToIntFn(valAny.(string))
+				}
+			}
+		}
+	}
+	// fmt.Printf("in findInt(): r: %d\n", r)
+
+	if tunit.fixFn != nil {
+		r, ok = tunit.fixFn(valAny, r)
+		// fmt.Println("r", r, "ok", ok)
+	} else if valAny == nil {
+		return 0
+	}
+
+	// debugf("in findInt(), r: %d, ok: %t\n", r, ok)
+	if !ok && (r < tunit.min || r > tunit.max) {
+		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tunit, "valAny", valAny))
+	}
+	// debugf("in findInt(), returning: %d\n", r)
+	return r
+}
+
+type timeUnit struct {
+	name          string
+	min           int
+	max           int
+	emptyVal      any
+	fixFn         func(any, int) (int, bool)
+	stringToIntFn func(string) int
+}
+
+var yearUnit = timeUnit{name: "year", fixFn: fixYear}
+var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
+var dayUnit = timeUnit{name: "day", min: 1, max: 31}
+var weekdayUnit = timeUnit{name: "weekday", min: 1, max: 7, stringToIntFn: weekdayNameToWeekday}
+var hourUnit = timeUnit{name: "hour", min: 0, max: 24, stringToIntFn: hourNameToHour}
+var minuteUnit = timeUnit{name: "minute", min: 0, max: 59}
+var secondUnit = timeUnit{name: "second", min: 0, max: 59}
+var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
+
+// var noTime = &Time{}
+// var noTimeZone = &TimeZone{}
+// var noYear = 0
+// var noMonth = 0
+// var noDay = 0
+// var noHour = 0
+// var noMinute = 0
+// var noSecond = 0
+// var noNS = 0
+
 var weekdaysByNames = map[string]int{
 	"su":        1,
 	"sun":       1,
@@ -250,6 +362,17 @@ var weekdaysByNames = map[string]int{
 	"sa":       7,
 	"sat":      7,
 	"saturday": 7,
+}
+
+var weekdayNames = []string{
+	"",
+	"Sunday",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
 }
 
 var monthsByNames = map[string]int{
@@ -286,100 +409,6 @@ var ordinals = map[string]bool{
 	// "th": true, recognize this separately because it also shortens Thursday
 }
 
-type timeUnit struct {
-	name          string
-	min           int
-	max           int
-	emptyVal      any
-	fixFn         func(any, int) (int, bool)
-	stringToIntFn func(string) int
-}
-
-var yearUnit = timeUnit{name: "year", fixFn: fixYear}
-var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
-var dayUnit = timeUnit{name: "day", min: 1, max: 31}
-var weekdayUnit = timeUnit{name: "weekday", min: 1, max: 7}
-var hourUnit = timeUnit{name: "hour", min: 0, max: 24, stringToIntFn: hourNameToHour}
-var minuteUnit = timeUnit{name: "minute", min: 0, max: 59}
-var secondUnit = timeUnit{name: "second", min: 0, max: 59}
-var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
-
-var noTime = &Time{}
-var noTimeZone = &TimeZone{}
-var noYear = 0
-var noMonth = 0
-var noDay = 0
-var noHour = 0
-var noMinute = 0
-var noSecond = 0
-var noNS = 0
-
-// func findFloat(valAny any) (float32, bool) {
-// 	if valAny == nil {
-// 		return 0.0, true
-// 	}
-// 	var r float32
-// 	switch valAny.(type) {
-// 	case float32:
-// 		rFloat, ok := valAny.(float32)
-// 		if ok {
-// 			r = rFloat
-// 		}
-// 	case string:
-// 		rFloat, err := strconv.ParseFloat(valAny.(string), 32)
-// 		if err == nil {
-// 			r = float32(rFloat)
-// 		}
-// 	default:
-// 		// panic(fmt.Sprintln("failed to find float", "valAny", valAny))
-// 		return r, false
-// 	}
-
-// 	return r, true
-// }
-
-func findInt(tunit timeUnit, valAny any) int {
-	r := -1
-	if valAny != nil {
-		switch valAny.(type) {
-		case int:
-			rInt, ok := valAny.(int)
-			if ok {
-				r = rInt
-			}
-		case *int:
-			rPtr, ok := valAny.(*int)
-			if ok {
-				r = *rPtr
-			}
-		case string:
-			rInt, err := strconv.Atoi(valAny.(string))
-			if err == nil {
-				r = rInt
-			} else {
-				if tunit.stringToIntFn != nil {
-					r = tunit.stringToIntFn(valAny.(string))
-				}
-			}
-		}
-	}
-
-	var ok bool
-	if tunit.fixFn != nil {
-		r, ok = tunit.fixFn(valAny, r)
-		// fmt.Println("r", r, "ok", ok)
-	} else if valAny == nil {
-		return 0
-	}
-
-	// debugf("in findInt(), r: %d, ok: %t\n", r, ok)
-	if !ok && (r < tunit.min || r > tunit.max) {
-		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tunit, "valAny", valAny))
-	}
-	// debugf("in findInt(), returning: %d\n", r)
-	return r
-}
-
 func fixYear(yearAny any, year int) (int, bool) {
 	// fmt.Printf("fixYear(yearAny: %#v, year: %d), parseYear: %d\n", yearAny, year, parseYear)
 	if parseYear != 0 && year == -1 {
@@ -400,6 +429,14 @@ func monthNameToMonth(monthName string) int {
 		return -1
 	}
 	return month
+}
+
+func weekdayNameToWeekday(weekdayName string) int {
+	weekday, found := weekdaysByNames[strings.ToLower(weekdayName)]
+	if !found {
+		return 0
+	}
+	return weekday
 }
 
 func hourNameToHour(hourName string) int {
@@ -424,12 +461,12 @@ func hourNameToHour(hourName string) int {
 // 	return &r
 // }
 
-func NewAmbiguousDate(first string, second string, yearAny any) *Date {
+func NewAmbiguousDate(weekdayAny any, first string, second string, yearAny any) *Date {
 	// North American tends to parse dates as month-day-year.
 	if parseDateMode == "na" {
-		return NewMDYDate(first, second, yearAny)
+		return NewWMDYDate(weekdayAny, first, second, yearAny)
 	}
-	return NewDMYDate(first, second, yearAny)
+	return NewWDMYDate(weekdayAny, first, second, yearAny)
 }
 
 func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []*Date {
@@ -445,16 +482,16 @@ func NewDMYDate(dayAny any, monthAny any, yearAny any) *Date {
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	return &Date{Day: day, Month: time.Month(month), Year: year}
+	return NewDate(&Date{Day: day, Month: time.Month(month), Year: year})
 }
 
-func NewDMYWDate(dayAny any, monthAny any, yearAny any, weekdayAny any) *Date {
+func NewWDMYDate(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
 	// fmt.Printf("NewDMYDate(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
+	weekday := 0 // findInt(weekdayUnit, weekdayAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	weekday := findInt(weekdayUnit, weekdayAny)
-	return &Date{Day: day, Month: time.Month(month), Year: year, Weekday: weekday}
+	return NewDate(&Date{Day: day, Month: time.Month(month), Year: year, Weekday: weekday})
 }
 
 func NewMDsYDates(monthAny any, daysAny []string, yearAny any) []*Date {
@@ -469,8 +506,8 @@ func NewMDYDate(monthAny any, dayAny any, yearAny any) *Date {
 	return NewDMYDate(dayAny, monthAny, yearAny)
 }
 
-func NewMDYWDate(monthAny any, dayAny any, yearAny any, weekdayAny any) *Date {
-	return NewDMYWDate(dayAny, monthAny, yearAny, weekdayAny)
+func NewWMDYDate(weekdayAny any, monthAny any, dayAny any, yearAny any) *Date {
+	return NewWDMYDate(weekdayAny, dayAny, monthAny, yearAny)
 }
 
 func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {

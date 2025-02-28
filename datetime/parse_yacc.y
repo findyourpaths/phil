@@ -52,29 +52,34 @@ package datetime
  /* Type of each nonterminal. */
 %type <DateTimeTZRanges> root
 %type <DateTimeTZRanges> DateTimeTZRanges
+
 %type <DateTimeTZRange> DateTimeTZRange
+
 %type <DateTimeTZ> DateTimeTZ
 %type <DateTimeTZ> RFC3339DateTimeTZ
+
 %type <Date> Date
 %type <Date> RFC3339Date
+
 %type <Time> Time
 %type <Time> RFC3339Time
+
 %type <TimeZone> TimeZone
 %type <TimeZone> TimeZoneOpt
 %type <TimeZone> RFC3339TimeZone
 
 %type <string> Day
-%type <string> Month
 %type <string> FullYear
+%type <string> Month
+%type <string> Weekday
+%type <string> WeekdayOpt
 %type <string> Year
+
 %type <strings> DayPlus
 %type <strings> DayPlus1
 
 
-
-
 %start root
-
 
  /* Type of each nonterminal. */
 %union {
@@ -214,22 +219,22 @@ DateTimeTZRange:
 | Month Day RangeSepPlus Month Day Year {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, $6), NewMDYDate($4, $5, $6))}
 
   // "Thu Feb 3 - Sat Mar 4, 2023"
-| WeekDay Month Day RangeSepPlus WeekDay Month Day Year {$$ = NewRangeWithStartEndDates(NewMDYDate($2, $3, $8), NewMDYDate($6, $7, $8))}
+| WeekdayOpt Month Day RangeSepPlus WeekdayOpt Month Day Year {$$ = NewRangeWithStartEndDates(NewWMDYDate($1, $2, $3, $8), NewWMDYDate($5, $6, $7, $8))}
 
   // "Thu Feb 3 - Sat 4 Mar, 2023"
-| WeekDay Month Day RangeSepPlus WeekDay Day Month Year {$$ = NewRangeWithStartEndDates(NewMDYDate($2, $3, $8), NewDMYDate($6, $7, $8))}
+| WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day Month Year {$$ = NewRangeWithStartEndDates(NewWMDYDate($1, $2, $3, $8), NewWDMYDate($5, $6, $7, $8))}
 
-  // "Thu Feb 3 - Sat 4 Mar, 2023"
-| WeekDay Month Day RangeSepPlus Day WeekDay Month Year {$$ = NewRangeWithStartEndDates(NewMDYDate($2, $3, $8), NewDMYDate($5, $7, $8))}
+  // "Thu Feb 3 - 4 Sat Mar, 2023"
+| WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt Month Year {$$ = NewRangeWithStartEndDates(NewWMDYDate($1, $2, $3, $8), NewWDMYDate($6, $5, $7, $8))}
 
   // "Thu 3 Feb - Sat Mar 4, 2023"
-| WeekDay Day Month RangeSepPlus WeekDay Month Day Year {$$ = NewRangeWithStartEndDates(NewDMYDate($2, $3, $8), NewMDYDate($6, $7, $8))}
+| WeekdayOpt Day Month RangeSepPlus WeekdayOpt Month Day Year {$$ = NewRangeWithStartEndDates(NewWDMYDate($1, $2, $3, $8), NewWMDYDate($5, $6, $7, $8))}
 
   // "Thu 3 Feb - Sat 4 Mar, 2023"
-| WeekDay Day Month RangeSepPlus WeekDay Day Month Year {$$ = NewRangeWithStartEndDates(NewDMYDate($2, $3, $8), NewDMYDate($6, $7, $8))}
+| WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day Month Year {$$ = NewRangeWithStartEndDates(NewWDMYDate($1, $2, $3, $8), NewWDMYDate($5, $6, $7, $8))}
 
   // "Thu 3 Feb - Sat 4 Mar, 2023"
-| WeekDay Day Month RangeSepPlus Day WeekDay Month Year {$$ = NewRangeWithStartEndDates(NewDMYDate($2, $3, $8), NewDMYDate($5, $7, $8))}
+| WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month Year {$$ = NewRangeWithStartEndDates(NewWDMYDate($1, $2, $3, $8), NewWDMYDate($6, $5, $7, $8))}
 
   // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
 | Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ(NewDMYDate($4, $6, $14), $1, $2), NewDateTimeTZ(NewDMYDate($8, $10, $14), $12, $13))}
@@ -355,7 +360,7 @@ Date:
   DatePrefixPlus Date {$$ = $2}
 
   // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
-| Day DateSepPlus Day {$$ = NewAmbiguousDate($1, $3, nil)}
+| WeekdayOpt Day DateSepPlus Day {$$ = NewAmbiguousDate($1, $2, $4, nil)}
 
 | FullYear {$$ = NewDMYDate(nil, nil, $1)}
 | FullYear DateSepPlus Day {$$ = NewDMYDate(nil, $3, $1)}
@@ -368,22 +373,22 @@ Date:
 | Month FullYear {$$ = NewMDYDate($1, nil, $2)}
 
   // "Feb 3 2023"
-| Month Day Year {$$ = NewMDYDate($1, $2, $3)}
+| WeekdayOpt Month Day Year {$$ = NewWMDYDate($1, $2, $3, $4)}
 
   // "3 Feb 2023"
-| Day Month Year {$$ = NewDMYDate($1, $2, $3)}
+| WeekdayOpt Day Month Year {$$ = NewWDMYDate($1, $2, $3, $4)}
 
   // "2/3/2023", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
-| Day DateSepPlus Day DateSepPlus Year {$$ = NewAmbiguousDate($1, $3, $5)}
+| WeekdayOpt Day DateSepPlus Day DateSepPlus Year {$$ = NewAmbiguousDate($1, $2, $4, $6)}
 
   // "Feb 3"
-| Month Day {$$ = NewMDYDate($1, $2, nil)}
+| WeekdayOpt Month Day {$$ = NewWMDYDate($1, $2, $3, nil)}
 
   // "3 Feb"
-| Day Month {$$ = NewDMYDate($1, $2, nil)}
+| WeekdayOpt Day Month {$$ = NewWDMYDate($1, $2, $3, nil)}
 
   // "2023 Feb 3"
-| FullYear Month Day {$$ = NewDMYDate($3, $2, $1)}
+| WeekdayOpt FullYear Month Day {$$ = NewWDMYDate($1, $4, $3, $2)}
 ;
 
 
@@ -393,7 +398,7 @@ DatePrefixPlus:
 ;
 DatePrefix:
   DATE
-| WeekDay
+| Weekday
 | COLON
 | COMMA
 | ON
@@ -465,8 +470,12 @@ YearSuffix:
 ;
 
 
-WeekDay:
-  TH
+WeekdayOpt:
+  {$$ = ""}
+| Weekday
+;
+Weekday:
+  TH {$$ = "TH"}
 | WEEKDAY_NAME
 ;
 
