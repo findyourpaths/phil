@@ -14,6 +14,7 @@ package datetime
 %token COLON
 %token COMMA
 %token DATE
+%token DATES
 %token DEC
 %token FROM
 %token GOOGLE
@@ -23,15 +24,18 @@ package datetime
 %token OF
 %token ON
 %token ORD_IND
+%token PART
 %token PM
 %token PERIOD
 %token QUO
 %token RPAREN
+%token SAVE
 %token SEMICOLON
 %token SUB
 %token THROUGH
 %token T
 %token TH
+%token THE
 %token TILL
 %token TIME
 %token TO
@@ -97,7 +101,18 @@ package datetime
 
 root:
   DateTimeTZRanges {$$ = $1}
-  DateTimeTZRanges RootSuffixPlus {$$ = $1}
+| root RootSuffixPlus {$$ = $1}
+| RootPrefixPlus root {$$ = $2}
+;
+
+
+RootPrefixPlus:
+  RootPrefix
+| RootPrefixPlus RootPrefix
+;
+RootPrefix:
+  PART INT ColonOpt
+| SAVE THE DATES ColonOpt
 ;
 
 
@@ -109,6 +124,12 @@ RootSuffix:
   GOOGLE
 | CALENDAR
 | ICS
+;
+
+
+ColonOpt:
+
+| COLON
 ;
 
 
@@ -298,7 +319,9 @@ DateTimeSepPlus:
 | DateTimeSepPlus DateTimeSep
 ;
 DateTimeSep:
-  DEC
+  COLON
+| DEC
+| QUO
 | SUB
 | T
 ;

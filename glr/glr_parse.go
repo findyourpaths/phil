@@ -89,6 +89,8 @@ type ParseNode struct {
 	Term     string
 	Children []*ParseNode
 
+	Type string
+
 	startPos int
 	endPos   int
 	isAlt    bool
@@ -110,6 +112,8 @@ func (n ParseNode) String() string {
 	var rule string
 	if n.Term != "" {
 		rule = fmt.Sprintf("%q", n.Term)
+	} else if n.Type != "" {
+		rule = "(rule " + strconv.Itoa(n.ruleID) + " for " + n.Type + ")"
 	} else {
 		rule = "(rule " + strconv.Itoa(n.ruleID) + ")"
 	}
@@ -199,7 +203,6 @@ func setNodeChildrenAndScore(n *ParseNode, children []*ParseNode) {
 	}
 
 	sc := &parseNodeScore{}
-	sc.size = 1
 	// sc.depths = depth
 	if n.Term != "" {
 		sc.numTerms = 1
@@ -211,6 +214,11 @@ func setNodeChildrenAndScore(n *ParseNode, children []*ParseNode) {
 			sc.depths += csc.depths
 		}
 	}
+
+	if sc.numTerms > 0 && (n.Type != "" && n.Type != "string") {
+		sc.size += 1
+	}
+
 	sc.depths += sc.size
 	n.score = sc
 }
@@ -668,6 +676,7 @@ func getRuleNode(g *Grammar, s *GLRState, rlID int, children []*ParseNode) *Pars
 
 	r := &ParseNode{
 		Symbol: rl.Nonterminal,
+		Type:   rl.Type,
 		ruleID: rlID,
 	}
 	if len(children) > 0 {
@@ -730,6 +739,7 @@ func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
 	// new child of the promoted old, along with new.
 	newOld := &ParseNode{
 		Symbol:   old.Symbol,
+		Type:     old.Type,
 		startPos: old.startPos,
 		endPos:   old.endPos,
 		ruleID:   old.ruleID,

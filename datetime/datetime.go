@@ -9,9 +9,7 @@ import (
 )
 
 var parseDateMode string
-var parseYear int
-var parseTimeZone *TimeZone
-var parseTimeZoneAbbrev string
+var parseDTTZ *DateTimeTZ
 
 // A DateTimeTZs represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
@@ -138,15 +136,15 @@ func (dttz *DateTimeTZ) String() string {
 
 func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
 	// fmt.Printf("NewDateTime(date: %#v, time: %#v, timeZone: %#v)\n", date, time, timeZone)
-	if timeZone == nil {
-		timeZone = parseTimeZone
+	if timeZone == nil && parseDTTZ != nil {
+		timeZone = parseDTTZ.TimeZone
 	}
 	return &DateTimeTZ{Date: date, Time: time, TimeZone: timeZone}
 }
 
 func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
-	if timeZone == nil {
-		timeZone = parseTimeZone
+	if timeZone == nil && parseDTTZ != nil {
+		timeZone = parseDTTZ.TimeZone
 	}
 	return &DateTimeTZ{Date: date, TimeZone: timeZone}
 }
@@ -411,11 +409,11 @@ var ordinals = map[string]bool{
 
 func fixYear(yearAny any, year int) (int, bool) {
 	// fmt.Printf("fixYear(yearAny: %#v, year: %d), parseYear: %d\n", yearAny, year, parseYear)
-	if parseYear != 0 && year == -1 {
-		return parseYear, true
+	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
+		return parseDTTZ.Date.Year, true
 	}
-	if parseYear != 0 && year >= 0 && year <= 99 {
-		return 100*(parseYear/100) + year, true
+	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
+		return 100*(parseDTTZ.Date.Year/100) + year, true
 	}
 	if yearAny == nil {
 		return 0, true
