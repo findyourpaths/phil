@@ -4,6 +4,7 @@ package datetime
 
 %token ILLEGAL
 
+%token A
 %token ADD
 %token AM
 %token AMP
@@ -25,6 +26,7 @@ package datetime
 %token ON
 %token ORD_IND
 %token PART
+%token P
 %token PM
 %token PERIOD
 %token QUO
@@ -177,6 +179,9 @@ DateTimeTZRanges:
 | Month Day Month Day {$$ = NewRanges(NewRangeWithStart(NewMDYDate($1, $2, nil)), NewRangeWithStart(NewMDYDate($3, $4, nil)))}
   // "Feb 3, Mar 4 2023"
 | Month Day Month Day Year {$$ = NewRanges(NewRangeWithStart(NewMDYDate($1, $2, $5)), NewRangeWithStart(NewMDYDate($3, $4, $5)))}
+
+  // "Wednesdays February 1st & 8th 12:00p-3:00p"
+| WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt Time {$$ = NewRanges(NewRange(NewDateTimeTZ(NewWMDYDate($1, $2, $3, nil), $6, nil), NewDateTimeTZ(NewWMDYDate($1, $2, $3, nil), $8, nil)), NewRange(NewDateTimeTZ(NewWMDYDate($1, $2, $5, nil), $6, nil), NewDateTimeTZ(NewWMDYDate($1, $2, $5, nil), $8, nil)))}
 ;
 
 
@@ -219,9 +224,9 @@ DateTimeTZRange:
   DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
 
 | RangePrefixPlus DateTimeTZRange {$$ = $2}
-| DateTimeTZ RangeSepPlus Time {$$ = NewRangeWithStartEndDateTimes($1, NewDateTimeTZ($1.Date, $3, $1.TimeZone))}
-| DateTimeTZ RangeSepPlus Time TimeZone {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ($1.Date, $1.Time, $4), NewDateTimeTZ($1.Date, $3, $4))}
-| Time RangeSepPlus DateTimeTZ {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ($3.Date, $1, $3.TimeZone), $3)}
+| DateTimeTZ RangeSepPlus Time {$$ = NewRange($1, NewDateTimeTZ($1.Date, $3, $1.TimeZone))}
+| DateTimeTZ RangeSepPlus Time TimeZone {$$ = NewRange(NewDateTimeTZ($1.Date, $1.Time, $4), NewDateTimeTZ($1.Date, $3, $4))}
+| Time RangeSepPlus DateTimeTZ {$$ = NewRange(NewDateTimeTZ($3.Date, $1, $3.TimeZone), $3)}
 
   // "Feb 3, 2023 - Feb 4, 2023"
 | DateTimeTZ RangeSepPlus DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
@@ -258,12 +263,12 @@ DateTimeTZRange:
 | WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month Year {$$ = NewRangeWithStartEndDates(NewWDMYDate($1, $2, $3, $8), NewWDMYDate($6, $5, $7, $8))}
 
   // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
-| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ(NewDMYDate($4, $6, $14), $1, $2), NewDateTimeTZ(NewDMYDate($8, $10, $14), $12, $13))}
+| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRange(NewDateTimeTZ(NewDMYDate($4, $6, $14), $1, $2), NewDateTimeTZ(NewDMYDate($8, $10, $14), $12, $13))}
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
   // "February 3rd, 9-12pm ET"
-| Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt {$$ = NewRangeWithStartEndDateTimes(NewDateTimeTZ($1, $2, $3), NewDateTimeTZ($1, $5, $6))}
+| Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt {$$ = NewRange(NewDateTimeTZ($1, $2, $3), NewDateTimeTZ($1, $5, $6))}
 ;
 
 
@@ -347,6 +352,7 @@ TimeZoneSep:
 TimeZone:
   TIME_ZONE {$$ = NewTimeZone($1, nil, nil)}
 | TIME_ZONE_ABBREV {$$ = NewTimeZone(nil, $1, nil)}
+| P {$$ = NewTimeZone(nil, "P", nil)}
 ;
 
 
@@ -438,10 +444,10 @@ DateSepPlus:
 | DateSepPlus DateSep
 ;
 DateSep:
-  COMMA
+  AND
+| COMMA
 | DEC
 | PERIOD
-| SUB
 | QUO
 ;
 
@@ -511,8 +517,8 @@ Time:
   TimePrefixPlus Time {$$ = $2}
   /* INT {$$ = NewTime($1, nil, nil, nil)} */
   // "11am"
-| INT AM {$$ = NewAMTime($1, nil, nil, nil)}
-| INT PM {$$ = NewPMTime($1, nil, nil, nil)}
+| INT Am {$$ = NewAMTime($1, nil, nil, nil)}
+| INT Pm {$$ = NewPMTime($1, nil, nil, nil)}
 
   // "12"
 | INT {$$ = NewTime($1, nil, nil, nil)}
@@ -524,10 +530,10 @@ Time:
 | INT TimeSep INT TimeSep INT {$$ = NewTime($1, $3, $5, nil)}
 
   // "9:00 AM"
-| INT TimeSep INT AM {$$ = NewAMTime($1, $3, nil, nil)}
+| INT TimeSep INT Am {$$ = NewAMTime($1, $3, nil, nil)}
 
   // "12:00 PM"
-| INT TimeSep INT PM {$$ = NewPMTime($1, $3, nil, nil)}
+| INT TimeSep INT Pm {$$ = NewPMTime($1, $3, nil, nil)}
 
 | TIME_NAME {$$ = NewTime($1, nil, nil, nil)}
 
@@ -553,4 +559,16 @@ TimePrefix:
 TimeSep:
   COLON
 | PERIOD
+;
+
+
+Am:
+  A
+| AM
+;
+
+
+Pm:
+  P
+| PM
 ;

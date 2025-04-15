@@ -3,6 +3,7 @@ package datetime
 import (
 	"fmt"
 	"log/slog"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -55,12 +56,66 @@ func NewRangesWithStartDates(starts ...*Date) *DateTimeTZRanges {
 	return r
 }
 
+// NewRangesWithStartEndRanges fills in the days between start and end. For
+// example a start of "Feb 1" and end of "Feb 4" is filled in with "Feb 2" and
+// "Feb 3".
+func NewRangesWithStartEndRanges(start *DateTimeTZRange, end *DateTimeTZRange) *DateTimeTZRanges {
+	if start.Start.Date.String() != start.End.Date.String() {
+		panic(fmt.Sprintf("start range must begin and end on same date: start: %q, end: %q", start.Start, start.End))
+	}
+	if end.Start.Date.String() != end.Start.Date.String() {
+		panic(fmt.Sprintf("end range must begin and end on same date: start: %q, end: %q", end.Start, end.End))
+	}
+	if start.Start.Time.String() != end.Start.Time.String() {
+		panic(fmt.Sprintf("start and end ranges must start with the same time: start: %q, end: %q", start, end))
+	}
+	if start.End.Time.String() != end.End.Time.String() {
+		panic(fmt.Sprintf("start and end ranges must end with the same time: start: %q, end: %q", start, end))
+	}
+
+	// endTime := end.Start.ToTime()
+	r := &DateTimeTZRanges{}
+	// for dttr := start; dttr.End.ToTime().Before(endTime); dttr = dttr.AddDate(0, 0, 1) {
+	// 	r.Items = append(r.Items, dttr)
+	// 	// fmt.Println(d.Format("2006-01-02"))
+	// }
+	r.Items = append(r.Items, end)
+	return r
+}
+
+// 	startDate := time.Date(time.Now().Year(), time.February, 1, 0, 0, 0, 0, time.UTC)
+//         endDate := time.Date(time.Now().Year(), time.February, 7, 0, 0, 0, 0, time.UTC)
+
+//         for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
+//                 fmt.Println(d.Format("2006-01-02"))
+//         }
+
+//         //Example with a specific year:
+//         specificYear := 2024;
+//         startDateSpecificYear := time.Date(specificYear, time.February, 1, 0, 0, 0, 0, time.UTC)
+//         endDateSpecificYear := time.Date(specificYear, time.February, 7, 0, 0, 0, 0, time.UTC)
+
+//         fmt.Println("\nSpecific Year Example:")
+
+//         for d := startDateSpecificYear; !d.After(endDateSpecificYear); d = d.AddDate(0, 0, 1) {
+//                 fmt.Println(d.Format("2006-01-02"))
+//         }
+
+// }
+
+// 	for _, start := range starts {
+// 		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeTZWithDate(start, nil)})
+// 	}
+
+// 	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDates(start, end)}}
+// }
+
 func NewRangesWithStartEndDates(start *Date, end *Date) *DateTimeTZRanges {
 	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDates(start, end)}}
 }
 
 func NewRangesWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTimeTZRanges {
-	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDateTimes(start, end)}}
+	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRange(start, end)}}
 }
 
 func HasStartMonthAndDay(rngs *DateTimeTZRanges) bool {
@@ -77,7 +132,16 @@ func HasStartMonthAndDay(rngs *DateTimeTZRanges) bool {
 type DateTimeTZRange struct {
 	Start *DateTimeTZ
 	End   *DateTimeTZ
+	// Frequency Frequency
 }
+
+// type Frequency int
+
+// const (
+// 	UNSPECIFIED_FREQUENCY Frequency = iota
+// 	DAILY
+// 	WEEKLY
+// )
 
 func (rng DateTimeTZRange) String() string {
 	r := rng.Start.String()
@@ -85,6 +149,36 @@ func (rng DateTimeTZRange) String() string {
 		r += " - " + rng.End.String()
 	}
 	return r
+}
+
+func (rng *DateTimeTZRange) AddDate(years int, months int, days int) *DateTimeTZRange {
+	// return &DateTimeTZRange {
+	// 	Start: rng.Start.Copy().AddDate(years, months, days)
+	// End   *DateTimeTZ
+
+	// r := rng.Copy()
+	// r.Start =
+
+	// r := rng.Start.String()
+	// if rng.End != nil {
+	// 	r += " - " + rng.End.String()
+	// }
+	return rng
+}
+
+// func NewDailyRange() *DateTimeTZRange {
+// 	return &DateTimeTZRange{Frequency: DAILY}
+// }
+
+// func NewWeeklyRange() *DateTimeTZRange {
+// 	return &DateTimeTZRange{Frequency: WEEKLY}
+// }
+
+func NewRange(start *DateTimeTZ, end *DateTimeTZ) *DateTimeTZRange {
+	return &DateTimeTZRange{
+		Start: start,
+		End:   end,
+	}
 }
 
 func NewRangeWithStart(start *Date) *DateTimeTZRange {
@@ -95,13 +189,6 @@ func NewRangeWithStartEndDates(start *Date, end *Date) *DateTimeTZRange {
 	return &DateTimeTZRange{
 		Start: &DateTimeTZ{Date: start},
 		End:   &DateTimeTZ{Date: end},
-	}
-}
-
-func NewRangeWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTimeTZRange {
-	return &DateTimeTZRange{
-		Start: start,
-		End:   end,
 	}
 }
 
@@ -132,6 +219,35 @@ func (dttz *DateTimeTZ) String() string {
 	// // 	r += tzStr
 	// // }
 	return dttz.Date.String() + dttz.Time.String() + dttz.TimeZone.String()
+}
+
+func (dttz *DateTimeTZ) ToTime() time.Time {
+	return time.Date(dttz.Date.Year, dttz.Date.Month, dttz.Date.Day, dttz.Time.Hour, dttz.Time.Minute, dttz.Time.Second, dttz.Time.Nanosecond, dttz.TimeZone.Location())
+}
+
+func NewDateTimeTZForNow() *DateTimeTZ {
+	tn := time.Now()
+
+	d := &Date{}
+	d.Year, d.Month, d.Day = tn.Date()
+	d.Weekday = int(tn.Weekday()) + 1
+
+	t := &Time{}
+	t.Hour, t.Minute, t.Second = tn.Clock()
+
+	tz := &TimeZone{}
+	var off int
+	tz.Abbrev, off = tn.Zone()
+	offSign := "+"
+	if off < 0 {
+		offSign = "-"
+	}
+	offAbs := int(math.Abs(float64(off)))
+	offHH := offAbs / 3600
+	offMM := (offAbs - (offHH * 3600)) / 60
+	tz.Offset = fmt.Sprintf("%s%02d:%02d", offSign, offHH, offMM)
+
+	return &DateTimeTZ{Date: d, Time: t, TimeZone: tz}
 }
 
 func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
@@ -166,6 +282,10 @@ func (d *Date) String() string {
 		return ""
 	}
 	return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day)
+}
+
+func (d *Date) ToTime() time.Time {
+	return time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, nil)
 }
 
 func NewDate(date *Date) *Date {
@@ -242,6 +362,17 @@ func (tz *TimeZone) String() string {
 		return tzs[0].OffsetHHMM()
 	}
 	return ""
+}
+
+func (tz *TimeZone) Location() *time.Location {
+	if tz == nil {
+		return nil
+	}
+	loc, err := time.LoadLocation(tz.Name)
+	if err != nil {
+		panic(fmt.Sprintf("failed to lookup name for time zone: %#v\n", tz))
+	}
+	return loc
 }
 
 func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {

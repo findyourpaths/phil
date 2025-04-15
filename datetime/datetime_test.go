@@ -45,3 +45,44 @@ func testToStringFn(t *testing.T, tc toStringTest) func(*testing.T) {
 		}
 	}
 }
+
+// type newRangesTest struct {
+// 	got  *DateTimeTZRanges
+// 	want *DateTimeTZRanges
+// }
+
+// func TestNewRanges(t *testing.T) {
+// 	tests := []newRangesTest{{
+// 		got: NewRangesWithStartEndRanges(
+// 			NewRange(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET),
+// 			NewRange(DateTimeFor2023Feb05_09AM_ET, DateTimeFor2023Feb05_12PM_ET)),
+// 		want: NewRanges(
+// 			NewRange(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET),
+// 			NewRange(DateTimeFor2023Feb04_09AM_ET, DateTimeFor2023Feb04_12PM_ET),
+// 			NewRange(DateTimeFor2023Feb05_09AM_ET, DateTimeFor2023Feb05_12PM_ET)),
+// 	},
+// 	}
+
+// 	failed := 0
+// 	for i, tc := range tests {
+// 		if !t.Run(fmt.Sprintf("%03d__%s", i, tc.want), testNewRangesFn(t, tc)) {
+// 			failed++
+// 		}
+// 	}
+
+// 	if len(tests) == 0 {
+// 		fmt.Println("No tests were run")
+// 		return
+// 	}
+
+// 	percent := float64(failed) / float64(len(tests)) * 100
+// 	fmt.Printf("TestToString: %.2f%% of tests failed (%d/%d)\n", percent, failed, len(tests))
+// }
+
+// func testNewRangesFn(t *testing.T, tc newRangesTest) func(*testing.T) {
+// 	return func(t *testing.T) {
+// 		if diff := cmp.Diff(tc.got, tc.want, protocmp.Transform()); diff != "" {
+// 			t.Errorf("unexpected difference:\n%v", diff)
+// 		}
+// 	}
+// }

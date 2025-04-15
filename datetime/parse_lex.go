@@ -122,6 +122,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 		case token.IDENT:
 			lowLit := strings.ToLower(lit)
 			switch lowLit {
+			case "a":
+				return A
 			case "am":
 				return AM
 			case "and":
@@ -154,6 +156,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return ON
 			case "part":
 				return PART
+			case "p":
+				return P
 			case "pm":
 				return PM
 			case "save":
