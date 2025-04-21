@@ -73,42 +73,10 @@ func NewRangesWithStartEndRanges(start *DateTimeTZRange, end *DateTimeTZRange) *
 		panic(fmt.Sprintf("start and end ranges must end with the same time: start: %q, end: %q", start, end))
 	}
 
-	// endTime := end.Start.ToTime()
 	r := &DateTimeTZRanges{}
-	// for dttr := start; dttr.End.ToTime().Before(endTime); dttr = dttr.AddDate(0, 0, 1) {
-	// 	r.Items = append(r.Items, dttr)
-	// 	// fmt.Println(d.Format("2006-01-02"))
-	// }
 	r.Items = append(r.Items, end)
 	return r
 }
-
-// 	startDate := time.Date(time.Now().Year(), time.February, 1, 0, 0, 0, 0, time.UTC)
-//         endDate := time.Date(time.Now().Year(), time.February, 7, 0, 0, 0, 0, time.UTC)
-
-//         for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
-//                 fmt.Println(d.Format("2006-01-02"))
-//         }
-
-//         //Example with a specific year:
-//         specificYear := 2024;
-//         startDateSpecificYear := time.Date(specificYear, time.February, 1, 0, 0, 0, 0, time.UTC)
-//         endDateSpecificYear := time.Date(specificYear, time.February, 7, 0, 0, 0, 0, time.UTC)
-
-//         fmt.Println("\nSpecific Year Example:")
-
-//         for d := startDateSpecificYear; !d.After(endDateSpecificYear); d = d.AddDate(0, 0, 1) {
-//                 fmt.Println(d.Format("2006-01-02"))
-//         }
-
-// }
-
-// 	for _, start := range starts {
-// 		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeTZWithDate(start, nil)})
-// 	}
-
-// 	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDates(start, end)}}
-// }
 
 func NewRangesWithStartEndDates(start *Date, end *Date) *DateTimeTZRanges {
 	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDates(start, end)}}
@@ -205,37 +173,35 @@ func (dttz *DateTimeTZ) String() string {
 	if dttz == nil {
 		return ""
 	}
-	// if dttz.Date != nil {
-	// 	r += dttz.Date.String()
-	// }
-	// r := "T"
-	// if dttz.Time != nil {
-	// 	r += dttz.Time.String()
-	// }
-	// if dttz.TimeZone != nil {
-	// 	r += dttz.TimeZone.String()
-	// }
-	// // if tzStr := dttz.TimeZone.String(); tzStr != "" {
-	// // 	r += tzStr
-	// // }
 	return dttz.Date.String() + dttz.Time.String() + dttz.TimeZone.String()
 }
 
 func (dttz *DateTimeTZ) ToTime() *time.Time {
-	fmt.Printf("dttz.ToTime(), dttz: %#v\n", dttz)
+	// fmt.Printf("dttz.ToTime(), dttz: %#v\n", dttz)
 	if dttz == nil {
 		return nil
 	}
+
 	t := &Time{}
 	if dttz.Time != nil {
 		t = dttz.Time
 	}
-	var tzLoc *time.Location
+
+	var loc *time.Location
 	if dttz.TimeZone != nil {
-		tzLoc = dttz.TimeZone.Location()
+		if dttz.TimeZone.Name != "" {
+			loc = locationForName(dttz.TimeZone.Name)
+		}
+		if dttz.TimeZone.Offset != "" {
+			loc = locationForOffset(dttz, dttz.TimeZone.Offset)
+		}
+		if dttz.TimeZone.Abbreviation != "" {
+			loc = locationForAbbreviation(dttz, dttz.TimeZone.Abbreviation)
+		}
 	}
-	r := time.Date(dttz.Date.Year, dttz.Date.Month, dttz.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, tzLoc)
-	fmt.Printf("in dttz.ToTime(), r: %#v\n", r)
+
+	r := time.Date(dttz.Date.Year, dttz.Date.Month, dttz.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, loc)
+	// fmt.Printf("in dttz.ToTime(), r: %#v\n", r)
 	return &r
 }
 
@@ -251,7 +217,7 @@ func NewDateTimeTZForNow() *DateTimeTZ {
 
 	tz := &TimeZone{}
 	var off int
-	tz.Abbrev, off = tn.Zone()
+	tz.Abbreviation, off = tn.Zone()
 	offSign := "+"
 	if off < 0 {
 		offSign = "-"
@@ -261,22 +227,81 @@ func NewDateTimeTZForNow() *DateTimeTZ {
 	offMM := (offAbs - (offHH * 3600)) / 60
 	tz.Offset = fmt.Sprintf("%s%02d:%02d", offSign, offHH, offMM)
 
-	return &DateTimeTZ{Date: d, Time: t, TimeZone: tz}
+	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: d, Time: t, TimeZone: tz})
 }
 
 func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
-	// fmt.Printf("NewDateTime(date: %#v, time: %#v, timeZone: %#v)\n", date, time, timeZone)
-	if timeZone == nil && minimumDTTZ != nil {
-		timeZone = minimumDTTZ.TimeZone
-	}
-	return &DateTimeTZ{Date: date, Time: time, TimeZone: timeZone}
+	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: date, Time: time, TimeZone: timeZone})
 }
 
 func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
-	if timeZone == nil && minimumDTTZ != nil {
-		timeZone = minimumDTTZ.TimeZone
+	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: date, TimeZone: timeZone})
+}
+
+func NewDateTimeTZFromRaw(dttz *DateTimeTZ) *DateTimeTZ {
+	// fmt.Printf("NewDateTimeTZFromRaw(dttz: %#v)\n", dttz)
+	if dttz.TimeZone == nil &&
+		dttz.Date != nil &&
+		dttz.Time != nil &&
+		minimumDTTZ != nil &&
+		minimumDTTZ.TimeZone != nil {
+		// fmt.Printf("in NewDateTimeTZFromRaw(), setting time zone to %#v\n", minimumDTTZ.TimeZone)
+		dttz.TimeZone = minimumDTTZ.TimeZone
 	}
-	return &DateTimeTZ{Date: date, TimeZone: timeZone}
+	return dttz
+}
+
+func locationForName(name string) *time.Location {
+	r, err := time.LoadLocation(name)
+	if err != nil {
+		panic(fmt.Sprintf("error getting time zone location from name (%q): %v", name, err))
+		return nil
+	}
+	// fmt.Printf("in locationForName(dttz, name: %q), returning %#v\n", name, r)
+	return r
+}
+
+func locationForOffset(dttz *DateTimeTZ, offset string) *time.Location {
+	if dttz.Date == nil || dttz.Date.Year == 0 || dttz.Date.Month == 0 || dttz.Date.Day == 0 {
+		return nil
+	}
+	fakeStr := dttz.Date.String() + "T00:00:00" + offset
+	t, err := time.Parse(time.RFC3339, fakeStr)
+	if err != nil {
+		panic(fmt.Sprintf("error parsing fake time string (%q) for offset %q: %v", fakeStr, offset, err))
+		return nil
+	}
+	r := t.Location()
+	// fmt.Printf("in locationForOffset(dttz, offset: %q), returning %#v\n", offset, r)
+	return r
+}
+
+var PreferredLocationsByAbbrev = map[string]*time.Location{
+	"ET": locationForName("America/New_York"),
+	"CT": locationForName("America/Chicago"),
+}
+
+func locationForAbbreviation(dttz *DateTimeTZ, abbrev string) *time.Location {
+	tzs, _ := timezoneTZ.GetTzAbbreviationInfo(abbrev)
+	// for i, tz := range tzs {
+	// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), got tz[%d]: %#v\n", abbrev, i, tz)
+	// }
+	if len(tzs) == 0 {
+		// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), returning nil\n", abbrev)
+		return nil
+	}
+	if len(tzs) == 1 {
+		r := locationForOffset(dttz, tzs[0].OffsetHHMM())
+		// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), returning %#v\n", abbrev, r)
+		return r
+	}
+	r := PreferredLocationsByAbbrev[abbrev]
+	if r == nil {
+		panic(fmt.Sprintf("no preferred Location for ambiguous time zone abbreviation %q", abbrev))
+		return nil
+	}
+	// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), returning %#v\n", abbrev, r)
+	return r
 }
 
 // A Date represents a date (year, month, day, weekday).
@@ -301,20 +326,20 @@ func (d *Date) String() string {
 }
 
 func (d *Date) ToTime() *time.Time {
-	r := time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, nil)
+	r := time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
 	return &r
 }
 
-func NewDate(date *Date) *Date {
-	fmt.Printf("NewDate(date: %#v)\n", date)
+func NewDateFromRaw(date *Date) *Date {
+	// fmt.Printf("NewDateFromRaw(date: %#v)\n", date)
 
-	fmt.Printf("checking month and day\n")
+	// fmt.Printf("checking month and day\n")
 	if date.Month == 0 || date.Day == 0 {
 		// Date has unspecified fields, don't try to check consistency.
 		return date
 	}
 
-	fmt.Printf("checking year\n")
+	// fmt.Printf("checking year\n")
 	// Fix year by setting date to be no earlier than 30 days before parseDTTZ.
 	if date.Year == 0 {
 		setNewDateYear(date)
@@ -333,14 +358,14 @@ func NewDate(date *Date) *Date {
 }
 
 func setNewDateYear(date *Date) *Date {
-	fmt.Printf("checking minDTTZ: %#v\n", minimumDTTZ)
+	// fmt.Printf("checking minimumDTTZ: %#v\n", minimumDTTZ)
 	if minimumDTTZ == nil {
 		date.Year = 0
 		return date
 	}
 
 	minTime := minimumDTTZ.ToTime()
-	fmt.Printf("checking minTime: %#v\n", minTime)
+	// fmt.Printf("checking minTime: %#v\n", minTime)
 	if minTime == nil {
 		date.Year = 0
 		return date
@@ -348,14 +373,14 @@ func setNewDateYear(date *Date) *Date {
 
 	date.Year = minimumDTTZ.Date.Year
 	dateTime := date.ToTime()
-	fmt.Printf("checking same year dateTime: %#v\n", dateTime)
+	// fmt.Printf("checking same year dateTime: %#v\n", dateTime)
 	if dateTime.After(*minTime) {
 		return date
 	}
 
 	date.Year = minimumDTTZ.Date.Year + 1
 	dateTime = date.ToTime()
-	fmt.Printf("checking next year dateTime: %#v\n", dateTime)
+	// fmt.Printf("checking next year dateTime: %#v\n", dateTime)
 	if dateTime.After(*minTime) {
 		return date
 	}
@@ -394,45 +419,16 @@ func (t *Time) String() string {
 }
 
 type TimeZone struct {
-	Name   string
-	Abbrev string
-	Offset string
+	Name         string
+	Abbreviation string
+	Offset       string
 }
 
 func (tz *TimeZone) String() string {
 	if tz == nil {
 		return "Z"
 	}
-	if tz.Offset != "" {
-		return tz.Offset
-	}
-	if tz.Name != "" {
-		if tz, _ := timezoneTZ.GetTzInfo(tz.Name); tz != nil {
-			return tz.StandardOffsetHHMM()
-		}
-	}
-	if tz.Abbrev != "" {
-		tzs, _ := timezoneTZ.GetTzAbbreviationInfo(tz.Abbrev)
-		if len(tzs) == 0 {
-			return ""
-		}
-		if len(tzs) > 1 {
-			slog.Debug("got multiple time zones", "tz", fmt.Sprintf("%#v", tz), "tzs", tzs)
-		}
-		return tzs[0].OffsetHHMM()
-	}
-	return ""
-}
-
-func (tz *TimeZone) Location() *time.Location {
-	if tz == nil {
-		return nil
-	}
-	loc, err := time.LoadLocation(tz.Name)
-	if err != nil {
-		panic(fmt.Sprintf("failed to lookup name for time zone: %#v\n", tz))
-	}
-	return loc
+	return tz.Offset
 }
 
 func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
@@ -446,11 +442,11 @@ func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 	if name == "" && abbrev == "" && offset == "" {
 		return nil
 	}
-	return &TimeZone{Name: name, Abbrev: abbrev, Offset: offset}
+	return &TimeZone{Name: name, Abbreviation: abbrev, Offset: offset}
 }
 
 func findInt(tunit timeUnit, valAny any) int {
-	// fmt.Printf("findInt(tunit: %#v, valAny: %#v)\n", tunit, valAny)
+	// fmt.Printf("findInt(tunit: %#v, valAny (%T): %#v)\n", tunit, valAny, valAny)
 	r := -1
 	var ok bool
 	if valAny != nil {
@@ -481,20 +477,23 @@ func findInt(tunit timeUnit, valAny any) int {
 			}
 		}
 	}
-	// fmt.Printf("in findInt(): r: %d\n", r)
 
 	if tunit.fixFn != nil {
 		r, ok = tunit.fixFn(valAny, r)
-		// fmt.Println("r", r, "ok", ok)
 	} else if valAny == nil {
 		return 0
 	}
 
 	// debugf("in findInt(), r: %d, ok: %t\n", r, ok)
 	if !ok && (r < tunit.min || r > tunit.max) {
+		// fmt.Printf("ok: %#v\n", ok)
+		// fmt.Printf("r: %#v\n", r)
+		// fmt.Printf("r < tunit.min: %#v\n", r < tunit.min)
+		// fmt.Printf("r > tunit.max: %#v\n", r > tunit.max)
 		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tunit, "valAny", valAny))
 	}
 	// debugf("in findInt(), returning: %d\n", r)
+
 	return r
 }
 
@@ -507,7 +506,7 @@ type timeUnit struct {
 	stringToIntFn func(string) int
 }
 
-var yearUnit = timeUnit{name: "year", min: 1, fixFn: fixYear}
+var yearUnit = timeUnit{name: "year", min: 1, max: math.MaxInt, fixFn: fixYear}
 var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
 var dayUnit = timeUnit{name: "day", min: 1, max: 31}
 var weekdayUnit = timeUnit{name: "weekday", min: 1, max: 7, stringToIntFn: weekdayNameToWeekday}
@@ -599,91 +598,13 @@ var ordinals = map[string]bool{
 }
 
 func fixYear(yearAny any, year int) (int, bool) {
-	fmt.Printf("fixYear(yearAny: %#v, year: %d)\n", yearAny, year)
-	// if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
-	// 	return parseDTTZ.Date.Year, true
-	// }
-	// if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
-	// 	return 100*(parseDTTZ.Date.Year/100) + year, true
-	// }
+	// fmt.Printf("fixYear(yearAny: %#v, year: %d)\n", yearAny, year)
 	if yearAny == nil {
 		return 0, true
 	}
 
 	return year, (year >= 1700 && year <= 2100)
 }
-
-// func fixYear(yearAny any, year int) (int, bool) {
-// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
-// 		return parseDTTZ.Date.Year, true
-// 	}
-// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
-// 		currentCentury := parseDTTZ.Date.Year / 100
-// 		potentialYear1 := currentCentury*100 + year
-// 		potentialYear2 := (currentCentury+1)*100 + year
-
-// 		refTime := time.Date(parseDTTZ.Date.Year, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
-// 			parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
-
-// 		time1 := time.Date(potentialYear1, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
-// 			parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
-
-// 		time2 := time.Date(potentialYear2, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
-// 			parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
-
-// 		if time1.After(refTime) || refTime.Sub(time1) <= 30*24*time.Hour {
-// 			return potentialYear1, true
-// 		}
-// 		if time2.After(refTime) || refTime.Sub(time2) <= 30*24*time.Hour {
-// 			return potentialYear2, true
-// 		}
-// 		// If neither fits, default to the current century (this might need more sophisticated handling)
-// 		return potentialYear1, true
-// 	}
-// 	if yearAny == nil {
-// 		return 0, true
-// 	}
-// 	return year, (year >= 1700 && year <= 2100)
-// }
-
-// func fixYear(yearAny any, year int) (int, bool) {
-// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
-// 		return parseDTTZ.Date.Year, true
-// 	}
-// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
-// 		return 100*(parseDTTZ.Date.Year/100) + year, true
-// 	}
-// 	if yearAny == nil {
-// 		return 0, true
-// 	}
-// 	return year, (year >= 1700 && year <= 2100)
-
-// 	if relative.Date == nil {
-// 		return relative // Cannot adjust if the entire Date is missing
-// 	}
-// 	if relative.Date.Year != 0 {
-// 		return relative // Year is already present
-// 	}
-
-// 	refTime := time.Date(parseDTTZ.Date.Year, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
-// 		parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
-
-// 	// Try the parseDTTZ year
-// 	relativeTimeSameYear := time.Date(parseDTTZ.Date.Year, relative.Date.Month, relative.Date.Day,
-// 		relative.Time.Hour, relative.Time.Minute, relative.Time.Second, 0, time.FixedZone(relative.TimeZone.Name, relative.TimeZone.Offset))
-
-// 	if relativeTimeSameYear.After(refTime) || refTime.Sub(relativeTimeSameYear) <= 30*24*time.Hour {
-// 		relative.Date.Year = parseDTTZ.Date.Year
-// 		return relative
-// 	}
-
-// 	// Try the next year
-// 	relativeTimeNextYear := time.Date(parseDTTZ.Date.Year+1, relative.Date.Month, relative.Date.Day,
-// 		relative.Time.Hour, relative.Time.Minute, relative.Time.Second, 0, time.FixedZone(relative.TimeZone.Name, relative.TimeZone.Offset))
-
-// 	relative.Date.Year = parseDTTZ.Date.Year + 1
-// 	return relative
-// }
 
 func monthNameToMonth(monthName string) int {
 	month, found := monthsByNames[strings.ToLower(monthName)]
@@ -712,17 +633,6 @@ func hourNameToHour(hourName string) int {
 	return -1
 }
 
-// func mustAtoi(str string) *int {
-// 	if str == "" {
-// 		return nil
-// 	}
-// 	r, err := strconv.Atoi(str)
-// 	if err != nil {
-// 		return nil
-// 	}
-// 	return &r
-// }
-
 func NewAmbiguousDate(weekdayAny any, first string, second string, yearAny any) *Date {
 	// North American tends to parse dates as month-day-year.
 	if parseDateMode == "na" {
@@ -744,7 +654,7 @@ func NewDMYDate(dayAny any, monthAny any, yearAny any) *Date {
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	return NewDate(&Date{Day: day, Month: time.Month(month), Year: year})
+	return NewDateFromRaw(&Date{Day: day, Month: time.Month(month), Year: year})
 }
 
 func NewWDMYDate(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
@@ -753,7 +663,7 @@ func NewWDMYDate(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	return NewDate(&Date{Day: day, Month: time.Month(month), Year: year, Weekday: weekday})
+	return NewDateFromRaw(&Date{Day: day, Month: time.Month(month), Year: year, Weekday: weekday})
 }
 
 func NewMDsYDates(monthAny any, daysAny []string, yearAny any) []*Date {
@@ -770,6 +680,10 @@ func NewMDYDate(monthAny any, dayAny any, yearAny any) *Date {
 
 func NewWMDYDate(weekdayAny any, monthAny any, dayAny any, yearAny any) *Date {
 	return NewWDMYDate(weekdayAny, dayAny, monthAny, yearAny)
+}
+
+func NewYMDDate(yearAny any, monthAny any, dayAny any) *Date {
+	return NewDMYDate(dayAny, monthAny, yearAny)
 }
 
 func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {

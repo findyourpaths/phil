@@ -125,7 +125,7 @@ func Parse(minDTTZ *DateTimeTZ, dateMode string, in string) (*DateTimeTZRanges, 
 	}
 
 	rs = rsAny.(*DateTimeTZRanges)
-	fmt.Printf("in datetime.Parse(), rs: %#v\n", rs)
+	// fmt.Printf("in datetime.Parse(), rs: %#v\n", rs)
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
 	cache[key] = rs
