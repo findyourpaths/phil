@@ -10,7 +10,7 @@ import (
 )
 
 var parseDateMode string
-var parseDTTZ *DateTimeTZ
+var minimumDTTZ *DateTimeTZ
 
 // A DateTimeTZs represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
@@ -221,8 +221,22 @@ func (dttz *DateTimeTZ) String() string {
 	return dttz.Date.String() + dttz.Time.String() + dttz.TimeZone.String()
 }
 
-func (dttz *DateTimeTZ) ToTime() time.Time {
-	return time.Date(dttz.Date.Year, dttz.Date.Month, dttz.Date.Day, dttz.Time.Hour, dttz.Time.Minute, dttz.Time.Second, dttz.Time.Nanosecond, dttz.TimeZone.Location())
+func (dttz *DateTimeTZ) ToTime() *time.Time {
+	fmt.Printf("dttz.ToTime(), dttz: %#v\n", dttz)
+	if dttz == nil {
+		return nil
+	}
+	t := &Time{}
+	if dttz.Time != nil {
+		t = dttz.Time
+	}
+	var tzLoc *time.Location
+	if dttz.TimeZone != nil {
+		tzLoc = dttz.TimeZone.Location()
+	}
+	r := time.Date(dttz.Date.Year, dttz.Date.Month, dttz.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, tzLoc)
+	fmt.Printf("in dttz.ToTime(), r: %#v\n", r)
+	return &r
 }
 
 func NewDateTimeTZForNow() *DateTimeTZ {
@@ -252,15 +266,15 @@ func NewDateTimeTZForNow() *DateTimeTZ {
 
 func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
 	// fmt.Printf("NewDateTime(date: %#v, time: %#v, timeZone: %#v)\n", date, time, timeZone)
-	if timeZone == nil && parseDTTZ != nil {
-		timeZone = parseDTTZ.TimeZone
+	if timeZone == nil && minimumDTTZ != nil {
+		timeZone = minimumDTTZ.TimeZone
 	}
 	return &DateTimeTZ{Date: date, Time: time, TimeZone: timeZone}
 }
 
 func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
-	if timeZone == nil && parseDTTZ != nil {
-		timeZone = parseDTTZ.TimeZone
+	if timeZone == nil && minimumDTTZ != nil {
+		timeZone = minimumDTTZ.TimeZone
 	}
 	return &DateTimeTZ{Date: date, TimeZone: timeZone}
 }
@@ -269,9 +283,11 @@ func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
 //
 // This type does not include location information, and therefore does not
 // describe a unique 24-hour timespan.
+//
+// When a field is unspecified, it holds 0.
 type Date struct {
-	Year    int        // Year (e.g., 2014).
-	Month   time.Month // Month of the year (January = 1, ...).
+	Year    int        // Year (e.g., 2014), starting at 1.
+	Month   time.Month // Month of the year, starting at 1 for January.
 	Day     int        // Day of the month, starting at 1.
 	Weekday int        // Day of the week, starting at 1 for Sunday
 }
@@ -284,15 +300,26 @@ func (d *Date) String() string {
 	return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day)
 }
 
-func (d *Date) ToTime() time.Time {
-	return time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, nil)
+func (d *Date) ToTime() *time.Time {
+	r := time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, nil)
+	return &r
 }
 
 func NewDate(date *Date) *Date {
-	return date
-	if date.Year == 0 || date.Month == 0 || date.Day == 0 {
+	fmt.Printf("NewDate(date: %#v)\n", date)
+
+	fmt.Printf("checking month and day\n")
+	if date.Month == 0 || date.Day == 0 {
+		// Date has unspecified fields, don't try to check consistency.
 		return date
 	}
+
+	fmt.Printf("checking year\n")
+	// Fix year by setting date to be no earlier than 30 days before parseDTTZ.
+	if date.Year == 0 {
+		setNewDateYear(date)
+	}
+
 	t := time.Date(date.Year, date.Month, date.Day, 0, 0, 0, 0, time.UTC)
 	tw := weekdaysByNames[strings.ToLower(t.Weekday().String())]
 	if date.Weekday == 0 {
@@ -302,6 +329,39 @@ func NewDate(date *Date) *Date {
 	if date.Weekday != tw {
 		panic(fmt.Sprintf("extracted weekday of %q doesn't actual match weekday of %q for %4d-%2d-%2d", weekdayNames[tw], weekdayNames[date.Weekday], date.Year, date.Month, date.Day))
 	}
+	return date
+}
+
+func setNewDateYear(date *Date) *Date {
+	fmt.Printf("checking minDTTZ: %#v\n", minimumDTTZ)
+	if minimumDTTZ == nil {
+		date.Year = 0
+		return date
+	}
+
+	minTime := minimumDTTZ.ToTime()
+	fmt.Printf("checking minTime: %#v\n", minTime)
+	if minTime == nil {
+		date.Year = 0
+		return date
+	}
+
+	date.Year = minimumDTTZ.Date.Year
+	dateTime := date.ToTime()
+	fmt.Printf("checking same year dateTime: %#v\n", dateTime)
+	if dateTime.After(*minTime) {
+		return date
+	}
+
+	date.Year = minimumDTTZ.Date.Year + 1
+	dateTime = date.ToTime()
+	fmt.Printf("checking next year dateTime: %#v\n", dateTime)
+	if dateTime.After(*minTime) {
+		return date
+	}
+
+	fmt.Printf("unclear why none of the above work")
+	date.Year = 0
 	return date
 }
 
@@ -447,7 +507,7 @@ type timeUnit struct {
 	stringToIntFn func(string) int
 }
 
-var yearUnit = timeUnit{name: "year", fixFn: fixYear}
+var yearUnit = timeUnit{name: "year", min: 1, fixFn: fixYear}
 var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
 var dayUnit = timeUnit{name: "day", min: 1, max: 31}
 var weekdayUnit = timeUnit{name: "weekday", min: 1, max: 7, stringToIntFn: weekdayNameToWeekday}
@@ -539,23 +599,96 @@ var ordinals = map[string]bool{
 }
 
 func fixYear(yearAny any, year int) (int, bool) {
-	// fmt.Printf("fixYear(yearAny: %#v, year: %d), parseYear: %d\n", yearAny, year, parseYear)
-	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
-		return parseDTTZ.Date.Year, true
-	}
-	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
-		return 100*(parseDTTZ.Date.Year/100) + year, true
-	}
+	fmt.Printf("fixYear(yearAny: %#v, year: %d)\n", yearAny, year)
+	// if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
+	// 	return parseDTTZ.Date.Year, true
+	// }
+	// if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
+	// 	return 100*(parseDTTZ.Date.Year/100) + year, true
+	// }
 	if yearAny == nil {
 		return 0, true
 	}
+
 	return year, (year >= 1700 && year <= 2100)
 }
+
+// func fixYear(yearAny any, year int) (int, bool) {
+// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
+// 		return parseDTTZ.Date.Year, true
+// 	}
+// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
+// 		currentCentury := parseDTTZ.Date.Year / 100
+// 		potentialYear1 := currentCentury*100 + year
+// 		potentialYear2 := (currentCentury+1)*100 + year
+
+// 		refTime := time.Date(parseDTTZ.Date.Year, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
+// 			parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
+
+// 		time1 := time.Date(potentialYear1, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
+// 			parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
+
+// 		time2 := time.Date(potentialYear2, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
+// 			parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
+
+// 		if time1.After(refTime) || refTime.Sub(time1) <= 30*24*time.Hour {
+// 			return potentialYear1, true
+// 		}
+// 		if time2.After(refTime) || refTime.Sub(time2) <= 30*24*time.Hour {
+// 			return potentialYear2, true
+// 		}
+// 		// If neither fits, default to the current century (this might need more sophisticated handling)
+// 		return potentialYear1, true
+// 	}
+// 	if yearAny == nil {
+// 		return 0, true
+// 	}
+// 	return year, (year >= 1700 && year <= 2100)
+// }
+
+// func fixYear(yearAny any, year int) (int, bool) {
+// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year == -1 {
+// 		return parseDTTZ.Date.Year, true
+// 	}
+// 	if parseDTTZ.Date != nil && parseDTTZ.Date.Year != 0 && year >= 0 && year <= 99 {
+// 		return 100*(parseDTTZ.Date.Year/100) + year, true
+// 	}
+// 	if yearAny == nil {
+// 		return 0, true
+// 	}
+// 	return year, (year >= 1700 && year <= 2100)
+
+// 	if relative.Date == nil {
+// 		return relative // Cannot adjust if the entire Date is missing
+// 	}
+// 	if relative.Date.Year != 0 {
+// 		return relative // Year is already present
+// 	}
+
+// 	refTime := time.Date(parseDTTZ.Date.Year, parseDTTZ.Date.Month, parseDTTZ.Date.Day,
+// 		parseDTTZ.Time.Hour, parseDTTZ.Time.Minute, parseDTTZ.Time.Second, 0, time.FixedZone(parseDTTZ.TimeZone.Name, parseDTTZ.TimeZone.Offset))
+
+// 	// Try the parseDTTZ year
+// 	relativeTimeSameYear := time.Date(parseDTTZ.Date.Year, relative.Date.Month, relative.Date.Day,
+// 		relative.Time.Hour, relative.Time.Minute, relative.Time.Second, 0, time.FixedZone(relative.TimeZone.Name, relative.TimeZone.Offset))
+
+// 	if relativeTimeSameYear.After(refTime) || refTime.Sub(relativeTimeSameYear) <= 30*24*time.Hour {
+// 		relative.Date.Year = parseDTTZ.Date.Year
+// 		return relative
+// 	}
+
+// 	// Try the next year
+// 	relativeTimeNextYear := time.Date(parseDTTZ.Date.Year+1, relative.Date.Month, relative.Date.Day,
+// 		relative.Time.Hour, relative.Time.Minute, relative.Time.Second, 0, time.FixedZone(relative.TimeZone.Name, relative.TimeZone.Offset))
+
+// 	relative.Date.Year = parseDTTZ.Date.Year + 1
+// 	return relative
+// }
 
 func monthNameToMonth(monthName string) int {
 	month, found := monthsByNames[strings.ToLower(monthName)]
 	if !found {
-		return -1
+		return 0
 	}
 	return month
 }

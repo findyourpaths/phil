@@ -41,6 +41,7 @@ var DateForFriday = NewDate(&Date{Weekday: 6})
 var DateRangesForFeb03 = NewRangesWithStartDates(DateForFeb03)
 var DateRangesFromFeb02ToFeb05 = NewRangesWithStartEndDates(DateForFeb02, DateForFeb05)
 var DateRangesFromFeb03ToFeb04 = NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)
+var DateRangesForMar02 = NewRangesWithStartDates(DateForMar02)
 
 var DateFor2023 = NewDate(&Date{Year: 2023})
 var DateFor2024 = NewDate(&Date{Year: 2024})
@@ -51,7 +52,9 @@ var DateFor2023Mar = NewDate(&Date{Year: 2023, Month: time.March})
 var DateRangesFor2023Feb = NewRangesWithStartDates(DateFor2023Feb)
 
 var DateRangesFor2023Feb03 = NewRangesWithStartDates(DateFor2023Feb03)
+var DateRangesFor2023Mar02 = NewRangesWithStartDates(DateFor2023Mar02)
 
+var DateFor2023Jan1 = NewDate(&Date{Year: 2023, Month: time.January, Day: 1})
 var DateFor2023Feb01 = NewDate(&Date{Year: 2023, Month: time.February, Day: 1})
 var DateFor2023Feb02 = NewDate(&Date{Year: 2023, Month: time.February, Day: 2})
 var DateFor2023Feb03 = NewDate(&Date{Year: 2023, Month: time.February, Day: 3})
@@ -63,6 +66,8 @@ var DateFor2023Feb22 = NewDate(&Date{Year: 2023, Month: time.February, Day: 22})
 var DateFor2023Mar01 = NewDate(&Date{Year: 2023, Month: time.March, Day: 1})
 var DateFor2023Mar02 = NewDate(&Date{Year: 2023, Month: time.March, Day: 2})
 var DateFor2023Mar03 = NewDate(&Date{Year: 2023, Month: time.March, Day: 3})
+
+var DateFor2024Jan1 = NewDate(&Date{Year: 2024, Month: time.January, Day: 1})
 
 var DateRangesFrom2023Feb03To2023Feb04 = NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)
 
@@ -126,13 +131,13 @@ var TimeZoneForADD0 = &TimeZone{Offset: "+00:00"}
 var TimeZoneForSUB0 = &TimeZone{Offset: "-00:00"}
 var TimeZoneForSUB5 = &TimeZone{Offset: "-05:00"}
 
-var DateTimeTZFor2023 = &DateTimeTZ{Date: DateFor2023}
+var DateTimeTZFor2023Jan1_12AM_ET = &DateTimeTZ{Date: DateFor2023Jan1, TimeZone: TimeZoneForET}
 var DateTimeTZForEast = &DateTimeTZ{TimeZone: TimeZoneForEast}
 var DateTimeTZForET = &DateTimeTZ{TimeZone: TimeZoneForET}
 
 type parseTest struct {
 	dateMode string
-	refDTTZ  *DateTimeTZ
+	minDTTZ  *DateTimeTZ
 
 	in       string
 	want     *DateTimeTZRanges
@@ -202,23 +207,22 @@ func TestParse(t *testing.T) {
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
 
 		// Both
-		{in: "02.03", want: DateRangesForFeb03, dateMode: "na"},
-		{in: "02.03", want: NewRangesWithStartDates(DateForMar02), dateMode: "rest"},
-		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", refDTTZ: DateTimeTZFor2023},
-		{in: "02.03", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest", refDTTZ: DateTimeTZFor2023},
-		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},
-		{in: "02.03.", want: NewRangesWithStartDates(DateForMar02), dateMode: "rest"},
-		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", refDTTZ: DateTimeTZFor2023},
-		{in: "02.03.", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest", refDTTZ: DateTimeTZFor2023},
-		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},
-		{in: "2/3/2023", want: NewRangesWithStartDates(DateFor2023Mar02), dateMode: "rest"},
-
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
+		{in: "02.03", want: DateRangesForFeb03, dateMode: "na"},
+		{in: "02.03", want: DateRangesForMar02, dateMode: "rest"},
+		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
+		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
+		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},
+		{in: "02.03.", want: DateRangesForMar02, dateMode: "rest"},
+		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
+		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
+		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},
+		{in: "2/3/2023", want: DateRangesFor2023Mar02, dateMode: "rest"},
 
 		// Extra tokens
 		{in: "Feb 3 Google Calendar ICS", want: DateRangesForFeb03},
 		{in: "Updated: Feb 3", want: DateRangesForFeb03},
-		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", refDTTZ: DateTimeTZFor2023},
+		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
 		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
@@ -359,8 +363,8 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3 12pm in ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		// Need to update lexer for multiple tokens like this.
 		{in: "Feb 3 12pm US/Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), wantDiff: acceptBrokenTests},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), refDTTZ: DateTimeTZForET},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), refDTTZ: DateTimeTZForEast, wantDiff: acceptBrokenTests},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), minDTTZ: DateTimeTZForET},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), minDTTZ: DateTimeTZForEast, wantDiff: acceptBrokenTests},
 		{in: "Starting February 3rd at 12pm (ET) - Virtually.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), dateMode: "na", wantDiff: acceptBrokenTests},
 		{in: "Today Friday, 12pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), wantDiff: acceptBrokenTests},
@@ -572,7 +576,7 @@ func TestParse(t *testing.T) {
 
 func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 	return func(t *testing.T) {
-		got, err := Parse(tc.refDTTZ, tc.dateMode, tc.in)
+		got, err := Parse(tc.minDTTZ, tc.dateMode, tc.in)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
