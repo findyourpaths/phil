@@ -9,22 +9,22 @@ import (
 	"time"
 )
 
-var minimumDTTZ *DateTimeTZ
+var minimumDateTime *DateTime
 
 var parseDateMode string
 
 var DateModeNorthAmerican = "na"
 var DateModeRest = "rest"
 
-// A DateTimeTZs represents a sequence of date and time ranges. It's the
+// A DateTimes represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
 //
 // This type DOES include location information.
-type DateTimeTZRanges struct {
-	Items []*DateTimeTZRange
+type DateTimeRanges struct {
+	Items []*DateTimeRange
 }
 
-func (rngs *DateTimeTZRanges) String() string {
+func (rngs *DateTimeRanges) String() string {
 	if rngs == nil {
 		return ""
 	}
@@ -35,27 +35,27 @@ func (rngs *DateTimeTZRanges) String() string {
 	return strings.Join(rs, ", ")
 }
 
-func AppendDateTimeTZRanges(rngs *DateTimeTZRanges, rng *DateTimeTZRange) *DateTimeTZRanges {
+func AppendDateTimeRanges(rngs *DateTimeRanges, rng *DateTimeRange) *DateTimeRanges {
 	rngs.Items = append(rngs.Items, rng)
 	return rngs
 }
 
-func NewRanges(rngs ...*DateTimeTZRange) *DateTimeTZRanges {
-	return &DateTimeTZRanges{Items: rngs}
+func NewRanges(rngs ...*DateTimeRange) *DateTimeRanges {
+	return &DateTimeRanges{Items: rngs}
 }
 
-func NewRangesWithStartDateTimes(starts ...*DateTimeTZ) *DateTimeTZRanges {
-	r := &DateTimeTZRanges{}
+func NewRangesWithStartDateTimes(starts ...*DateTime) *DateTimeRanges {
+	r := &DateTimeRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeTZRange{Start: start})
+		r.Items = append(r.Items, &DateTimeRange{Start: start})
 	}
 	return r
 }
 
-func NewRangesWithStartDates(starts ...*Date) *DateTimeTZRanges {
-	r := &DateTimeTZRanges{}
+func NewRangesWithStartDates(starts ...*Date) *DateTimeRanges {
+	r := &DateTimeRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeTZRange{Start: NewDateTimeTZWithDate(start, nil)})
+		r.Items = append(r.Items, &DateTimeRange{Start: NewDateTimeWithDate(start, nil)})
 	}
 	return r
 }
@@ -63,7 +63,7 @@ func NewRangesWithStartDates(starts ...*Date) *DateTimeTZRanges {
 // NewRangesWithStartEndRanges fills in the days between start and end. For
 // example a start of "Feb 1" and end of "Feb 4" is filled in with "Feb 2" and
 // "Feb 3".
-func NewRangesWithStartEndRanges(start *DateTimeTZRange, end *DateTimeTZRange) *DateTimeTZRanges {
+func NewRangesWithStartEndRanges(start *DateTimeRange, end *DateTimeRange) *DateTimeRanges {
 	if start.Start.Date.String() != start.End.Date.String() {
 		panic(fmt.Sprintf("start range must begin and end on same date: start: %q, end: %q", start.Start, start.End))
 	}
@@ -77,20 +77,20 @@ func NewRangesWithStartEndRanges(start *DateTimeTZRange, end *DateTimeTZRange) *
 		panic(fmt.Sprintf("start and end ranges must end with the same time: start: %q, end: %q", start, end))
 	}
 
-	r := &DateTimeTZRanges{}
+	r := &DateTimeRanges{}
 	r.Items = append(r.Items, end)
 	return r
 }
 
-func NewRangesWithStartEndDates(start *Date, end *Date) *DateTimeTZRanges {
-	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRangeWithStartEndDates(start, end)}}
+func NewRangesWithStartEndDates(start *Date, end *Date) *DateTimeRanges {
+	return &DateTimeRanges{Items: []*DateTimeRange{NewRangeWithStartEndDates(start, end)}}
 }
 
-func NewRangesWithStartEndDateTimes(start *DateTimeTZ, end *DateTimeTZ) *DateTimeTZRanges {
-	return &DateTimeTZRanges{Items: []*DateTimeTZRange{NewRange(start, end)}}
+func NewRangesWithStartEndDateTimes(start *DateTime, end *DateTime) *DateTimeRanges {
+	return &DateTimeRanges{Items: []*DateTimeRange{NewRange(start, end)}}
 }
 
-func HasStartMonthAndDay(rngs *DateTimeTZRanges) bool {
+func HasStartMonthAndDay(rngs *DateTimeRanges) bool {
 	return rngs != nil &&
 		len(rngs.Items) > 0 &&
 		rngs.Items[0].Start != nil &&
@@ -98,12 +98,12 @@ func HasStartMonthAndDay(rngs *DateTimeTZRanges) bool {
 		rngs.Items[0].Start.Date.Day > 0
 }
 
-// A DateTimeTZRange represents a range of dates and times with time zones.
+// A DateTimeRange represents a range of dates and times with time zones.
 //
 // This type DOES include location information.
-type DateTimeTZRange struct {
-	Start *DateTimeTZ
-	End   *DateTimeTZ
+type DateTimeRange struct {
+	Start *DateTime
+	End   *DateTime
 	// Frequency Frequency
 }
 
@@ -115,7 +115,7 @@ type DateTimeTZRange struct {
 // 	WEEKLY
 // )
 
-func (rng DateTimeTZRange) String() string {
+func (rng DateTimeRange) String() string {
 	r := rng.Start.String()
 	if rng.End != nil {
 		r += " - " + rng.End.String()
@@ -123,10 +123,10 @@ func (rng DateTimeTZRange) String() string {
 	return r
 }
 
-func (rng *DateTimeTZRange) AddDate(years int, months int, days int) *DateTimeTZRange {
-	// return &DateTimeTZRange {
+func (rng *DateTimeRange) AddDate(years int, months int, days int) *DateTimeRange {
+	// return &DateTimeRange {
 	// 	Start: rng.Start.Copy().AddDate(years, months, days)
-	// End   *DateTimeTZ
+	// End   *DateTime
 
 	// r := rng.Copy()
 	// r.Start =
@@ -138,104 +138,104 @@ func (rng *DateTimeTZRange) AddDate(years int, months int, days int) *DateTimeTZ
 	return rng
 }
 
-// func NewDailyRange() *DateTimeTZRange {
-// 	return &DateTimeTZRange{Frequency: DAILY}
+// func NewDailyRange() *DateTimeRange {
+// 	return &DateTimeRange{Frequency: DAILY}
 // }
 
-// func NewWeeklyRange() *DateTimeTZRange {
-// 	return &DateTimeTZRange{Frequency: WEEKLY}
+// func NewWeeklyRange() *DateTimeRange {
+// 	return &DateTimeRange{Frequency: WEEKLY}
 // }
 
-func NewRange(start *DateTimeTZ, end *DateTimeTZ) *DateTimeTZRange {
-	return &DateTimeTZRange{
+func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
+	return &DateTimeRange{
 		Start: start,
 		End:   end,
 	}
 }
 
-func NewRangeWithStart(start *Date) *DateTimeTZRange {
-	return &DateTimeTZRange{Start: &DateTimeTZ{Date: start}}
+func NewRangeWithStart(start *Date) *DateTimeRange {
+	return &DateTimeRange{Start: &DateTime{Date: start}}
 }
 
-func NewRangeWithStartEndDates(start *Date, end *Date) *DateTimeTZRange {
-	return &DateTimeTZRange{
-		Start: &DateTimeTZ{Date: start},
-		End:   &DateTimeTZ{Date: end},
+func NewRangeWithStartEndDates(start *Date, end *Date) *DateTimeRange {
+	return &DateTimeRange{
+		Start: &DateTime{Date: start},
+		End:   &DateTime{Date: end},
 	}
 }
 
-// A DateTimeTZ represents a date and time with a time zone.
+// A DateTime represents a date and time with a time zone.
 //
 // This type DOES include location information.
-type DateTimeTZ struct {
+type DateTime struct {
 	Date     *Date
 	Time     *Time
 	TimeZone *TimeZone
 }
 
-func (dttz *DateTimeTZ) String() string {
-	if dttz == nil {
+func (dt *DateTime) String() string {
+	if dt == nil {
 		return ""
 	}
-	if dttz.Date != nil && dttz.Time != nil && dttz.TimeZone != nil {
-		if t := dttz.ToTime(); t != nil {
+	if dt.Date != nil && dt.Time != nil && dt.TimeZone != nil {
+		if t := dt.ToTime(); t != nil {
 			return t.Format(time.RFC3339)
 		}
 	}
-	return dttz.Date.String() + dttz.Time.String() + dttz.TimeZone.String()
+	return dt.Date.String() + dt.Time.String() + dt.TimeZone.String()
 }
 
-func (dttz *DateTimeTZ) ToTime() *time.Time {
-	// fmt.Printf("dttz.ToTime(), dttz: %#v\n", dttz)
-	if dttz == nil {
+func (dt *DateTime) ToTime() *time.Time {
+	// fmt.Printf("dt.ToTime(), dt: %#v\n", dt)
+	if dt == nil {
 		return nil
 	}
 
 	t := &Time{}
-	if dttz.Time != nil {
-		t = dttz.Time
+	if dt.Time != nil {
+		t = dt.Time
 	}
 
 	var loc *time.Location
-	if dttz.TimeZone == nil {
-		fmt.Printf("no TimeZone found in DateTimeTZ")
+	if dt.TimeZone == nil {
+		fmt.Printf("no TimeZone found in DateTime")
 		return nil
 	}
 
-	if dttz.TimeZone.Name != "" {
-		loc = locationForName(dttz.TimeZone.Name)
+	if dt.TimeZone.Name != "" {
+		loc = locationForName(dt.TimeZone.Name)
 	}
-	if loc == nil && dttz.TimeZone.Offset != "" {
-		loc = locationForOffset(dttz, dttz.TimeZone.Offset)
+	if loc == nil && dt.TimeZone.Offset != "" {
+		loc = locationForOffset(dt, dt.TimeZone.Offset)
 	}
-	if loc == nil && dttz.TimeZone.Abbreviation != "" {
-		loc = locationForAbbreviation(dttz, dttz.TimeZone.Abbreviation)
+	if loc == nil && dt.TimeZone.Abbreviation != "" {
+		loc = locationForAbbreviation(dt, dt.TimeZone.Abbreviation)
 	}
 	if loc == nil {
-		fmt.Printf("warning: no time Location found for TimeZone: %#v\n", dttz.TimeZone)
+		fmt.Printf("warning: no time Location found for TimeZone: %#v\n", dt.TimeZone)
 		return nil
 	}
 
-	r := time.Date(dttz.Date.Year, dttz.Date.Month, dttz.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, loc)
-	// fmt.Printf("in dttz.ToTime(), r: %#v\n", r)
+	r := time.Date(dt.Date.Year, dt.Date.Month, dt.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, loc)
+	// fmt.Printf("in dt.ToTime(), r: %#v\n", r)
 	return &r
 }
 
-func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
-	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: date, Time: time, TimeZone: timeZone})
+func NewDateTime(date *Date, time *Time, timeZone *TimeZone) *DateTime {
+	return NewDateTimeFromRaw(&DateTime{Date: date, Time: time, TimeZone: timeZone})
 }
 
-func NewDateTimeTZForNow() *DateTimeTZ {
+func NewDateTimeForNow() *DateTime {
 	t := time.Now()
 	abbrev, off := t.Zone()
-	return NewDateTimeTZWithTimeAndTimeZone(t, abbrev, &off)
+	return NewDateTimeWithTimeAndTimeZone(t, abbrev, &off)
 }
 
-func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
-	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: date, TimeZone: timeZone})
+func NewDateTimeWithDate(date *Date, timeZone *TimeZone) *DateTime {
+	return NewDateTimeFromRaw(&DateTime{Date: date, TimeZone: timeZone})
 }
 
-func NewDateTimeTZWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *int) *DateTimeTZ {
+func NewDateTimeWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *int) *DateTime {
 	d := &Date{}
 	d.Year, d.Month, d.Day = tt.Date()
 	d.Weekday = int(tt.Weekday()) + 1
@@ -257,48 +257,48 @@ func NewDateTimeTZWithTimeAndTimeZone(tt time.Time, abbreviation string, offset 
 		tz.Offset = fmt.Sprintf("%s%02d:%02d", offSign, offHH, offMM)
 	}
 
-	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: d, Time: t, TimeZone: tz})
+	return NewDateTimeFromRaw(&DateTime{Date: d, Time: t, TimeZone: tz})
 }
 
-func NewDateTimeTZFromRaw(dttz *DateTimeTZ) *DateTimeTZ {
-	// fmt.Printf("NewDateTimeTZFromRaw(dttz: %#v)\n", dttz)
+func NewDateTimeFromRaw(dt *DateTime) *DateTime {
+	// fmt.Printf("NewDateTimeFromRaw(dt: %#v)\n", dt)
 
 	// We may have an unofficial Name that we need to replace with an Abbreviation (e.g. "Eastern" -> "ET").
-	if dttz.TimeZone != nil &&
-		dttz.TimeZone.Name != "" {
-		n := dttz.TimeZone.Name
+	if dt.TimeZone != nil &&
+		dt.TimeZone.Name != "" {
+		n := dt.TimeZone.Name
 		if _, err := time.LoadLocation(n); err != nil {
 			if abbrev := timeZoneAbbreviationsByNames[strings.ToLower(n)]; abbrev != "" {
-				dttz.TimeZone.Name = ""
-				if dttz.TimeZone.Abbreviation == "" {
-					dttz.TimeZone.Abbreviation = abbrev
+				dt.TimeZone.Name = ""
+				if dt.TimeZone.Abbreviation == "" {
+					dt.TimeZone.Abbreviation = abbrev
 				}
 			}
 		}
 	}
 
-	if dttz.TimeZone == nil &&
-		dttz.Date != nil &&
-		dttz.Time != nil &&
-		minimumDTTZ != nil &&
-		minimumDTTZ.TimeZone != nil {
-		// fmt.Printf("in NewDateTimeTZFromRaw(), setting time zone to %#v\n", minimumDTTZ.TimeZone)
-		dttz.TimeZone = minimumDTTZ.TimeZone
+	if dt.TimeZone == nil &&
+		dt.Date != nil &&
+		dt.Time != nil &&
+		minimumDateTime != nil &&
+		minimumDateTime.TimeZone != nil {
+		// fmt.Printf("in NewDateTimeFromRaw(), setting time zone to %#v\n", minimumDT.TimeZone)
+		dt.TimeZone = minimumDateTime.TimeZone
 	}
-	return dttz
+	return dt
 }
 
-func DateMode(dttz *DateTimeTZ) string {
-	if dttz == nil || dttz.TimeZone == nil {
+func DateMode(dt *DateTime) string {
+	if dt == nil || dt.TimeZone == nil {
 		return DateModeRest
 	}
 
-	name := dttz.TimeZone.Name
+	name := dt.TimeZone.Name
 	if strings.HasPrefix(name, "America/") {
 		return DateModeNorthAmerican
 	}
 
-	abbrev := dttz.TimeZone.Abbreviation
+	abbrev := dt.TimeZone.Abbreviation
 	if abbrev == "" {
 		abbrev = timeZoneAbbreviationsByNames[name]
 	}
@@ -314,27 +314,27 @@ func locationForName(name string) *time.Location {
 		panic(fmt.Sprintf("error getting time zone location from name (%q): %v", name, err))
 		return nil
 	}
-	// fmt.Printf("in locationForName(dttz, name: %q), returning %#v\n", name, r)
+	// fmt.Printf("in locationForName(dt, name: %q), returning %#v\n", name, r)
 	return r
 }
 
-func locationForOffset(dttz *DateTimeTZ, offset string) *time.Location {
-	if dttz.Date == nil || dttz.Date.Year == 0 || dttz.Date.Month == 0 || dttz.Date.Day == 0 {
+func locationForOffset(dt *DateTime, offset string) *time.Location {
+	if dt.Date == nil || dt.Date.Year == 0 || dt.Date.Month == 0 || dt.Date.Day == 0 {
 		return nil
 	}
-	fakeStr := dttz.Date.String() + "T00:00:00" + offset
+	fakeStr := dt.Date.String() + "T00:00:00" + offset
 	t, err := time.Parse(time.RFC3339, fakeStr)
 	if err != nil {
 		panic(fmt.Sprintf("error parsing fake time string (%q) for offset %q: %v", fakeStr, offset, err))
 		return nil
 	}
 	r := t.Location()
-	// fmt.Printf("in locationForOffset(dttz, offset: %q), returning %#v\n", offset, r)
+	// fmt.Printf("in locationForOffset(dt, offset: %q), returning %#v\n", offset, r)
 	return r
 }
 
-func locationForAbbreviation(dttz *DateTimeTZ, abbrev string) *time.Location {
-	// slog.Debug("locationForAbbreviation(dttz, abbrev)", "abbrev", abbrev)
+func locationForAbbreviation(dt *DateTime, abbrev string) *time.Location {
+	// slog.Debug("locationForAbbreviation(dt, abbrev)", "abbrev", abbrev)
 
 	name := PreferredLocationNamesByAbbrev[abbrev]
 	// slog.Debug("in locationForAbbreviation()", "name", name)
@@ -346,12 +346,12 @@ func locationForAbbreviation(dttz *DateTimeTZ, abbrev string) *time.Location {
 
 	tzs, _ := timezoneTZ.GetTzAbbreviationInfo(abbrev)
 	// for i, tz := range tzs {
-	// 	fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), got tz[%d]: %#v\n", abbrev, i, tz)
+	// 	fmt.Printf("in locationForAbbreviation(dt, abbrev: %q), got tz[%d]: %#v\n", abbrev, i, tz)
 	// }
 
 	if len(tzs) == 1 {
-		r := locationForOffset(dttz, tzs[0].OffsetHHMM())
-		// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), returning %#v\n", abbrev, r)
+		r := locationForOffset(dt, tzs[0].OffsetHHMM())
+		// fmt.Printf("in locationForAbbreviation(dt, abbrev: %q), returning %#v\n", abbrev, r)
 		return r
 	}
 
@@ -394,11 +394,11 @@ func NewDateFromRaw(date *Date) *Date {
 		return date
 	}
 
-	// fmt.Printf("checking year\n")
-	// Fix year by setting date to be no earlier than 30 days before parseDTTZ.
-	if date.Year == 0 {
-		setNewDateYear(date)
-	}
+	// // fmt.Printf("checking year\n")
+	// // Fix year by setting date to be no earlier than 30 days before parseDT.
+	// if date.Year == 0 {
+	// 	setNewDateYear(date)
+	// }
 
 	t := time.Date(date.Year, date.Month, date.Day, 0, 0, 0, 0, time.UTC)
 	tw := weekdaysByNames[strings.ToLower(t.Weekday().String())]
@@ -413,27 +413,27 @@ func NewDateFromRaw(date *Date) *Date {
 }
 
 func setNewDateYear(date *Date) *Date {
-	// fmt.Printf("checking minimumDTTZ: %#v\n", minimumDTTZ)
-	if minimumDTTZ == nil {
+	// fmt.Printf("checking minimumDT: %#v\n", minimumDT)
+	if minimumDateTime == nil {
 		date.Year = 0
 		return date
 	}
 
-	minTime := minimumDTTZ.ToTime()
+	minTime := minimumDateTime.ToTime()
 	// fmt.Printf("checking minTime: %#v\n", minTime)
 	if minTime == nil {
 		date.Year = 0
 		return date
 	}
 
-	date.Year = minimumDTTZ.Date.Year
+	date.Year = minimumDateTime.Date.Year
 	dateTime := date.ToTime()
 	// fmt.Printf("checking same year dateTime: %#v\n", dateTime)
 	if dateTime.After(*minTime) {
 		return date
 	}
 
-	date.Year = minimumDTTZ.Date.Year + 1
+	date.Year = minimumDateTime.Date.Year + 1
 	dateTime = date.ToTime()
 	// fmt.Printf("checking next year dateTime: %#v\n", dateTime)
 	if dateTime.After(*minTime) {

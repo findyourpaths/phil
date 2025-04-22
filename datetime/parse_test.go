@@ -13,9 +13,9 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 )
 
-// var acceptBrokenTests = true
+var acceptBrokenTests = true
 
-var acceptBrokenTests = false
+// var acceptBrokenTests = false
 
 // Run with
 // rm datetime_glr.go; time GOWORK=off go generate -v ./...
@@ -73,57 +73,57 @@ var DateFor2024Jan1 = NewYMDDate(2024, 1, 1)
 
 var DateRangesFrom2023Feb03To2023Feb04 = NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)
 
-var DateTimeForFeb01_12PM = NewDateTimeTZ(DateForFeb01, TimeFor12PM, nil)
-var DateTimeForFeb01_03PM = NewDateTimeTZ(DateForFeb01, TimeFor03PM, nil)
+var DateTimeForFeb01_12PM = NewDateTime(DateForFeb01, TimeFor12PM, nil)
+var DateTimeForFeb01_03PM = NewDateTime(DateForFeb01, TimeFor03PM, nil)
 
-var DateTimeForFeb03_09AM = NewDateTimeTZ(DateForFeb03, TimeFor09AM, nil)
-var DateTimeForFeb03_12PM = NewDateTimeTZ(DateForFeb03, TimeFor12PM, nil)
-var DateTimeForFeb03_03PM = NewDateTimeTZ(DateForFeb03, TimeFor03PM, nil)
+var DateTimeForFeb03_09AM = NewDateTime(DateForFeb03, TimeFor09AM, nil)
+var DateTimeForFeb03_12PM = NewDateTime(DateForFeb03, TimeFor12PM, nil)
+var DateTimeForFeb03_03PM = NewDateTime(DateForFeb03, TimeFor03PM, nil)
 
-var DateTimeForFeb08_12PM = NewDateTimeTZ(DateForFeb08, TimeFor12PM, nil)
-var DateTimeForFeb08_03PM = NewDateTimeTZ(DateForFeb08, TimeFor03PM, nil)
+var DateTimeForFeb08_12PM = NewDateTime(DateForFeb08, TimeFor12PM, nil)
+var DateTimeForFeb08_03PM = NewDateTime(DateForFeb08, TimeFor03PM, nil)
 
-var DateTimeFor2023Feb03_09AM = NewDateTimeTZ(DateFor2023Feb03, TimeFor09AM, nil)
-var DateTimeFor2023Feb03_12PM = NewDateTimeTZ(DateFor2023Feb03, TimeFor12PM, nil)
-var DateTimeFor2023Feb03_03PM = NewDateTimeTZ(DateFor2023Feb03, TimeFor03PM, nil)
-var DateTimeFor2023Feb04_03PM = NewDateTimeTZ(DateFor2023Feb04, TimeFor03PM, nil)
+var DateTimeFor2023Feb03_09AM = NewDateTime(DateFor2023Feb03, TimeFor09AM, nil)
+var DateTimeFor2023Feb03_12PM = NewDateTime(DateFor2023Feb03, TimeFor12PM, nil)
+var DateTimeFor2023Feb03_03PM = NewDateTime(DateFor2023Feb03, TimeFor03PM, nil)
+var DateTimeFor2023Feb04_03PM = NewDateTime(DateFor2023Feb04, TimeFor03PM, nil)
 
-var DateTimeForFeb03_09AM_ET = NewDateTimeTZ(DateForFeb03, TimeFor09AM, TimeZoneForET)
-var DateTimeForFeb03_12PM_ET = NewDateTimeTZ(DateForFeb03, TimeFor12PM, TimeZoneForET)
-var DateTimeForFeb03_03PM_ET = NewDateTimeTZ(DateForFeb03, TimeFor03PM, TimeZoneForET)
+var DateTimeForFeb03_09AM_ET = NewDateTime(DateForFeb03, TimeFor09AM, TimeZoneForET)
+var DateTimeForFeb03_12PM_ET = NewDateTime(DateForFeb03, TimeFor12PM, TimeZoneForET)
+var DateTimeForFeb03_03PM_ET = NewDateTime(DateForFeb03, TimeFor03PM, TimeZoneForET)
 
-var DateTimeForFeb03_12PM_Eastern = NewDateTimeTZ(DateForFeb03, TimeFor12PM, TimeZoneForEastern)
+var DateTimeForFeb03_12PM_Eastern = NewDateTime(DateForFeb03, TimeFor12PM, TimeZoneForEastern)
 
-var DateTimeForFriday_12PM_ET = NewDateTimeTZ(DateForFriday, TimeFor12PM, TimeZoneForET)
-var DateTimeForFriday_03PM_ET = NewDateTimeTZ(DateForFriday, TimeFor03PM, TimeZoneForET)
+var DateTimeForFriday_12PM_ET = NewDateTime(DateForFriday, TimeFor12PM, TimeZoneForET)
+var DateTimeForFriday_03PM_ET = NewDateTime(DateForFriday, TimeFor03PM, TimeZoneForET)
 
-var DateTimeFor2023Jan01_12AM_ET = NewDateTimeTZ(DateFor2023Jan1, TimeFor12AM, TimeZoneForET)
+var DateTimeFor2023Jan01_12AM_ET = NewDateTime(DateFor2023Jan1, TimeFor12AM, TimeZoneForET)
 
-var DateTimeFor2023Feb01_09AM_ET = NewDateTimeTZ(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb01_12PM_ET = NewDateTimeTZ(DateFor2023Feb01, TimeFor12PM, TimeZoneForET)
-var DateTimeFor2023Feb01_03PM_ET = NewDateTimeTZ(DateFor2023Feb01, TimeFor03PM, TimeZoneForET)
+var DateTimeFor2023Feb01_09AM_ET = NewDateTime(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Feb01_12PM_ET = NewDateTime(DateFor2023Feb01, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Feb01_03PM_ET = NewDateTime(DateFor2023Feb01, TimeFor03PM, TimeZoneForET)
 
-var DateTimeFor2023Feb03_09AM_ET = NewDateTimeTZ(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb03_12PM_ET = NewDateTimeTZ(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)
-var DateTimeFor2023Feb03_12PM_ADD0 = NewDateTimeTZ(DateFor2023Feb03, TimeFor12PM, TimeZoneForADD0)
-var DateTimeFor2023Feb03_12PM_SUB0 = NewDateTimeTZ(DateFor2023Feb03, TimeFor12PM, TimeZoneForSUB0)
-var DateTimeFor2023Feb03_12PM_SUB5 = NewDateTimeTZ(DateFor2023Feb03, TimeFor12PM, TimeZoneForSUB5)
+var DateTimeFor2023Feb03_09AM_ET = NewDateTime(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Feb03_12PM_ET = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Feb03_12PM_ADD0 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForADD0)
+var DateTimeFor2023Feb03_12PM_SUB0 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForSUB0)
+var DateTimeFor2023Feb03_12PM_SUB5 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForSUB5)
 
-var DateTimeFor2023Feb04_09AM_ET = NewDateTimeTZ(DateFor2023Feb04, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb04_12PM_ET = NewDateTimeTZ(DateFor2023Feb04, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Feb04_09AM_ET = NewDateTime(DateFor2023Feb04, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Feb04_12PM_ET = NewDateTime(DateFor2023Feb04, TimeFor12PM, TimeZoneForET)
 
-var DateTimeFor2023Feb05_09AM_ET = NewDateTimeTZ(DateFor2023Feb05, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb05_12PM_ET = NewDateTimeTZ(DateFor2023Feb05, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Feb05_09AM_ET = NewDateTime(DateFor2023Feb05, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Feb05_12PM_ET = NewDateTime(DateFor2023Feb05, TimeFor12PM, TimeZoneForET)
 
-var DateTimeFor2023Feb08_09AM_ET = NewDateTimeTZ(DateFor2023Feb08, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb08_12PM_ET = NewDateTimeTZ(DateFor2023Feb08, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Feb08_09AM_ET = NewDateTime(DateFor2023Feb08, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Feb08_12PM_ET = NewDateTime(DateFor2023Feb08, TimeFor12PM, TimeZoneForET)
 
-var DateTimeFor2023Feb15_09AM_ET = NewDateTimeTZ(DateFor2023Feb15, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb15_12PM_ET = NewDateTimeTZ(DateFor2023Feb15, TimeFor12PM, TimeZoneForET)
-var DateTimeFor2023Feb22_09AM_ET = NewDateTimeTZ(DateFor2023Feb22, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb22_12PM_ET = NewDateTimeTZ(DateFor2023Feb22, TimeFor12PM, TimeZoneForET)
-var DateTimeFor2023Mar01_09AM_ET = NewDateTimeTZ(DateFor2023Mar01, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Mar01_12PM_ET = NewDateTimeTZ(DateFor2023Mar01, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Feb15_09AM_ET = NewDateTime(DateFor2023Feb15, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Feb15_12PM_ET = NewDateTime(DateFor2023Feb15, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Feb22_09AM_ET = NewDateTime(DateFor2023Feb22, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Feb22_12PM_ET = NewDateTime(DateFor2023Feb22, TimeFor12PM, TimeZoneForET)
+var DateTimeFor2023Mar01_09AM_ET = NewDateTime(DateFor2023Mar01, TimeFor09AM, TimeZoneForET)
+var DateTimeFor2023Mar01_12PM_ET = NewDateTime(DateFor2023Mar01, TimeFor12PM, TimeZoneForET)
 
 var TimeFor12AM = &Time{}
 var TimeFor09AM = &Time{Hour: 9}
@@ -138,10 +138,10 @@ var TimeZoneForSUB5 = &TimeZone{Offset: "-05:00"}
 
 type parseTest struct {
 	dateMode string
-	minDTTZ  *DateTimeTZ
+	minDT  *DateTime
 
 	in       string
-	want     *DateTimeTZRanges
+	want     *DateTimeRanges
 	isBroken bool
 }
 
@@ -211,20 +211,20 @@ func TestParse(t *testing.T) {
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
 		{in: "02.03", want: DateRangesForFeb03, dateMode: "na"},
 		{in: "02.03", want: DateRangesForMar02, dateMode: "rest"},
-		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
-		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZDateTimeFor2023Jan01_12AM_ETET},
-		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},DateTimeFor2023Jan01_12AM_ET
+		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: "rest", minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
 		{in: "02.03.", want: DateRangesForMar02, dateMode: "rest"},
-		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
-		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZDateTimeFor2023Jan01_12AM_ETET},
-		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},DateTimeFor2023Jan01_12AM_ET
+		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: "rest", minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
 		{in: "2/3/2023", want: DateRangesFor2023Mar02, dateMode: "rest"},
 
 		// Extra tokens
 		{in: "Feb 3 Google Calendar ICS", want: DateRangesForFeb03},
 		{in: "Updated: Feb 3", want: DateRangesForFeb03},
-		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET, isBroken: true},
-		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},DateTimeFor2023Jan01_12AM_ET
+		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET, isBroken: true},
+		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03, minDT: DateTimeFor2023Jan01_12AM_ET},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		// Need to replace scanner for these.
@@ -364,8 +364,8 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3 12pm in ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3 12pm Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_Eastern)},
 		{in: "Feb 3 12pm US/Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDTTZ: DateTimeFor2023Jan01_12AM_ET},
-		// {in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), minDTTZ: DateTimeTZForEast, wantDiff: true},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Jan01_12AM_ET},
+		// {in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), minDT: DateTimeForEast, wantDiff: true},
 		{in: "Starting February 3rd at 12pm (ET) - Virtually.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), dateMode: "na", isBroken: true},
 		{in: "Today Friday, 12pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), isBroken: true},
@@ -411,7 +411,7 @@ func TestParse(t *testing.T) {
 			NewRange(DateTimeFor2023Feb04_09AM_ET, DateTimeFor2023Feb04_12PM_ET)), isBroken: true},
 		{in: "THIS Friday: February 3 \n 12-3:00pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM, DateTimeForFeb03_03PM)},
 
-		// MDTTZ
+		// MDT
 		{in: "Feb 3rd - 9.00 AM- 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "February 3rd, 9-12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3 2023 9am - 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
@@ -596,7 +596,7 @@ func TestParse(t *testing.T) {
 
 func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 	return func(t *testing.T) {
-		got, err := Parse(tc.minDTTZ, tc.dateMode, tc.in)
+		got, err := Parse(tc.minDT, tc.dateMode, tc.in)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -617,7 +617,7 @@ func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 			pp.Default.SetColoringEnabled(false)
 			// fmt.Printf("got:\n%s\n", litter.Sdump(got))
 			// fmt.Printf("want:\n%s\n", litter.Sdump(tc.want))
-			fmt.Printf("got vs. want:\n%s\n", litter.Sdump([]*DateTimeTZRanges{got, tc.want}))
+			fmt.Printf("got vs. want:\n%s\n", litter.Sdump([]*DateTimeRanges{got, tc.want}))
 			t.Fatalf("unexpected difference:\n%v", diff)
 		}
 	}

@@ -37,10 +37,10 @@ func debugf(format string, args ...any) {
 
 var timezoneTZ = timezone.New()
 
-var cache = map[string]*DateTimeTZRanges{}
+var cache = map[string]*DateTimeRanges{}
 var cacheMutex sync.RWMutex
 
-func Parse(minDTTZ *DateTimeTZ, dateMode string, in string) (*DateTimeTZRanges, error) {
+func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, error) {
 	// fmt.Printf("datetime.Parse(year: %d, dateMode: %q, timeZone: %#v, in: %q)\n", year, dateMode, timeZone, in)
 	defer func() {
 		if err := recover(); err != nil {
@@ -48,7 +48,7 @@ func Parse(minDTTZ *DateTimeTZ, dateMode string, in string) (*DateTimeTZRanges, 
 		}
 	}()
 
-	key := fmt.Sprintf("%q %q %q", minDTTZ.String(), dateMode, in)
+	key := fmt.Sprintf("%q %q %q", minDateTime.String(), dateMode, in)
 	cacheMutex.RLock()
 	r, found := cache[key]
 	cacheMutex.RUnlock()
@@ -56,9 +56,9 @@ func Parse(minDTTZ *DateTimeTZ, dateMode string, in string) (*DateTimeTZRanges, 
 		return r, nil
 	}
 
-	// if minDTTZ == nil {
+	// if minDT == nil {
 	// 	// Set this so we don't get null pointer references for year and time zone.
-	// 	minDTTZ = &DateTimeTZ{}
+	// 	minDT = &DateTime{}
 	// }
 
 	// parseYear = year
@@ -66,8 +66,8 @@ func Parse(minDTTZ *DateTimeTZ, dateMode string, in string) (*DateTimeTZRanges, 
 	// 	parseYear = time.Now().Year()
 	// }
 
-	minimumDTTZ = minDTTZ
-	debugf("minimumDTTZ: %q\n", minimumDTTZ.String())
+	minimumDateTime = minDateTime
+	debugf("minimumDateTime: %q\n", minimumDateTime.String())
 	if dateMode == "" {
 		dateMode = DateModeRest
 	}
@@ -114,12 +114,12 @@ func Parse(minDTTZ *DateTimeTZ, dateMode string, in string) (*DateTimeTZRanges, 
 	// 	}
 	// }
 
-	var rs *DateTimeTZRanges
+	var rs *DateTimeRanges
 	if rsAny == nil {
 		return nil, nil //fmt.Errorf("no parse tree passed semantic checks")
 	}
 
-	rs = rsAny.(*DateTimeTZRanges)
+	rs = rsAny.(*DateTimeRanges)
 	// fmt.Printf("in datetime.Parse(), rs: %#v\n", rs)
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()

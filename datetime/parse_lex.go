@@ -18,7 +18,7 @@ type datetimeLexer struct {
 	lval    *yySymType
 	scanner scanner.Scanner
 	err     error
-	root    *DateTimeTZRanges
+	root    *DateTimeRanges
 }
 
 // Match a digit on one side and a letter on another. Used to separate `12pm`.

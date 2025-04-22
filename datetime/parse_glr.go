@@ -7,7 +7,7 @@ import "github.com/findyourpaths/phil/glr"
 Rules
 
 root:
-  DateTimeTZRanges
+  DateTimeRanges
 root:
   root RootSuffixPlus
 root:
@@ -34,45 +34,45 @@ ColonOpt:
   <empty>
 ColonOpt:
   COLON
-DateTimeTZRanges:
-  DateTimeTZRange
-DateTimeTZRanges:
-  RangesPrefixPlus DateTimeTZRanges
-DateTimeTZRanges:
-  DateTimeTZRanges RangesSepPlus DateTimeTZRange
-DateTimeTZRanges:
+DateTimeRanges:
+  DateTimeRange
+DateTimeRanges:
+  RangesPrefixPlus DateTimeRanges
+DateTimeRanges:
+  DateTimeRanges RangesSepPlus DateTimeRange
+DateTimeRanges:
   Month DayPlus1
-DateTimeTZRanges:
+DateTimeRanges:
   DayPlus1 Month
-DateTimeTZRanges:
+DateTimeRanges:
   Month DayPlus1 Year
-DateTimeTZRanges:
+DateTimeRanges:
   Month DayPlus AND Month DayPlus Year
-DateTimeTZRanges:
+DateTimeRanges:
   DayPlus1 Month Year
-DateTimeTZRanges:
+DateTimeRanges:
   DayPlus Month AND DayPlus Month Year
-DateTimeTZRanges:
+DateTimeRanges:
   Month Day RangeSep Day Day RangeSep Day
-DateTimeTZRanges:
+DateTimeRanges:
   Day RangeSep Day Day RangeSep Day Month
-DateTimeTZRanges:
+DateTimeRanges:
   Month Day RangeSep Day Month Day RangeSep Day
-DateTimeTZRanges:
+DateTimeRanges:
   Day RangeSep Day Month Day RangeSep Day Month
-DateTimeTZRanges:
+DateTimeRanges:
   Month Day RangeSep Day Day RangeSep Day Year
-DateTimeTZRanges:
+DateTimeRanges:
   Day RangeSep Day Day RangeSep Day Month Year
-DateTimeTZRanges:
+DateTimeRanges:
   Month Day RangeSep Day Month Day RangeSep Day Year
-DateTimeTZRanges:
+DateTimeRanges:
   Day RangeSep Day Month Day RangeSep Day Month Year
-DateTimeTZRanges:
+DateTimeRanges:
   Month Day Month Day
-DateTimeTZRanges:
+DateTimeRanges:
   Month Day Month Day Year
-DateTimeTZRanges:
+DateTimeRanges:
   WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt Time
 RangesPrefixPlus:
   RangesPrefix
@@ -96,43 +96,43 @@ DayPlus1:
   Day Day
 DayPlus1:
   DayPlus1 Day
-DateTimeTZRange:
-  DateTimeTZ
-DateTimeTZRange:
-  RangePrefixPlus DateTimeTZRange
-DateTimeTZRange:
-  DateTimeTZ RangeSepPlus Time
-DateTimeTZRange:
-  DateTimeTZ RangeSepPlus Time TimeZone
-DateTimeTZRange:
-  Time RangeSepPlus DateTimeTZ
-DateTimeTZRange:
-  DateTimeTZ RangeSepPlus DateTimeTZ
-DateTimeTZRange:
+DateTimeRange:
+  DateTime
+DateTimeRange:
+  RangePrefixPlus DateTimeRange
+DateTimeRange:
+  DateTime RangeSepPlus Time
+DateTimeRange:
+  DateTime RangeSepPlus Time TimeZone
+DateTimeRange:
+  Time RangeSepPlus DateTime
+DateTimeRange:
+  DateTime RangeSepPlus DateTime
+DateTimeRange:
   Month Day RangeSepPlus Day
-DateTimeTZRange:
+DateTimeRange:
   Day RangeSepPlus Day Month
-DateTimeTZRange:
+DateTimeRange:
   Month Day RangeSepPlus Day Year
-DateTimeTZRange:
+DateTimeRange:
   Day RangeSepPlus Day Month Year
-DateTimeTZRange:
+DateTimeRange:
   Month Day RangeSepPlus Month Day Year
-DateTimeTZRange:
+DateTimeRange:
   WeekdayOpt Month Day RangeSepPlus WeekdayOpt Month Day Year
-DateTimeTZRange:
+DateTimeRange:
   WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day Month Year
-DateTimeTZRange:
+DateTimeRange:
   WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt Month Year
-DateTimeTZRange:
+DateTimeRange:
   WeekdayOpt Day Month RangeSepPlus WeekdayOpt Month Day Year
-DateTimeTZRange:
+DateTimeRange:
   WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day Month Year
-DateTimeTZRange:
+DateTimeRange:
   WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month Year
-DateTimeTZRange:
+DateTimeRange:
   Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year
-DateTimeTZRange:
+DateTimeRange:
   Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt
 RangePrefixPlus:
   RangePrefix
@@ -162,18 +162,18 @@ RangeSep:
   TO
 RangeSep:
   UNTIL
-DateTimeTZ:
+DateTime:
   Date
-DateTimeTZ:
+DateTime:
   Date Time TimeZoneOpt
-DateTimeTZ:
+DateTime:
   Date DateTimeSepPlus Time TimeZoneOpt
-DateTimeTZ:
+DateTime:
   Time TimeZoneOpt Date
-DateTimeTZ:
+DateTime:
   Time TimeZoneOpt DateTimeSepPlus Date
-DateTimeTZ:
-  RFC3339DateTimeTZ
+DateTime:
+  RFC3339DateTime
 DateTimeSepOpt:
   <empty>
 DateTimeSepOpt:
@@ -216,11 +216,11 @@ TimeZone:
   TIME_ZONE_ABBREV
 TimeZone:
   P
-RFC3339DateTimeTZ:
+RFC3339DateTime:
   RFC3339Date
-RFC3339DateTimeTZ:
+RFC3339DateTime:
   RFC3339Date RFC3339Time
-RFC3339DateTimeTZ:
+RFC3339DateTime:
   RFC3339Date RFC3339Time RFC3339TimeZone
 RFC3339Date:
   Year SUB INT SUB INT
@@ -384,9 +384,9 @@ Pm:
 
 var datetimeRules = &glr.Rules{Items:[]glr.Rule{
   /* Rule 000 */ glr.Rule{Nonterminal:"", RHS:[]string(nil), Type:""}, // ignored because rule-numbering starts at 1
-  /* Rule 001 */ glr.Rule{Nonterminal:"root", RHS:[]string{"DateTimeTZRanges"}, Type:"*DateTimeTZRanges"},
-  /* Rule 002 */ glr.Rule{Nonterminal:"root", RHS:[]string{"root", "RootSuffixPlus"}, Type:"*DateTimeTZRanges"},
-  /* Rule 003 */ glr.Rule{Nonterminal:"root", RHS:[]string{"RootPrefixPlus", "root"}, Type:"*DateTimeTZRanges"},
+  /* Rule 001 */ glr.Rule{Nonterminal:"root", RHS:[]string{"DateTimeRanges"}, Type:"*DateTimeRanges"},
+  /* Rule 002 */ glr.Rule{Nonterminal:"root", RHS:[]string{"root", "RootSuffixPlus"}, Type:"*DateTimeRanges"},
+  /* Rule 003 */ glr.Rule{Nonterminal:"root", RHS:[]string{"RootPrefixPlus", "root"}, Type:"*DateTimeRanges"},
   /* Rule 004 */ glr.Rule{Nonterminal:"RootPrefixPlus", RHS:[]string{"RootPrefix"}, Type:""},
   /* Rule 005 */ glr.Rule{Nonterminal:"RootPrefixPlus", RHS:[]string{"RootPrefixPlus", "RootPrefix"}, Type:""},
   /* Rule 006 */ glr.Rule{Nonterminal:"RootPrefix", RHS:[]string{"PART", "INT", "ColonOpt"}, Type:""},
@@ -398,26 +398,26 @@ var datetimeRules = &glr.Rules{Items:[]glr.Rule{
   /* Rule 012 */ glr.Rule{Nonterminal:"RootSuffix", RHS:[]string{"ICS"}, Type:""},
   /* Rule 013 */ glr.Rule{Nonterminal:"ColonOpt", RHS:[]string(nil), Type:""},
   /* Rule 014 */ glr.Rule{Nonterminal:"ColonOpt", RHS:[]string{"COLON"}, Type:""},
-  /* Rule 015 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"DateTimeTZRange"}, Type:"*DateTimeTZRanges"},
-  /* Rule 016 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"RangesPrefixPlus", "DateTimeTZRanges"}, Type:"*DateTimeTZRanges"},
-  /* Rule 017 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"DateTimeTZRanges", "RangesSepPlus", "DateTimeTZRange"}, Type:"*DateTimeTZRanges"},
-  /* Rule 018 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "DayPlus1"}, Type:"*DateTimeTZRanges"},
-  /* Rule 019 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"DayPlus1", "Month"}, Type:"*DateTimeTZRanges"},
-  /* Rule 020 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "DayPlus1", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 021 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "DayPlus", "AND", "Month", "DayPlus", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 022 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"DayPlus1", "Month", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 023 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"DayPlus", "Month", "AND", "DayPlus", "Month", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 024 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Day", "RangeSep", "Day"}, Type:"*DateTimeTZRanges"},
-  /* Rule 025 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Day", "RangeSep", "Day", "Day", "RangeSep", "Day", "Month"}, Type:"*DateTimeTZRanges"},
-  /* Rule 026 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day"}, Type:"*DateTimeTZRanges"},
-  /* Rule 027 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day", "Month"}, Type:"*DateTimeTZRanges"},
-  /* Rule 028 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Day", "RangeSep", "Day", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 029 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Day", "RangeSep", "Day", "Day", "RangeSep", "Day", "Month", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 030 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 031 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day", "Month", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 032 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "Day", "Month", "Day"}, Type:"*DateTimeTZRanges"},
-  /* Rule 033 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"Month", "Day", "Month", "Day", "Year"}, Type:"*DateTimeTZRanges"},
-  /* Rule 034 */ glr.Rule{Nonterminal:"DateTimeTZRanges", RHS:[]string{"WeekdayOpt", "Month", "Day", "DateSepOpt", "Day", "Time", "DateTimeSepOpt", "Time"}, Type:"*DateTimeTZRanges"},
+  /* Rule 015 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"DateTimeRange"}, Type:"*DateTimeRanges"},
+  /* Rule 016 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"RangesPrefixPlus", "DateTimeRanges"}, Type:"*DateTimeRanges"},
+  /* Rule 017 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"DateTimeRanges", "RangesSepPlus", "DateTimeRange"}, Type:"*DateTimeRanges"},
+  /* Rule 018 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "DayPlus1"}, Type:"*DateTimeRanges"},
+  /* Rule 019 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"DayPlus1", "Month"}, Type:"*DateTimeRanges"},
+  /* Rule 020 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "DayPlus1", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 021 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "DayPlus", "AND", "Month", "DayPlus", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 022 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"DayPlus1", "Month", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 023 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"DayPlus", "Month", "AND", "DayPlus", "Month", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 024 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Day", "RangeSep", "Day"}, Type:"*DateTimeRanges"},
+  /* Rule 025 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Day", "RangeSep", "Day", "Day", "RangeSep", "Day", "Month"}, Type:"*DateTimeRanges"},
+  /* Rule 026 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day"}, Type:"*DateTimeRanges"},
+  /* Rule 027 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day", "Month"}, Type:"*DateTimeRanges"},
+  /* Rule 028 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Day", "RangeSep", "Day", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 029 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Day", "RangeSep", "Day", "Day", "RangeSep", "Day", "Month", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 030 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 031 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Day", "RangeSep", "Day", "Month", "Day", "RangeSep", "Day", "Month", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 032 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "Day", "Month", "Day"}, Type:"*DateTimeRanges"},
+  /* Rule 033 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"Month", "Day", "Month", "Day", "Year"}, Type:"*DateTimeRanges"},
+  /* Rule 034 */ glr.Rule{Nonterminal:"DateTimeRanges", RHS:[]string{"WeekdayOpt", "Month", "Day", "DateSepOpt", "Day", "Time", "DateTimeSepOpt", "Time"}, Type:"*DateTimeRanges"},
   /* Rule 035 */ glr.Rule{Nonterminal:"RangesPrefixPlus", RHS:[]string{"RangesPrefix"}, Type:""},
   /* Rule 036 */ glr.Rule{Nonterminal:"RangesPrefixPlus", RHS:[]string{"RangesPrefixPlus", "RangesPrefix"}, Type:""},
   /* Rule 037 */ glr.Rule{Nonterminal:"RangesPrefix", RHS:[]string{"WHEN"}, Type:""},
@@ -429,25 +429,25 @@ var datetimeRules = &glr.Rules{Items:[]glr.Rule{
   /* Rule 043 */ glr.Rule{Nonterminal:"DayPlus", RHS:[]string{"DayPlus1"}, Type:"[]string"},
   /* Rule 044 */ glr.Rule{Nonterminal:"DayPlus1", RHS:[]string{"Day", "Day"}, Type:"[]string"},
   /* Rule 045 */ glr.Rule{Nonterminal:"DayPlus1", RHS:[]string{"DayPlus1", "Day"}, Type:"[]string"},
-  /* Rule 046 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"DateTimeTZ"}, Type:"*DateTimeTZRange"},
-  /* Rule 047 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"RangePrefixPlus", "DateTimeTZRange"}, Type:"*DateTimeTZRange"},
-  /* Rule 048 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"DateTimeTZ", "RangeSepPlus", "Time"}, Type:"*DateTimeTZRange"},
-  /* Rule 049 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"DateTimeTZ", "RangeSepPlus", "Time", "TimeZone"}, Type:"*DateTimeTZRange"},
-  /* Rule 050 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Time", "RangeSepPlus", "DateTimeTZ"}, Type:"*DateTimeTZRange"},
-  /* Rule 051 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"DateTimeTZ", "RangeSepPlus", "DateTimeTZ"}, Type:"*DateTimeTZRange"},
-  /* Rule 052 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Month", "Day", "RangeSepPlus", "Day"}, Type:"*DateTimeTZRange"},
-  /* Rule 053 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Day", "RangeSepPlus", "Day", "Month"}, Type:"*DateTimeTZRange"},
-  /* Rule 054 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Month", "Day", "RangeSepPlus", "Day", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 055 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Day", "RangeSepPlus", "Day", "Month", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 056 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Month", "Day", "RangeSepPlus", "Month", "Day", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 057 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"WeekdayOpt", "Month", "Day", "RangeSepPlus", "WeekdayOpt", "Month", "Day", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 058 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"WeekdayOpt", "Month", "Day", "RangeSepPlus", "WeekdayOpt", "Day", "Month", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 059 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"WeekdayOpt", "Month", "Day", "RangeSepPlus", "Day", "WeekdayOpt", "Month", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 060 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"WeekdayOpt", "Day", "Month", "RangeSepPlus", "WeekdayOpt", "Month", "Day", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 061 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"WeekdayOpt", "Day", "Month", "RangeSepPlus", "WeekdayOpt", "Day", "Month", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 062 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"WeekdayOpt", "Day", "Month", "RangeSepPlus", "Day", "WeekdayOpt", "Month", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 063 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Time", "TimeZoneOpt", "DateTimeSepOpt", "Day", "DateSepOpt", "Month", "RangeSepPlus", "Day", "DateSepOpt", "Month", "DateTimeSepOpt", "Time", "TimeZoneOpt", "Year"}, Type:"*DateTimeTZRange"},
-  /* Rule 064 */ glr.Rule{Nonterminal:"DateTimeTZRange", RHS:[]string{"Date", "Time", "TimeZoneOpt", "RangeSepOpt", "Time", "TimeZoneOpt"}, Type:"*DateTimeTZRange"},
+  /* Rule 046 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"DateTime"}, Type:"*DateTimeRange"},
+  /* Rule 047 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"RangePrefixPlus", "DateTimeRange"}, Type:"*DateTimeRange"},
+  /* Rule 048 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"DateTime", "RangeSepPlus", "Time"}, Type:"*DateTimeRange"},
+  /* Rule 049 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"DateTime", "RangeSepPlus", "Time", "TimeZone"}, Type:"*DateTimeRange"},
+  /* Rule 050 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Time", "RangeSepPlus", "DateTime"}, Type:"*DateTimeRange"},
+  /* Rule 051 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"DateTime", "RangeSepPlus", "DateTime"}, Type:"*DateTimeRange"},
+  /* Rule 052 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Month", "Day", "RangeSepPlus", "Day"}, Type:"*DateTimeRange"},
+  /* Rule 053 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Day", "RangeSepPlus", "Day", "Month"}, Type:"*DateTimeRange"},
+  /* Rule 054 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Month", "Day", "RangeSepPlus", "Day", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 055 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Day", "RangeSepPlus", "Day", "Month", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 056 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Month", "Day", "RangeSepPlus", "Month", "Day", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 057 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"WeekdayOpt", "Month", "Day", "RangeSepPlus", "WeekdayOpt", "Month", "Day", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 058 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"WeekdayOpt", "Month", "Day", "RangeSepPlus", "WeekdayOpt", "Day", "Month", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 059 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"WeekdayOpt", "Month", "Day", "RangeSepPlus", "Day", "WeekdayOpt", "Month", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 060 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"WeekdayOpt", "Day", "Month", "RangeSepPlus", "WeekdayOpt", "Month", "Day", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 061 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"WeekdayOpt", "Day", "Month", "RangeSepPlus", "WeekdayOpt", "Day", "Month", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 062 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"WeekdayOpt", "Day", "Month", "RangeSepPlus", "Day", "WeekdayOpt", "Month", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 063 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Time", "TimeZoneOpt", "DateTimeSepOpt", "Day", "DateSepOpt", "Month", "RangeSepPlus", "Day", "DateSepOpt", "Month", "DateTimeSepOpt", "Time", "TimeZoneOpt", "Year"}, Type:"*DateTimeRange"},
+  /* Rule 064 */ glr.Rule{Nonterminal:"DateTimeRange", RHS:[]string{"Date", "Time", "TimeZoneOpt", "RangeSepOpt", "Time", "TimeZoneOpt"}, Type:"*DateTimeRange"},
   /* Rule 065 */ glr.Rule{Nonterminal:"RangePrefixPlus", RHS:[]string{"RangePrefix"}, Type:""},
   /* Rule 066 */ glr.Rule{Nonterminal:"RangePrefixPlus", RHS:[]string{"RangePrefixPlus", "RangePrefix"}, Type:""},
   /* Rule 067 */ glr.Rule{Nonterminal:"RangePrefix", RHS:[]string{"BEGINNING"}, Type:""},
@@ -462,12 +462,12 @@ var datetimeRules = &glr.Rules{Items:[]glr.Rule{
   /* Rule 076 */ glr.Rule{Nonterminal:"RangeSep", RHS:[]string{"TILL"}, Type:""},
   /* Rule 077 */ glr.Rule{Nonterminal:"RangeSep", RHS:[]string{"TO"}, Type:""},
   /* Rule 078 */ glr.Rule{Nonterminal:"RangeSep", RHS:[]string{"UNTIL"}, Type:""},
-  /* Rule 079 */ glr.Rule{Nonterminal:"DateTimeTZ", RHS:[]string{"Date"}, Type:"*DateTimeTZ"},
-  /* Rule 080 */ glr.Rule{Nonterminal:"DateTimeTZ", RHS:[]string{"Date", "Time", "TimeZoneOpt"}, Type:"*DateTimeTZ"},
-  /* Rule 081 */ glr.Rule{Nonterminal:"DateTimeTZ", RHS:[]string{"Date", "DateTimeSepPlus", "Time", "TimeZoneOpt"}, Type:"*DateTimeTZ"},
-  /* Rule 082 */ glr.Rule{Nonterminal:"DateTimeTZ", RHS:[]string{"Time", "TimeZoneOpt", "Date"}, Type:"*DateTimeTZ"},
-  /* Rule 083 */ glr.Rule{Nonterminal:"DateTimeTZ", RHS:[]string{"Time", "TimeZoneOpt", "DateTimeSepPlus", "Date"}, Type:"*DateTimeTZ"},
-  /* Rule 084 */ glr.Rule{Nonterminal:"DateTimeTZ", RHS:[]string{"RFC3339DateTimeTZ"}, Type:"*DateTimeTZ"},
+  /* Rule 079 */ glr.Rule{Nonterminal:"DateTime", RHS:[]string{"Date"}, Type:"*DateTime"},
+  /* Rule 080 */ glr.Rule{Nonterminal:"DateTime", RHS:[]string{"Date", "Time", "TimeZoneOpt"}, Type:"*DateTime"},
+  /* Rule 081 */ glr.Rule{Nonterminal:"DateTime", RHS:[]string{"Date", "DateTimeSepPlus", "Time", "TimeZoneOpt"}, Type:"*DateTime"},
+  /* Rule 082 */ glr.Rule{Nonterminal:"DateTime", RHS:[]string{"Time", "TimeZoneOpt", "Date"}, Type:"*DateTime"},
+  /* Rule 083 */ glr.Rule{Nonterminal:"DateTime", RHS:[]string{"Time", "TimeZoneOpt", "DateTimeSepPlus", "Date"}, Type:"*DateTime"},
+  /* Rule 084 */ glr.Rule{Nonterminal:"DateTime", RHS:[]string{"RFC3339DateTime"}, Type:"*DateTime"},
   /* Rule 085 */ glr.Rule{Nonterminal:"DateTimeSepOpt", RHS:[]string(nil), Type:""},
   /* Rule 086 */ glr.Rule{Nonterminal:"DateTimeSepOpt", RHS:[]string{"DateTimeSepPlus"}, Type:""},
   /* Rule 087 */ glr.Rule{Nonterminal:"DateTimeSepPlus", RHS:[]string{"DateTimeSep"}, Type:""},
@@ -489,9 +489,9 @@ var datetimeRules = &glr.Rules{Items:[]glr.Rule{
   /* Rule 103 */ glr.Rule{Nonterminal:"TimeZone", RHS:[]string{"TIME_ZONE"}, Type:"*TimeZone"},
   /* Rule 104 */ glr.Rule{Nonterminal:"TimeZone", RHS:[]string{"TIME_ZONE_ABBREV"}, Type:"*TimeZone"},
   /* Rule 105 */ glr.Rule{Nonterminal:"TimeZone", RHS:[]string{"P"}, Type:"*TimeZone"},
-  /* Rule 106 */ glr.Rule{Nonterminal:"RFC3339DateTimeTZ", RHS:[]string{"RFC3339Date"}, Type:"*DateTimeTZ"},
-  /* Rule 107 */ glr.Rule{Nonterminal:"RFC3339DateTimeTZ", RHS:[]string{"RFC3339Date", "RFC3339Time"}, Type:"*DateTimeTZ"},
-  /* Rule 108 */ glr.Rule{Nonterminal:"RFC3339DateTimeTZ", RHS:[]string{"RFC3339Date", "RFC3339Time", "RFC3339TimeZone"}, Type:"*DateTimeTZ"},
+  /* Rule 106 */ glr.Rule{Nonterminal:"RFC3339DateTime", RHS:[]string{"RFC3339Date"}, Type:"*DateTime"},
+  /* Rule 107 */ glr.Rule{Nonterminal:"RFC3339DateTime", RHS:[]string{"RFC3339Date", "RFC3339Time"}, Type:"*DateTime"},
+  /* Rule 108 */ glr.Rule{Nonterminal:"RFC3339DateTime", RHS:[]string{"RFC3339Date", "RFC3339Time", "RFC3339TimeZone"}, Type:"*DateTime"},
   /* Rule 109 */ glr.Rule{Nonterminal:"RFC3339Date", RHS:[]string{"Year", "SUB", "INT", "SUB", "INT"}, Type:"*Date"},
   /* Rule 110 */ glr.Rule{Nonterminal:"RFC3339Time", RHS:[]string{"T", "INT", "COLON", "INT", "COLON", "INT"}, Type:"*Time"},
   /* Rule 111 */ glr.Rule{Nonterminal:"RFC3339TimeZone", RHS:[]string{"Z"}, Type:"*TimeZone"},
@@ -577,9 +577,9 @@ var datetimeRules = &glr.Rules{Items:[]glr.Rule{
 
 var datetimeActions = &glr.SemanticActions{Items:[]any{
   /* Action 000 */ nil, // empty action
-  /* Action 001 */ func (DateTimeTZRanges1 *DateTimeTZRanges) *DateTimeTZRanges {return DateTimeTZRanges1},
-  /* Action 002 */ func (root1 *DateTimeTZRanges, RootSuffixPlus1 string) *DateTimeTZRanges {return root1},
-  /* Action 003 */ func (RootPrefixPlus1 string, root1 *DateTimeTZRanges) *DateTimeTZRanges {return root1},
+  /* Action 001 */ func (DateTimeRanges1 *DateTimeRanges) *DateTimeRanges {return DateTimeRanges1},
+  /* Action 002 */ func (root1 *DateTimeRanges, RootSuffixPlus1 string) *DateTimeRanges {return root1},
+  /* Action 003 */ func (RootPrefixPlus1 string, root1 *DateTimeRanges) *DateTimeRanges {return root1},
   /* Action 004 */ func (RootPrefix1 string) string {return RootPrefix1},
   /* Action 005 */ func (RootPrefixPlus1 string, RootPrefix1 string) string {return RootPrefixPlus1},
   /* Action 006 */ func (PART1 string, INT1 string, ColonOpt1 string) string {return PART1},
@@ -591,26 +591,26 @@ var datetimeActions = &glr.SemanticActions{Items:[]any{
   /* Action 012 */ func (ICS1 string) string {return ICS1},
   /* Action 013 */ func () string {return ""},
   /* Action 014 */ func (COLON1 string) string {return COLON1},
-  /* Action 015 */ func (DateTimeTZRange1 *DateTimeTZRange) *DateTimeTZRanges {return &DateTimeTZRanges{Items: []*DateTimeTZRange{DateTimeTZRange1}}},
-  /* Action 016 */ func (RangesPrefixPlus1 string, DateTimeTZRanges1 *DateTimeTZRanges) *DateTimeTZRanges {return DateTimeTZRanges1},
-  /* Action 017 */ func (DateTimeTZRanges1 *DateTimeTZRanges, RangesSepPlus1 string, DateTimeTZRange1 *DateTimeTZRange) *DateTimeTZRanges {return AppendDateTimeTZRanges(DateTimeTZRanges1, DateTimeTZRange1)},
-  /* Action 018 */ func (Month1 string, DayPlus11 []string) *DateTimeTZRanges {return NewRangesWithStartDates(NewMDsYDates(Month1, DayPlus11, nil)...)},
-  /* Action 019 */ func (DayPlus11 []string, Month1 string) *DateTimeTZRanges {return NewRangesWithStartDates(NewDsMYDates(DayPlus11, Month1, nil)...)},
-  /* Action 020 */ func (Month1 string, DayPlus11 []string, Year1 string) *DateTimeTZRanges {return NewRangesWithStartDates(NewMDsYDates(Month1, DayPlus11, Year1)...)},
-  /* Action 021 */ func (Month1 string, DayPlus1 []string, AND1 string, Month2 string, DayPlus2 []string, Year1 string) *DateTimeTZRanges {return NewRangesWithStartDates(append(NewMDsYDates(Month1, DayPlus1, Year1), NewMDsYDates(Month2, DayPlus2, Year1)...)...)},
-  /* Action 022 */ func (DayPlus11 []string, Month1 string, Year1 string) *DateTimeTZRanges {return NewRangesWithStartDates(NewDsMYDates(DayPlus11, Month1, Year1)...)},
-  /* Action 023 */ func (DayPlus1 []string, Month1 string, AND1 string, DayPlus2 []string, Month2 string, Year1 string) *DateTimeTZRanges {return NewRangesWithStartDates(append(NewDsMYDates(DayPlus1, Month1, Year1), NewDsMYDates(DayPlus2, Month2, Year1)...)...)},
-  /* Action 024 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, nil), NewMDYDate(Month1, Day2, nil)), NewRangeWithStartEndDates(NewMDYDate(Month1, Day3, nil), NewMDYDate(Month1, Day4, nil)))},
-  /* Action 025 */ func (Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string, Month1 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, nil), NewDMYDate(Day2, Month1, nil)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month1, nil), NewDMYDate(Day4, Month1, nil)))},
-  /* Action 026 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Month2 string, Day3 string, RangeSep2 string, Day4 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, nil), NewMDYDate(Month1, Day2, nil)), NewRangeWithStartEndDates(NewMDYDate(Month2, Day3, nil), NewMDYDate(Month2, Day4, nil)))},
-  /* Action 027 */ func (Day1 string, RangeSep1 string, Day2 string, Month1 string, Day3 string, RangeSep2 string, Day4 string, Month2 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, nil), NewDMYDate(Day2, Month1, nil)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month2, nil), NewDMYDate(Day4, Month2, nil)))},
-  /* Action 028 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string, Year1 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month1, Day2, Year1)), NewRangeWithStartEndDates(NewMDYDate(Month1, Day3, Year1), NewMDYDate(Month1, Day4, Year1)))},
-  /* Action 029 */ func (Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string, Month1 string, Year1 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, Year1), NewDMYDate(Day2, Month1, Year1)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month1, Year1), NewDMYDate(Day4, Month1, Year1)))},
-  /* Action 030 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Month2 string, Day3 string, RangeSep2 string, Day4 string, Year1 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month1, Day2, Year1)), NewRangeWithStartEndDates(NewMDYDate(Month2, Day3, Year1), NewMDYDate(Month2, Day4, Year1)))},
-  /* Action 031 */ func (Day1 string, RangeSep1 string, Day2 string, Month1 string, Day3 string, RangeSep2 string, Day4 string, Month2 string, Year1 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, Year1), NewDMYDate(Day2, Month1, Year1)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month2, Year1), NewDMYDate(Day4, Month2, Year1)))},
-  /* Action 032 */ func (Month1 string, Day1 string, Month2 string, Day2 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStart(NewMDYDate(Month1, Day1, nil)), NewRangeWithStart(NewMDYDate(Month2, Day2, nil)))},
-  /* Action 033 */ func (Month1 string, Day1 string, Month2 string, Day2 string, Year1 string) *DateTimeTZRanges {return NewRanges(NewRangeWithStart(NewMDYDate(Month1, Day1, Year1)), NewRangeWithStart(NewMDYDate(Month2, Day2, Year1)))},
-  /* Action 034 */ func (WeekdayOpt1 string, Month1 string, Day1 string, DateSepOpt1 string, Day2 string, Time1 *Time, DateTimeSepOpt1 string, Time2 *Time) *DateTimeTZRanges {return NewRanges(NewRange(NewDateTimeTZ(NewWMDYDate(WeekdayOpt1, Month1, Day1, nil), Time1, nil), NewDateTimeTZ(NewWMDYDate(WeekdayOpt1, Month1, Day1, nil), Time2, nil)), NewRange(NewDateTimeTZ(NewWMDYDate(WeekdayOpt1, Month1, Day2, nil), Time1, nil), NewDateTimeTZ(NewWMDYDate(WeekdayOpt1, Month1, Day2, nil), Time2, nil)))},
+  /* Action 015 */ func (DateTimeRange1 *DateTimeRange) *DateTimeRanges {return &DateTimeRanges{Items: []*DateTimeRange{DateTimeRange1}}},
+  /* Action 016 */ func (RangesPrefixPlus1 string, DateTimeRanges1 *DateTimeRanges) *DateTimeRanges {return DateTimeRanges1},
+  /* Action 017 */ func (DateTimeRanges1 *DateTimeRanges, RangesSepPlus1 string, DateTimeRange1 *DateTimeRange) *DateTimeRanges {return AppendDateTimeRanges(DateTimeRanges1, DateTimeRange1)},
+  /* Action 018 */ func (Month1 string, DayPlus11 []string) *DateTimeRanges {return NewRangesWithStartDates(NewMDsYDates(Month1, DayPlus11, nil)...)},
+  /* Action 019 */ func (DayPlus11 []string, Month1 string) *DateTimeRanges {return NewRangesWithStartDates(NewDsMYDates(DayPlus11, Month1, nil)...)},
+  /* Action 020 */ func (Month1 string, DayPlus11 []string, Year1 string) *DateTimeRanges {return NewRangesWithStartDates(NewMDsYDates(Month1, DayPlus11, Year1)...)},
+  /* Action 021 */ func (Month1 string, DayPlus1 []string, AND1 string, Month2 string, DayPlus2 []string, Year1 string) *DateTimeRanges {return NewRangesWithStartDates(append(NewMDsYDates(Month1, DayPlus1, Year1), NewMDsYDates(Month2, DayPlus2, Year1)...)...)},
+  /* Action 022 */ func (DayPlus11 []string, Month1 string, Year1 string) *DateTimeRanges {return NewRangesWithStartDates(NewDsMYDates(DayPlus11, Month1, Year1)...)},
+  /* Action 023 */ func (DayPlus1 []string, Month1 string, AND1 string, DayPlus2 []string, Month2 string, Year1 string) *DateTimeRanges {return NewRangesWithStartDates(append(NewDsMYDates(DayPlus1, Month1, Year1), NewDsMYDates(DayPlus2, Month2, Year1)...)...)},
+  /* Action 024 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, nil), NewMDYDate(Month1, Day2, nil)), NewRangeWithStartEndDates(NewMDYDate(Month1, Day3, nil), NewMDYDate(Month1, Day4, nil)))},
+  /* Action 025 */ func (Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string, Month1 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, nil), NewDMYDate(Day2, Month1, nil)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month1, nil), NewDMYDate(Day4, Month1, nil)))},
+  /* Action 026 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Month2 string, Day3 string, RangeSep2 string, Day4 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, nil), NewMDYDate(Month1, Day2, nil)), NewRangeWithStartEndDates(NewMDYDate(Month2, Day3, nil), NewMDYDate(Month2, Day4, nil)))},
+  /* Action 027 */ func (Day1 string, RangeSep1 string, Day2 string, Month1 string, Day3 string, RangeSep2 string, Day4 string, Month2 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, nil), NewDMYDate(Day2, Month1, nil)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month2, nil), NewDMYDate(Day4, Month2, nil)))},
+  /* Action 028 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string, Year1 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month1, Day2, Year1)), NewRangeWithStartEndDates(NewMDYDate(Month1, Day3, Year1), NewMDYDate(Month1, Day4, Year1)))},
+  /* Action 029 */ func (Day1 string, RangeSep1 string, Day2 string, Day3 string, RangeSep2 string, Day4 string, Month1 string, Year1 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, Year1), NewDMYDate(Day2, Month1, Year1)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month1, Year1), NewDMYDate(Day4, Month1, Year1)))},
+  /* Action 030 */ func (Month1 string, Day1 string, RangeSep1 string, Day2 string, Month2 string, Day3 string, RangeSep2 string, Day4 string, Year1 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month1, Day2, Year1)), NewRangeWithStartEndDates(NewMDYDate(Month2, Day3, Year1), NewMDYDate(Month2, Day4, Year1)))},
+  /* Action 031 */ func (Day1 string, RangeSep1 string, Day2 string, Month1 string, Day3 string, RangeSep2 string, Day4 string, Month2 string, Year1 string) *DateTimeRanges {return NewRanges(NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, Year1), NewDMYDate(Day2, Month1, Year1)), NewRangeWithStartEndDates(NewDMYDate(Day3, Month2, Year1), NewDMYDate(Day4, Month2, Year1)))},
+  /* Action 032 */ func (Month1 string, Day1 string, Month2 string, Day2 string) *DateTimeRanges {return NewRanges(NewRangeWithStart(NewMDYDate(Month1, Day1, nil)), NewRangeWithStart(NewMDYDate(Month2, Day2, nil)))},
+  /* Action 033 */ func (Month1 string, Day1 string, Month2 string, Day2 string, Year1 string) *DateTimeRanges {return NewRanges(NewRangeWithStart(NewMDYDate(Month1, Day1, Year1)), NewRangeWithStart(NewMDYDate(Month2, Day2, Year1)))},
+  /* Action 034 */ func (WeekdayOpt1 string, Month1 string, Day1 string, DateSepOpt1 string, Day2 string, Time1 *Time, DateTimeSepOpt1 string, Time2 *Time) *DateTimeRanges {return NewRanges(NewRange(NewDateTime(NewWMDYDate(WeekdayOpt1, Month1, Day1, nil), Time1, nil), NewDateTime(NewWMDYDate(WeekdayOpt1, Month1, Day1, nil), Time2, nil)), NewRange(NewDateTime(NewWMDYDate(WeekdayOpt1, Month1, Day2, nil), Time1, nil), NewDateTime(NewWMDYDate(WeekdayOpt1, Month1, Day2, nil), Time2, nil)))},
   /* Action 035 */ func (RangesPrefix1 string) string {return RangesPrefix1},
   /* Action 036 */ func (RangesPrefixPlus1 string, RangesPrefix1 string) string {return RangesPrefixPlus1},
   /* Action 037 */ func (WHEN1 string) string {return WHEN1},
@@ -622,25 +622,25 @@ var datetimeActions = &glr.SemanticActions{Items:[]any{
   /* Action 043 */ func (DayPlus11 []string) []string {return DayPlus11},
   /* Action 044 */ func (Day1 string, Day2 string) []string {return []string{Day1, Day2}},
   /* Action 045 */ func (DayPlus11 []string, Day1 string) []string {return append(DayPlus11, Day1)},
-  /* Action 046 */ func (DateTimeTZ1 *DateTimeTZ) *DateTimeTZRange {return &DateTimeTZRange{Start: DateTimeTZ1}},
-  /* Action 047 */ func (RangePrefixPlus1 string, DateTimeTZRange1 *DateTimeTZRange) *DateTimeTZRange {return DateTimeTZRange1},
-  /* Action 048 */ func (DateTimeTZ1 *DateTimeTZ, RangeSepPlus1 string, Time1 *Time) *DateTimeTZRange {return NewRange(DateTimeTZ1, NewDateTimeTZ(DateTimeTZ1.Date, Time1, DateTimeTZ1.TimeZone))},
-  /* Action 049 */ func (DateTimeTZ1 *DateTimeTZ, RangeSepPlus1 string, Time1 *Time, TimeZone1 *TimeZone) *DateTimeTZRange {return NewRange(NewDateTimeTZ(DateTimeTZ1.Date, DateTimeTZ1.Time, TimeZone1), NewDateTimeTZ(DateTimeTZ1.Date, Time1, TimeZone1))},
-  /* Action 050 */ func (Time1 *Time, RangeSepPlus1 string, DateTimeTZ1 *DateTimeTZ) *DateTimeTZRange {return NewRange(NewDateTimeTZ(DateTimeTZ1.Date, Time1, DateTimeTZ1.TimeZone), DateTimeTZ1)},
-  /* Action 051 */ func (DateTimeTZ1 *DateTimeTZ, RangeSepPlus1 string, DateTimeTZ2 *DateTimeTZ) *DateTimeTZRange {return &DateTimeTZRange{Start: DateTimeTZ1, End: DateTimeTZ2}},
-  /* Action 052 */ func (Month1 string, Day1 string, RangeSepPlus1 string, Day2 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, nil), NewMDYDate(Month1, Day2, nil))},
-  /* Action 053 */ func (Day1 string, RangeSepPlus1 string, Day2 string, Month1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, nil), NewDMYDate(Day2, Month1, nil))},
-  /* Action 054 */ func (Month1 string, Day1 string, RangeSepPlus1 string, Day2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month1, Day2, Year1))},
-  /* Action 055 */ func (Day1 string, RangeSepPlus1 string, Day2 string, Month1 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, Year1), NewDMYDate(Day2, Month1, Year1))},
-  /* Action 056 */ func (Month1 string, Day1 string, RangeSepPlus1 string, Month2 string, Day2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month2, Day2, Year1))},
-  /* Action 057 */ func (WeekdayOpt1 string, Month1 string, Day1 string, RangeSepPlus1 string, WeekdayOpt2 string, Month2 string, Day2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewWMDYDate(WeekdayOpt1, Month1, Day1, Year1), NewWMDYDate(WeekdayOpt2, Month2, Day2, Year1))},
-  /* Action 058 */ func (WeekdayOpt1 string, Month1 string, Day1 string, RangeSepPlus1 string, WeekdayOpt2 string, Day2 string, Month2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewWMDYDate(WeekdayOpt1, Month1, Day1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
-  /* Action 059 */ func (WeekdayOpt1 string, Month1 string, Day1 string, RangeSepPlus1 string, Day2 string, WeekdayOpt2 string, Month2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewWMDYDate(WeekdayOpt1, Month1, Day1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
-  /* Action 060 */ func (WeekdayOpt1 string, Day1 string, Month1 string, RangeSepPlus1 string, WeekdayOpt2 string, Month2 string, Day2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewWDMYDate(WeekdayOpt1, Day1, Month1, Year1), NewWMDYDate(WeekdayOpt2, Month2, Day2, Year1))},
-  /* Action 061 */ func (WeekdayOpt1 string, Day1 string, Month1 string, RangeSepPlus1 string, WeekdayOpt2 string, Day2 string, Month2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewWDMYDate(WeekdayOpt1, Day1, Month1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
-  /* Action 062 */ func (WeekdayOpt1 string, Day1 string, Month1 string, RangeSepPlus1 string, Day2 string, WeekdayOpt2 string, Month2 string, Year1 string) *DateTimeTZRange {return NewRangeWithStartEndDates(NewWDMYDate(WeekdayOpt1, Day1, Month1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
-  /* Action 063 */ func (Time1 *Time, TimeZoneOpt1 *TimeZone, DateTimeSepOpt1 string, Day1 string, DateSepOpt1 string, Month1 string, RangeSepPlus1 string, Day2 string, DateSepOpt2 string, Month2 string, DateTimeSepOpt2 string, Time2 *Time, TimeZoneOpt2 *TimeZone, Year1 string) *DateTimeTZRange {return NewRange(NewDateTimeTZ(NewDMYDate(Day1, Month1, Year1), Time1, TimeZoneOpt1), NewDateTimeTZ(NewDMYDate(Day2, Month2, Year1), Time2, TimeZoneOpt2))},
-  /* Action 064 */ func (Date1 *Date, Time1 *Time, TimeZoneOpt1 *TimeZone, RangeSepOpt1 string, Time2 *Time, TimeZoneOpt2 *TimeZone) *DateTimeTZRange {return NewRange(NewDateTimeTZ(Date1, Time1, TimeZoneOpt1), NewDateTimeTZ(Date1, Time2, TimeZoneOpt2))},
+  /* Action 046 */ func (DateTime1 *DateTime) *DateTimeRange {return &DateTimeRange{Start: DateTime1}},
+  /* Action 047 */ func (RangePrefixPlus1 string, DateTimeRange1 *DateTimeRange) *DateTimeRange {return DateTimeRange1},
+  /* Action 048 */ func (DateTime1 *DateTime, RangeSepPlus1 string, Time1 *Time) *DateTimeRange {return NewRange(DateTime1, NewDateTime(DateTime1.Date, Time1, DateTime1.TimeZone))},
+  /* Action 049 */ func (DateTime1 *DateTime, RangeSepPlus1 string, Time1 *Time, TimeZone1 *TimeZone) *DateTimeRange {return NewRange(NewDateTime(DateTime1.Date, DateTime1.Time, TimeZone1), NewDateTime(DateTime1.Date, Time1, TimeZone1))},
+  /* Action 050 */ func (Time1 *Time, RangeSepPlus1 string, DateTime1 *DateTime) *DateTimeRange {return NewRange(NewDateTime(DateTime1.Date, Time1, DateTime1.TimeZone), DateTime1)},
+  /* Action 051 */ func (DateTime1 *DateTime, RangeSepPlus1 string, DateTime2 *DateTime) *DateTimeRange {return &DateTimeRange{Start: DateTime1, End: DateTime2}},
+  /* Action 052 */ func (Month1 string, Day1 string, RangeSepPlus1 string, Day2 string) *DateTimeRange {return NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, nil), NewMDYDate(Month1, Day2, nil))},
+  /* Action 053 */ func (Day1 string, RangeSepPlus1 string, Day2 string, Month1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, nil), NewDMYDate(Day2, Month1, nil))},
+  /* Action 054 */ func (Month1 string, Day1 string, RangeSepPlus1 string, Day2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month1, Day2, Year1))},
+  /* Action 055 */ func (Day1 string, RangeSepPlus1 string, Day2 string, Month1 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewDMYDate(Day1, Month1, Year1), NewDMYDate(Day2, Month1, Year1))},
+  /* Action 056 */ func (Month1 string, Day1 string, RangeSepPlus1 string, Month2 string, Day2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewMDYDate(Month1, Day1, Year1), NewMDYDate(Month2, Day2, Year1))},
+  /* Action 057 */ func (WeekdayOpt1 string, Month1 string, Day1 string, RangeSepPlus1 string, WeekdayOpt2 string, Month2 string, Day2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewWMDYDate(WeekdayOpt1, Month1, Day1, Year1), NewWMDYDate(WeekdayOpt2, Month2, Day2, Year1))},
+  /* Action 058 */ func (WeekdayOpt1 string, Month1 string, Day1 string, RangeSepPlus1 string, WeekdayOpt2 string, Day2 string, Month2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewWMDYDate(WeekdayOpt1, Month1, Day1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
+  /* Action 059 */ func (WeekdayOpt1 string, Month1 string, Day1 string, RangeSepPlus1 string, Day2 string, WeekdayOpt2 string, Month2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewWMDYDate(WeekdayOpt1, Month1, Day1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
+  /* Action 060 */ func (WeekdayOpt1 string, Day1 string, Month1 string, RangeSepPlus1 string, WeekdayOpt2 string, Month2 string, Day2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewWDMYDate(WeekdayOpt1, Day1, Month1, Year1), NewWMDYDate(WeekdayOpt2, Month2, Day2, Year1))},
+  /* Action 061 */ func (WeekdayOpt1 string, Day1 string, Month1 string, RangeSepPlus1 string, WeekdayOpt2 string, Day2 string, Month2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewWDMYDate(WeekdayOpt1, Day1, Month1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
+  /* Action 062 */ func (WeekdayOpt1 string, Day1 string, Month1 string, RangeSepPlus1 string, Day2 string, WeekdayOpt2 string, Month2 string, Year1 string) *DateTimeRange {return NewRangeWithStartEndDates(NewWDMYDate(WeekdayOpt1, Day1, Month1, Year1), NewWDMYDate(WeekdayOpt2, Day2, Month2, Year1))},
+  /* Action 063 */ func (Time1 *Time, TimeZoneOpt1 *TimeZone, DateTimeSepOpt1 string, Day1 string, DateSepOpt1 string, Month1 string, RangeSepPlus1 string, Day2 string, DateSepOpt2 string, Month2 string, DateTimeSepOpt2 string, Time2 *Time, TimeZoneOpt2 *TimeZone, Year1 string) *DateTimeRange {return NewRange(NewDateTime(NewDMYDate(Day1, Month1, Year1), Time1, TimeZoneOpt1), NewDateTime(NewDMYDate(Day2, Month2, Year1), Time2, TimeZoneOpt2))},
+  /* Action 064 */ func (Date1 *Date, Time1 *Time, TimeZoneOpt1 *TimeZone, RangeSepOpt1 string, Time2 *Time, TimeZoneOpt2 *TimeZone) *DateTimeRange {return NewRange(NewDateTime(Date1, Time1, TimeZoneOpt1), NewDateTime(Date1, Time2, TimeZoneOpt2))},
   /* Action 065 */ func (RangePrefix1 string) string {return RangePrefix1},
   /* Action 066 */ func (RangePrefixPlus1 string, RangePrefix1 string) string {return RangePrefixPlus1},
   /* Action 067 */ func (BEGINNING1 string) string {return BEGINNING1},
@@ -655,12 +655,12 @@ var datetimeActions = &glr.SemanticActions{Items:[]any{
   /* Action 076 */ func (TILL1 string) string {return TILL1},
   /* Action 077 */ func (TO1 string) string {return TO1},
   /* Action 078 */ func (UNTIL1 string) string {return UNTIL1},
-  /* Action 079 */ func (Date1 *Date) *DateTimeTZ {return NewDateTimeTZWithDate(Date1, nil)},
-  /* Action 080 */ func (Date1 *Date, Time1 *Time, TimeZoneOpt1 *TimeZone) *DateTimeTZ {return NewDateTimeTZ(Date1, Time1, TimeZoneOpt1)},
-  /* Action 081 */ func (Date1 *Date, DateTimeSepPlus1 string, Time1 *Time, TimeZoneOpt1 *TimeZone) *DateTimeTZ {return NewDateTimeTZ(Date1, Time1, TimeZoneOpt1)},
-  /* Action 082 */ func (Time1 *Time, TimeZoneOpt1 *TimeZone, Date1 *Date) *DateTimeTZ {return NewDateTimeTZ(Date1, Time1, TimeZoneOpt1)},
-  /* Action 083 */ func (Time1 *Time, TimeZoneOpt1 *TimeZone, DateTimeSepPlus1 string, Date1 *Date) *DateTimeTZ {return NewDateTimeTZ(Date1, Time1, TimeZoneOpt1)},
-  /* Action 084 */ func (RFC3339DateTimeTZ1 *DateTimeTZ) *DateTimeTZ {return RFC3339DateTimeTZ1},
+  /* Action 079 */ func (Date1 *Date) *DateTime {return NewDateTimeWithDate(Date1, nil)},
+  /* Action 080 */ func (Date1 *Date, Time1 *Time, TimeZoneOpt1 *TimeZone) *DateTime {return NewDateTime(Date1, Time1, TimeZoneOpt1)},
+  /* Action 081 */ func (Date1 *Date, DateTimeSepPlus1 string, Time1 *Time, TimeZoneOpt1 *TimeZone) *DateTime {return NewDateTime(Date1, Time1, TimeZoneOpt1)},
+  /* Action 082 */ func (Time1 *Time, TimeZoneOpt1 *TimeZone, Date1 *Date) *DateTime {return NewDateTime(Date1, Time1, TimeZoneOpt1)},
+  /* Action 083 */ func (Time1 *Time, TimeZoneOpt1 *TimeZone, DateTimeSepPlus1 string, Date1 *Date) *DateTime {return NewDateTime(Date1, Time1, TimeZoneOpt1)},
+  /* Action 084 */ func (RFC3339DateTime1 *DateTime) *DateTime {return RFC3339DateTime1},
   /* Action 085 */ func () string {return ""},
   /* Action 086 */ func (DateTimeSepPlus1 string) string {return DateTimeSepPlus1},
   /* Action 087 */ func (DateTimeSep1 string) string {return DateTimeSep1},
@@ -682,9 +682,9 @@ var datetimeActions = &glr.SemanticActions{Items:[]any{
   /* Action 103 */ func (TIME_ZONE1 string) *TimeZone {return NewTimeZone(TIME_ZONE1, nil, nil)},
   /* Action 104 */ func (TIME_ZONE_ABBREV1 string) *TimeZone {return NewTimeZone(nil, TIME_ZONE_ABBREV1, nil)},
   /* Action 105 */ func (P1 string) *TimeZone {return NewTimeZone(nil, "P", nil)},
-  /* Action 106 */ func (RFC3339Date1 *Date) *DateTimeTZ {return NewDateTimeTZWithDate(RFC3339Date1, nil)},
-  /* Action 107 */ func (RFC3339Date1 *Date, RFC3339Time1 *Time) *DateTimeTZ {return NewDateTimeTZ(RFC3339Date1, RFC3339Time1, nil)},
-  /* Action 108 */ func (RFC3339Date1 *Date, RFC3339Time1 *Time, RFC3339TimeZone1 *TimeZone) *DateTimeTZ {return NewDateTimeTZ(RFC3339Date1, RFC3339Time1, RFC3339TimeZone1)},
+  /* Action 106 */ func (RFC3339Date1 *Date) *DateTime {return NewDateTimeWithDate(RFC3339Date1, nil)},
+  /* Action 107 */ func (RFC3339Date1 *Date, RFC3339Time1 *Time) *DateTime {return NewDateTime(RFC3339Date1, RFC3339Time1, nil)},
+  /* Action 108 */ func (RFC3339Date1 *Date, RFC3339Time1 *Time, RFC3339TimeZone1 *TimeZone) *DateTime {return NewDateTime(RFC3339Date1, RFC3339Time1, RFC3339TimeZone1)},
   /* Action 109 */ func (Year1 string, SUB1 string, INT1 string, SUB2 string, INT2 string) *Date {return NewDMYDate(INT2, INT1, Year1)},
   /* Action 110 */ func (T1 string, INT1 string, COLON1 string, INT2 string, COLON2 string, INT3 string) *Time {return NewTime(INT1, INT2, INT3, nil)},
   /* Action 111 */ func (Z1 string) *TimeZone {return nil},
@@ -767,12 +767,12 @@ var datetimeActions = &glr.SemanticActions{Items:[]any{
 }}
 
 var datetimeStates = &glr.ParseStates{Items:[]glr.ParseState{
-  /* State 000 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:0, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "PART":[]glr.Action{glr.Action{Type:"shift", StateID:20, RuleID:0}}, "SAVE":[]glr.Action{glr.Action{Type:"shift", StateID:21, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "WHEN":[]glr.Action{glr.Action{Type:"shift", StateID:28, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeTZ":12, "DateTimeTZRange":4, "DateTimeTZRanges":2, "Day":9, "DayPlus":8, "DayPlus1":7, "Month":6, "RFC3339Date":31, "RFC3339DateTimeTZ":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesPrefix":16, "RangesPrefixPlus":5, "RootPrefix":11, "RootPrefixPlus":3, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":10, "Year":27, "root":1}},
+  /* State 000 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:0, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "PART":[]glr.Action{glr.Action{Type:"shift", StateID:20, RuleID:0}}, "SAVE":[]glr.Action{glr.Action{Type:"shift", StateID:21, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "WHEN":[]glr.Action{glr.Action{Type:"shift", StateID:28, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTime":12, "DateTimeRange":4, "DateTimeRanges":2, "Day":9, "DayPlus":8, "DayPlus1":7, "Month":6, "RFC3339Date":31, "RFC3339DateTime":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesPrefix":16, "RangesPrefixPlus":5, "RootPrefix":11, "RootPrefixPlus":3, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":10, "Year":27, "root":1}},
   /* State 001 */ glr.ParseState{Actions:map[string][]glr.Action{"$end":[]glr.Action{glr.Action{Type:"accept", StateID:0, RuleID:0}}, ".":[]glr.Action{glr.Action{Type:"shift", StateID:1, RuleID:0}}, "CALENDAR":[]glr.Action{glr.Action{Type:"shift", StateID:46, RuleID:0}}, "GOOGLE":[]glr.Action{glr.Action{Type:"shift", StateID:45, RuleID:0}}, "ICS":[]glr.Action{glr.Action{Type:"shift", StateID:47, RuleID:0}}}, Gotos:map[string]int{"RootSuffix":44, "RootSuffixPlus":43}},
   /* State 002 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:2, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:1}}, "AND":[]glr.Action{glr.Action{Type:"shift", StateID:50, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:51, RuleID:0}}}, Gotos:map[string]int{"RangesSep":49, "RangesSepPlus":48}},
-  /* State 003 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:3, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "PART":[]glr.Action{glr.Action{Type:"shift", StateID:20, RuleID:0}}, "SAVE":[]glr.Action{glr.Action{Type:"shift", StateID:21, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "WHEN":[]glr.Action{glr.Action{Type:"shift", StateID:28, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeTZ":12, "DateTimeTZRange":4, "DateTimeTZRanges":2, "Day":9, "DayPlus":8, "DayPlus1":7, "Month":6, "RFC3339Date":31, "RFC3339DateTimeTZ":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesPrefix":16, "RangesPrefixPlus":5, "RootPrefix":53, "RootPrefixPlus":3, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":10, "Year":27, "root":52}},
+  /* State 003 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:3, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "PART":[]glr.Action{glr.Action{Type:"shift", StateID:20, RuleID:0}}, "SAVE":[]glr.Action{glr.Action{Type:"shift", StateID:21, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "WHEN":[]glr.Action{glr.Action{Type:"shift", StateID:28, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTime":12, "DateTimeRange":4, "DateTimeRanges":2, "Day":9, "DayPlus":8, "DayPlus1":7, "Month":6, "RFC3339Date":31, "RFC3339DateTime":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesPrefix":16, "RangesPrefixPlus":5, "RootPrefix":53, "RootPrefixPlus":3, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":10, "Year":27, "root":52}},
   /* State 004 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:4, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:15}}}, Gotos:map[string]int{}},
-  /* State 005 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:5, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "WHEN":[]glr.Action{glr.Action{Type:"shift", StateID:28, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeTZ":12, "DateTimeTZRange":4, "DateTimeTZRanges":54, "Day":9, "DayPlus":8, "DayPlus1":7, "Month":6, "RFC3339Date":31, "RFC3339DateTimeTZ":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesPrefix":55, "RangesPrefixPlus":5, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":10, "Year":27}},
+  /* State 005 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:5, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "WHEN":[]glr.Action{glr.Action{Type:"shift", StateID:28, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTime":12, "DateTimeRange":4, "DateTimeRanges":54, "Day":9, "DayPlus":8, "DayPlus1":7, "Month":6, "RFC3339Date":31, "RFC3339DateTime":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesPrefix":55, "RangesPrefixPlus":5, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":10, "Year":27}},
   /* State 006 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:6, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:119}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:119}, glr.Action{Type:"shift", StateID:60, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Day":58, "DayPlus":57, "DayPlus1":56, "Year":59}},
   /* State 007 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:7, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"shift", StateID:60, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:43}, glr.Action{Type:"shift", StateID:17, RuleID:0}}}, Gotos:map[string]int{"Day":62, "Month":61}},
   /* State 008 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:8, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:17, RuleID:0}}}, Gotos:map[string]int{"Month":63}},
@@ -780,7 +780,7 @@ var datetimeStates = &glr.ParseStates{Items:[]glr.ParseState{
   /* State 010 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:10, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"shift", StateID:60, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:17, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Day":74, "Month":73, "Year":75}},
   /* State 011 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:11, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:4}}}, Gotos:map[string]int{}},
   /* State 012 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:12, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:46}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:67, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"shift", StateID:68, RuleID:0}}, "THROUGH":[]glr.Action{glr.Action{Type:"shift", StateID:69, RuleID:0}}, "TILL":[]glr.Action{glr.Action{Type:"shift", StateID:70, RuleID:0}}, "TO":[]glr.Action{glr.Action{Type:"shift", StateID:71, RuleID:0}}, "UNTIL":[]glr.Action{glr.Action{Type:"shift", StateID:72, RuleID:0}}}, Gotos:map[string]int{"RangeSep":77, "RangeSepPlus":76}},
-  /* State 013 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:13, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeTZ":12, "DateTimeTZRange":78, "Day":81, "Month":80, "RFC3339Date":31, "RFC3339DateTimeTZ":22, "RangePrefix":79, "RangePrefixPlus":13, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":82, "Year":27}},
+  /* State 013 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:13, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTime":12, "DateTimeRange":78, "Day":81, "Month":80, "RFC3339Date":31, "RFC3339DateTime":22, "RangePrefix":79, "RangePrefixPlus":13, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":82, "Year":27}},
   /* State 014 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:14, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:94}}, "DEC":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:94}, glr.Action{Type:"shift", StateID:67, RuleID:0}}, "IN":[]glr.Action{glr.Action{Type:"shift", StateID:93, RuleID:0}}, "LPAREN":[]glr.Action{glr.Action{Type:"shift", StateID:86, RuleID:0}}, "P":[]glr.Action{glr.Action{Type:"shift", StateID:92, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:94}, glr.Action{Type:"shift", StateID:89, RuleID:0}}, "THROUGH":[]glr.Action{glr.Action{Type:"shift", StateID:69, RuleID:0}}, "TILL":[]glr.Action{glr.Action{Type:"shift", StateID:70, RuleID:0}}, "TIME_ZONE":[]glr.Action{glr.Action{Type:"shift", StateID:90, RuleID:0}}, "TIME_ZONE_ABBREV":[]glr.Action{glr.Action{Type:"shift", StateID:91, RuleID:0}}, "TO":[]glr.Action{glr.Action{Type:"shift", StateID:71, RuleID:0}}, "UNTIL":[]glr.Action{glr.Action{Type:"shift", StateID:72, RuleID:0}}, "Z":[]glr.Action{glr.Action{Type:"shift", StateID:88, RuleID:0}}}, Gotos:map[string]int{"RangeSep":77, "RangeSepPlus":83, "TimeZone":85, "TimeZoneOpt":84, "TimeZoneSep":87}},
   /* State 015 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:15, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:79}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:98, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:79}, glr.Action{Type:"shift", StateID:99, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:104, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"shift", StateID:96, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:105, RuleID:0}}, "QUO":[]glr.Action{glr.Action{Type:"shift", StateID:100, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:79}, glr.Action{Type:"shift", StateID:101, RuleID:0}}, "T":[]glr.Action{glr.Action{Type:"shift", StateID:102, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:103, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}}, Gotos:map[string]int{"DateTimeSep":97, "DateTimeSepPlus":95, "Time":94, "TimePrefix":34, "TimePrefixPlus":24}},
   /* State 016 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:16, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:35}}}, Gotos:map[string]int{}},
@@ -815,7 +815,7 @@ var datetimeStates = &glr.ParseStates{Items:[]glr.ParseState{
   /* State 045 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:45, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:10}}}, Gotos:map[string]int{}},
   /* State 046 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:46, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:11}}}, Gotos:map[string]int{}},
   /* State 047 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:47, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:12}}}, Gotos:map[string]int{}},
-  /* State 048 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:48, RuleID:0}}, "AND":[]glr.Action{glr.Action{Type:"shift", StateID:50, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:150, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeTZ":12, "DateTimeTZRange":148, "Day":81, "Month":80, "RFC3339Date":31, "RFC3339DateTimeTZ":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesSep":149, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":82, "Year":27}},
+  /* State 048 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:48, RuleID:0}}, "AND":[]glr.Action{glr.Action{Type:"shift", StateID:50, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "BEGINNING":[]glr.Action{glr.Action{Type:"shift", StateID:32, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:150, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:33, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:18, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":15, "DatePrefix":35, "DatePrefixPlus":26, "DateTime":12, "DateTimeRange":148, "Day":81, "Month":80, "RFC3339Date":31, "RFC3339DateTime":22, "RangePrefix":23, "RangePrefixPlus":13, "RangesSep":149, "Time":14, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":82, "Year":27}},
   /* State 049 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:49, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:38}}}, Gotos:map[string]int{}},
   /* State 050 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:50, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:40}}}, Gotos:map[string]int{}},
   /* State 051 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:51, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:41}}}, Gotos:map[string]int{}},
@@ -843,14 +843,14 @@ var datetimeStates = &glr.ParseStates{Items:[]glr.ParseState{
   /* State 073 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:73, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"shift", StateID:60, RuleID:0}}}, Gotos:map[string]int{"Day":163}},
   /* State 074 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:74, RuleID:0}}, "AND":[]glr.Action{glr.Action{Type:"shift", StateID:139, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:166, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:141, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:17, RuleID:0}}, "PERIOD":[]glr.Action{glr.Action{Type:"shift", StateID:142, RuleID:0}}, "QUO":[]glr.Action{glr.Action{Type:"shift", StateID:143, RuleID:0}}}, Gotos:map[string]int{"DateSep":137, "DateSepPlus":165, "Month":164}},
   /* State 075 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:75, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:156, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:17, RuleID:0}}}, Gotos:map[string]int{"Month":167, "YearSuffix":138, "YearSuffixPlus":136}},
-  /* State 076 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:76, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:67, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:104, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:96, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"shift", StateID:68, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "THROUGH":[]glr.Action{glr.Action{Type:"shift", StateID:69, RuleID:0}}, "TILL":[]glr.Action{glr.Action{Type:"shift", StateID:70, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "TO":[]glr.Action{glr.Action{Type:"shift", StateID:71, RuleID:0}}, "UNTIL":[]glr.Action{glr.Action{Type:"shift", StateID:72, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":170, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeTZ":169, "Month":131, "RFC3339Date":31, "RFC3339DateTimeTZ":22, "RangeSep":162, "Time":168, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":129, "Year":27}},
+  /* State 076 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:76, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:67, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:104, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:96, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"shift", StateID:68, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "THROUGH":[]glr.Action{glr.Action{Type:"shift", StateID:69, RuleID:0}}, "TILL":[]glr.Action{glr.Action{Type:"shift", StateID:70, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "TO":[]glr.Action{glr.Action{Type:"shift", StateID:71, RuleID:0}}, "UNTIL":[]glr.Action{glr.Action{Type:"shift", StateID:72, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":170, "DatePrefix":35, "DatePrefixPlus":26, "DateTime":169, "Month":131, "RFC3339Date":31, "RFC3339DateTime":22, "RangeSep":162, "Time":168, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":129, "Year":27}},
   /* State 077 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:77, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:71}}}, Gotos:map[string]int{}},
   /* State 078 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:78, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:47}}}, Gotos:map[string]int{}},
   /* State 079 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:66}, glr.Action{Type:"shift", StateID:79, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:65}}}, Gotos:map[string]int{}},
   /* State 080 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:80, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:119}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:119}, glr.Action{Type:"shift", StateID:60, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Day":171, "Year":59}},
   /* State 081 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:81, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:67, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"shift", StateID:68, RuleID:0}}, "THROUGH":[]glr.Action{glr.Action{Type:"shift", StateID:69, RuleID:0}}, "TILL":[]glr.Action{glr.Action{Type:"shift", StateID:70, RuleID:0}}, "TO":[]glr.Action{glr.Action{Type:"shift", StateID:71, RuleID:0}}, "UNTIL":[]glr.Action{glr.Action{Type:"shift", StateID:72, RuleID:0}}}, Gotos:map[string]int{"RangeSep":77, "RangeSepPlus":66}},
   /* State 082 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:82, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"shift", StateID:60, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:17, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Day":74, "Month":172, "Year":75}},
-  /* State 083 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:83, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:67, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:104, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:96, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"shift", StateID:68, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "THROUGH":[]glr.Action{glr.Action{Type:"shift", StateID:69, RuleID:0}}, "TILL":[]glr.Action{glr.Action{Type:"shift", StateID:70, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "TO":[]glr.Action{glr.Action{Type:"shift", StateID:71, RuleID:0}}, "UNTIL":[]glr.Action{glr.Action{Type:"shift", StateID:72, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":170, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeTZ":173, "Month":131, "RFC3339Date":31, "RFC3339DateTimeTZ":22, "RangeSep":162, "Time":174, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":129, "Year":27}},
+  /* State 083 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:83, RuleID:0}}, "AT":[]glr.Action{glr.Action{Type:"shift", StateID:37, RuleID:0}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:41, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:67, RuleID:0}}, "FROM":[]glr.Action{glr.Action{Type:"shift", StateID:104, RuleID:0}}, "INT":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:96, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:39, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"shift", StateID:68, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "THROUGH":[]glr.Action{glr.Action{Type:"shift", StateID:69, RuleID:0}}, "TILL":[]glr.Action{glr.Action{Type:"shift", StateID:70, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:38, RuleID:0}}, "TIME_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:25, RuleID:0}}, "TO":[]glr.Action{glr.Action{Type:"shift", StateID:71, RuleID:0}}, "UNTIL":[]glr.Action{glr.Action{Type:"shift", StateID:72, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":170, "DatePrefix":35, "DatePrefixPlus":26, "DateTime":173, "Month":131, "RFC3339Date":31, "RFC3339DateTime":22, "RangeSep":162, "Time":174, "TimePrefix":34, "TimePrefixPlus":24, "Weekday":19, "WeekdayOpt":129, "Year":27}},
   /* State 084 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:84, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:85}}, "COLON":[]glr.Action{glr.Action{Type:"shift", StateID:178, RuleID:0}}, "COMMA":[]glr.Action{glr.Action{Type:"shift", StateID:42, RuleID:0}}, "DATE":[]glr.Action{glr.Action{Type:"shift", StateID:40, RuleID:0}}, "DEC":[]glr.Action{glr.Action{Type:"shift", StateID:99, RuleID:0}}, "MONTH_NAME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:17, RuleID:0}}, "ON":[]glr.Action{glr.Action{Type:"shift", StateID:132, RuleID:0}}, "QUO":[]glr.Action{glr.Action{Type:"shift", StateID:100, RuleID:0}}, "SUB":[]glr.Action{glr.Action{Type:"shift", StateID:101, RuleID:0}}, "T":[]glr.Action{glr.Action{Type:"shift", StateID:102, RuleID:0}}, "TH":[]glr.Action{glr.Action{Type:"shift", StateID:29, RuleID:0}}, "TIME":[]glr.Action{glr.Action{Type:"shift", StateID:133, RuleID:0}}, "WEEKDAY_NAME":[]glr.Action{glr.Action{Type:"shift", StateID:30, RuleID:0}}, "YEAR":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:162}, glr.Action{Type:"shift", StateID:36, RuleID:0}}}, Gotos:map[string]int{"Date":176, "DatePrefix":35, "DatePrefixPlus":26, "DateTimeSep":97, "DateTimeSepOpt":175, "DateTimeSepPlus":177, "Month":131, "Weekday":19, "WeekdayOpt":129, "Year":130}},
   /* State 085 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:85, RuleID:0}, glr.Action{Type:"reduce", StateID:0, RuleID:99}}, "TIME":[]glr.Action{glr.Action{Type:"reduce", StateID:0, RuleID:99}, glr.Action{Type:"shift", StateID:180, RuleID:0}}}, Gotos:map[string]int{"TimeZoneSuffixOpt":179}},
   /* State 086 */ glr.ParseState{Actions:map[string][]glr.Action{".":[]glr.Action{glr.Action{Type:"shift", StateID:86, RuleID:0}}, "P":[]glr.Action{glr.Action{Type:"shift", StateID:92, RuleID:0}}, "TIME_ZONE":[]glr.Action{glr.Action{Type:"shift", StateID:90, RuleID:0}}, "TIME_ZONE_ABBREV":[]glr.Action{glr.Action{Type:"shift", StateID:91, RuleID:0}}}, Gotos:map[string]int{"TimeZone":181}},

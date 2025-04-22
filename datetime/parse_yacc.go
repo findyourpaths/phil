@@ -4,15 +4,15 @@ package datetime
 import __yyfmt__ "fmt"
 
 type yySymType struct {
-	yys              int
-	DateTimeTZRanges *DateTimeTZRanges
-	DateTimeTZRange  *DateTimeTZRange
-	DateTimeTZ       *DateTimeTZ
-	Date             *Date
-	Time             *Time
-	TimeZone         *TimeZone
-	string           string
-	strings          []string
+	yys            int
+	DateTimeRanges *DateTimeRanges
+	DateTimeRange  *DateTimeRange
+	DateTime       *DateTime
+	Date           *Date
+	Time           *Time
+	TimeZone       *TimeZone
+	string         string
+	strings        []string
 }
 
 const ILLEGAL = 57346
@@ -792,117 +792,117 @@ yydefault:
 	case 1:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = yyDollar[1].DateTimeTZRanges
+			yyVAL.DateTimeRanges = yyDollar[1].DateTimeRanges
 		}
 	case 2:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = yyDollar[1].DateTimeTZRanges
+			yyVAL.DateTimeRanges = yyDollar[1].DateTimeRanges
 		}
 	case 3:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = yyDollar[2].DateTimeTZRanges
+			yyVAL.DateTimeRanges = yyDollar[2].DateTimeRanges
 		}
 	case 15:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = &DateTimeTZRanges{Items: []*DateTimeTZRange{yyDollar[1].DateTimeTZRange}}
+			yyVAL.DateTimeRanges = &DateTimeRanges{Items: []*DateTimeRange{yyDollar[1].DateTimeRange}}
 		}
 	case 16:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = yyDollar[2].DateTimeTZRanges
+			yyVAL.DateTimeRanges = yyDollar[2].DateTimeRanges
 		}
 	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = AppendDateTimeTZRanges(yyDollar[1].DateTimeTZRanges, yyDollar[3].DateTimeTZRange)
+			yyVAL.DateTimeRanges = AppendDateTimeRanges(yyDollar[1].DateTimeRanges, yyDollar[3].DateTimeRange)
 		}
 	case 18:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, nil)...)
+			yyVAL.DateTimeRanges = NewRangesWithStartDates(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, nil)...)
 		}
 	case 19:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, nil)...)
+			yyVAL.DateTimeRanges = NewRangesWithStartDates(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, nil)...)
 		}
 	case 20:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, yyDollar[3].string)...)
+			yyVAL.DateTimeRanges = NewRangesWithStartDates(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, yyDollar[3].string)...)
 		}
 	case 21:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(append(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, yyDollar[6].string), NewMDsYDates(yyDollar[4].string, yyDollar[5].strings, yyDollar[6].string)...)...)
+			yyVAL.DateTimeRanges = NewRangesWithStartDates(append(NewMDsYDates(yyDollar[1].string, yyDollar[2].strings, yyDollar[6].string), NewMDsYDates(yyDollar[4].string, yyDollar[5].strings, yyDollar[6].string)...)...)
 		}
 	case 22:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, yyDollar[3].string)...)
+			yyVAL.DateTimeRanges = NewRangesWithStartDates(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, yyDollar[3].string)...)
 		}
 	case 23:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRangesWithStartDates(append(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, yyDollar[6].string), NewDsMYDates(yyDollar[4].strings, yyDollar[5].string, yyDollar[6].string)...)...)
+			yyVAL.DateTimeRanges = NewRangesWithStartDates(append(NewDsMYDates(yyDollar[1].strings, yyDollar[2].string, yyDollar[6].string), NewDsMYDates(yyDollar[4].strings, yyDollar[5].string, yyDollar[6].string)...)...)
 		}
 	case 24:
 		yyDollar = yyS[yypt-7 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[4].string, nil)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[5].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[7].string, nil)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[4].string, nil)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[5].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[7].string, nil)))
 		}
 	case 25:
 		yyDollar = yyS[yypt-7 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[7].string, nil), NewDMYDate(yyDollar[3].string, yyDollar[7].string, nil)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[4].string, yyDollar[7].string, nil), NewDMYDate(yyDollar[6].string, yyDollar[7].string, nil)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[7].string, nil), NewDMYDate(yyDollar[3].string, yyDollar[7].string, nil)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[4].string, yyDollar[7].string, nil), NewDMYDate(yyDollar[6].string, yyDollar[7].string, nil)))
 		}
 	case 26:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[4].string, nil)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[5].string, yyDollar[6].string, nil), NewMDYDate(yyDollar[5].string, yyDollar[8].string, nil)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[4].string, nil)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[5].string, yyDollar[6].string, nil), NewMDYDate(yyDollar[5].string, yyDollar[8].string, nil)))
 		}
 	case 27:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, nil), NewDMYDate(yyDollar[3].string, yyDollar[4].string, nil)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[5].string, yyDollar[8].string, nil), NewDMYDate(yyDollar[7].string, yyDollar[8].string, nil)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, nil), NewDMYDate(yyDollar[3].string, yyDollar[4].string, nil)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[5].string, yyDollar[8].string, nil), NewDMYDate(yyDollar[7].string, yyDollar[8].string, nil)))
 		}
 	case 28:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[8].string)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[5].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[8].string)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[5].string, yyDollar[8].string), NewMDYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string)))
 		}
 	case 29:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[3].string, yyDollar[7].string, yyDollar[8].string)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[4].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[3].string, yyDollar[7].string, yyDollar[8].string)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[4].string, yyDollar[7].string, yyDollar[8].string), NewDMYDate(yyDollar[6].string, yyDollar[7].string, yyDollar[8].string)))
 		}
 	case 30:
 		yyDollar = yyS[yypt-9 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[9].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[9].string), NewMDYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[9].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEndDates(NewMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[9].string), NewMDYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string)))
 		}
 	case 31:
 		yyDollar = yyS[yypt-9 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string), NewDMYDate(yyDollar[7].string, yyDollar[8].string, yyDollar[9].string)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[9].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[9].string)), NewRangeWithStartEndDates(NewDMYDate(yyDollar[5].string, yyDollar[8].string, yyDollar[9].string), NewDMYDate(yyDollar[7].string, yyDollar[8].string, yyDollar[9].string)))
 		}
 	case 32:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStart(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil)), NewRangeWithStart(NewMDYDate(yyDollar[3].string, yyDollar[4].string, nil)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStart(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil)), NewRangeWithStart(NewMDYDate(yyDollar[3].string, yyDollar[4].string, nil)))
 		}
 	case 33:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRangeWithStart(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string)), NewRangeWithStart(NewMDYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string)))
+			yyVAL.DateTimeRanges = NewRanges(NewRangeWithStart(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string)), NewRangeWithStart(NewMDYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string)))
 		}
 	case 34:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRanges = NewRanges(NewRange(NewDateTimeTZ(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, nil), yyDollar[6].Time, nil), NewDateTimeTZ(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, nil), yyDollar[8].Time, nil)), NewRange(NewDateTimeTZ(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string, nil), yyDollar[6].Time, nil), NewDateTimeTZ(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string, nil), yyDollar[8].Time, nil)))
+			yyVAL.DateTimeRanges = NewRanges(NewRange(NewDateTime(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, nil), yyDollar[6].Time, nil), NewDateTime(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, nil), yyDollar[8].Time, nil)), NewRange(NewDateTime(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string, nil), yyDollar[6].Time, nil), NewDateTime(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string, nil), yyDollar[8].Time, nil)))
 		}
 	case 42:
 		yyDollar = yyS[yypt-1 : yypt+1]
@@ -922,122 +922,122 @@ yydefault:
 	case 46:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[1].DateTimeTZ}
+			yyVAL.DateTimeRange = &DateTimeRange{Start: yyDollar[1].DateTime}
 		}
 	case 47:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = yyDollar[2].DateTimeTZRange
+			yyVAL.DateTimeRange = yyDollar[2].DateTimeRange
 		}
 	case 48:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRange(yyDollar[1].DateTimeTZ, NewDateTimeTZ(yyDollar[1].DateTimeTZ.Date, yyDollar[3].Time, yyDollar[1].DateTimeTZ.TimeZone))
+			yyVAL.DateTimeRange = NewRange(yyDollar[1].DateTime, NewDateTime(yyDollar[1].DateTime.Date, yyDollar[3].Time, yyDollar[1].DateTime.TimeZone))
 		}
 	case 49:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRange(NewDateTimeTZ(yyDollar[1].DateTimeTZ.Date, yyDollar[1].DateTimeTZ.Time, yyDollar[4].TimeZone), NewDateTimeTZ(yyDollar[1].DateTimeTZ.Date, yyDollar[3].Time, yyDollar[4].TimeZone))
+			yyVAL.DateTimeRange = NewRange(NewDateTime(yyDollar[1].DateTime.Date, yyDollar[1].DateTime.Time, yyDollar[4].TimeZone), NewDateTime(yyDollar[1].DateTime.Date, yyDollar[3].Time, yyDollar[4].TimeZone))
 		}
 	case 50:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRange(NewDateTimeTZ(yyDollar[3].DateTimeTZ.Date, yyDollar[1].Time, yyDollar[3].DateTimeTZ.TimeZone), yyDollar[3].DateTimeTZ)
+			yyVAL.DateTimeRange = NewRange(NewDateTime(yyDollar[3].DateTime.Date, yyDollar[1].Time, yyDollar[3].DateTime.TimeZone), yyDollar[3].DateTime)
 		}
 	case 51:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = &DateTimeTZRange{Start: yyDollar[1].DateTimeTZ, End: yyDollar[3].DateTimeTZ}
+			yyVAL.DateTimeRange = &DateTimeRange{Start: yyDollar[1].DateTime, End: yyDollar[3].DateTime}
 		}
 	case 52:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[4].string, nil))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, nil), NewMDYDate(yyDollar[1].string, yyDollar[4].string, nil))
 		}
 	case 53:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, nil), NewDMYDate(yyDollar[3].string, yyDollar[4].string, nil))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, nil), NewDMYDate(yyDollar[3].string, yyDollar[4].string, nil))
 		}
 	case 54:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[5].string), NewMDYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string))
 		}
 	case 55:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewDMYDate(yyDollar[1].string, yyDollar[4].string, yyDollar[5].string), NewDMYDate(yyDollar[3].string, yyDollar[4].string, yyDollar[5].string))
 		}
 	case 56:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[6].string), NewMDYDate(yyDollar[4].string, yyDollar[5].string, yyDollar[6].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[6].string), NewMDYDate(yyDollar[4].string, yyDollar[5].string, yyDollar[6].string))
 		}
 	case 57:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
 	case 58:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
 	case 59:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[6].string, yyDollar[5].string, yyDollar[7].string, yyDollar[8].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewWMDYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[6].string, yyDollar[5].string, yyDollar[7].string, yyDollar[8].string))
 		}
 	case 60:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewWDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewWDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWMDYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
 	case 61:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewWDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewWDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[5].string, yyDollar[6].string, yyDollar[7].string, yyDollar[8].string))
 		}
 	case 62:
 		yyDollar = yyS[yypt-8 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRangeWithStartEndDates(NewWDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[6].string, yyDollar[5].string, yyDollar[7].string, yyDollar[8].string))
+			yyVAL.DateTimeRange = NewRangeWithStartEndDates(NewWDMYDate(yyDollar[1].string, yyDollar[2].string, yyDollar[3].string, yyDollar[8].string), NewWDMYDate(yyDollar[6].string, yyDollar[5].string, yyDollar[7].string, yyDollar[8].string))
 		}
 	case 63:
 		yyDollar = yyS[yypt-14 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRange(NewDateTimeTZ(NewDMYDate(yyDollar[4].string, yyDollar[6].string, yyDollar[14].string), yyDollar[1].Time, yyDollar[2].TimeZone), NewDateTimeTZ(NewDMYDate(yyDollar[8].string, yyDollar[10].string, yyDollar[14].string), yyDollar[12].Time, yyDollar[13].TimeZone))
+			yyVAL.DateTimeRange = NewRange(NewDateTime(NewDMYDate(yyDollar[4].string, yyDollar[6].string, yyDollar[14].string), yyDollar[1].Time, yyDollar[2].TimeZone), NewDateTime(NewDMYDate(yyDollar[8].string, yyDollar[10].string, yyDollar[14].string), yyDollar[12].Time, yyDollar[13].TimeZone))
 		}
 	case 64:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
-			yyVAL.DateTimeTZRange = NewRange(NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone), NewDateTimeTZ(yyDollar[1].Date, yyDollar[5].Time, yyDollar[6].TimeZone))
+			yyVAL.DateTimeRange = NewRange(NewDateTime(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone), NewDateTime(yyDollar[1].Date, yyDollar[5].Time, yyDollar[6].TimeZone))
 		}
 	case 79:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZWithDate(yyDollar[1].Date, nil)
+			yyVAL.DateTime = NewDateTimeWithDate(yyDollar[1].Date, nil)
 		}
 	case 80:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
+			yyVAL.DateTime = NewDateTime(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
 		}
 	case 81:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[3].Time, yyDollar[4].TimeZone)
+			yyVAL.DateTime = NewDateTime(yyDollar[1].Date, yyDollar[3].Time, yyDollar[4].TimeZone)
 		}
 	case 82:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[3].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
+			yyVAL.DateTime = NewDateTime(yyDollar[3].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
 		}
 	case 83:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[4].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
+			yyVAL.DateTime = NewDateTime(yyDollar[4].Date, yyDollar[1].Time, yyDollar[2].TimeZone)
 		}
 	case 94:
 		yyDollar = yyS[yypt-0 : yypt+1]
@@ -1082,17 +1082,17 @@ yydefault:
 	case 106:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZWithDate(yyDollar[1].Date, nil)
+			yyVAL.DateTime = NewDateTimeWithDate(yyDollar[1].Date, nil)
 		}
 	case 107:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, nil)
+			yyVAL.DateTime = NewDateTime(yyDollar[1].Date, yyDollar[2].Time, nil)
 		}
 	case 108:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.DateTimeTZ = NewDateTimeTZ(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
+			yyVAL.DateTime = NewDateTime(yyDollar[1].Date, yyDollar[2].Time, yyDollar[3].TimeZone)
 		}
 	case 109:
 		yyDollar = yyS[yypt-5 : yypt+1]

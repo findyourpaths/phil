@@ -56,13 +56,13 @@ package datetime
 
 
  /* Type of each nonterminal. */
-%type <DateTimeTZRanges> root
-%type <DateTimeTZRanges> DateTimeTZRanges
+%type <DateTimeRanges> root
+%type <DateTimeRanges> DateTimeRanges
 
-%type <DateTimeTZRange> DateTimeTZRange
+%type <DateTimeRange> DateTimeRange
 
-%type <DateTimeTZ> DateTimeTZ
-%type <DateTimeTZ> RFC3339DateTimeTZ
+%type <DateTime> DateTime
+%type <DateTime> RFC3339DateTime
 
 %type <Date> Date
 %type <Date> RFC3339Date
@@ -88,9 +88,9 @@ package datetime
 
  /* Type of each nonterminal. */
 %union {
-    DateTimeTZRanges *DateTimeTZRanges
-    DateTimeTZRange *DateTimeTZRange
-    DateTimeTZ *DateTimeTZ
+    DateTimeRanges *DateTimeRanges
+    DateTimeRange *DateTimeRange
+    DateTime *DateTime
     Date *Date
     Time *Time
     TimeZone  *TimeZone
@@ -101,7 +101,7 @@ package datetime
 %%
 
 root:
-  DateTimeTZRanges {$$ = $1}
+  DateTimeRanges {$$ = $1}
 | root RootSuffixPlus {$$ = $1}
 | RootPrefixPlus root {$$ = $2}
 ;
@@ -134,11 +134,11 @@ ColonOpt:
 ;
 
 
-DateTimeTZRanges:
-  DateTimeTZRange {$$ = &DateTimeTZRanges{Items: []*DateTimeTZRange{$1}}}
+DateTimeRanges:
+  DateTimeRange {$$ = &DateTimeRanges{Items: []*DateTimeRange{$1}}}
 
-| RangesPrefixPlus DateTimeTZRanges {$$ = $2}
-| DateTimeTZRanges RangesSepPlus DateTimeTZRange {$$ = AppendDateTimeTZRanges($1, $3)}
+| RangesPrefixPlus DateTimeRanges {$$ = $2}
+| DateTimeRanges RangesSepPlus DateTimeRange {$$ = AppendDateTimeRanges($1, $3)}
 
   // "Feb 3, 4"
 | Month DayPlus1 {$$ = NewRangesWithStartDates(NewMDsYDates($1, $2, nil)...)}
@@ -180,7 +180,7 @@ DateTimeTZRanges:
 | Month Day Month Day Year {$$ = NewRanges(NewRangeWithStart(NewMDYDate($1, $2, $5)), NewRangeWithStart(NewMDYDate($3, $4, $5)))}
 
   // "Wednesdays February 1st & 8th 12:00p-3:00p"
-| WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt Time {$$ = NewRanges(NewRange(NewDateTimeTZ(NewWMDYDate($1, $2, $3, nil), $6, nil), NewDateTimeTZ(NewWMDYDate($1, $2, $3, nil), $8, nil)), NewRange(NewDateTimeTZ(NewWMDYDate($1, $2, $5, nil), $6, nil), NewDateTimeTZ(NewWMDYDate($1, $2, $5, nil), $8, nil)))}
+| WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt Time {$$ = NewRanges(NewRange(NewDateTime(NewWMDYDate($1, $2, $3, nil), $6, nil), NewDateTime(NewWMDYDate($1, $2, $3, nil), $8, nil)), NewRange(NewDateTime(NewWMDYDate($1, $2, $5, nil), $6, nil), NewDateTime(NewWMDYDate($1, $2, $5, nil), $8, nil)))}
 ;
 
 
@@ -219,16 +219,16 @@ DayPlus1:
 // Date Time Range
 //
 
-DateTimeTZRange:
-  DateTimeTZ {$$ = &DateTimeTZRange{Start: $1}}
+DateTimeRange:
+  DateTime {$$ = &DateTimeRange{Start: $1}}
 
-| RangePrefixPlus DateTimeTZRange {$$ = $2}
-| DateTimeTZ RangeSepPlus Time {$$ = NewRange($1, NewDateTimeTZ($1.Date, $3, $1.TimeZone))}
-| DateTimeTZ RangeSepPlus Time TimeZone {$$ = NewRange(NewDateTimeTZ($1.Date, $1.Time, $4), NewDateTimeTZ($1.Date, $3, $4))}
-| Time RangeSepPlus DateTimeTZ {$$ = NewRange(NewDateTimeTZ($3.Date, $1, $3.TimeZone), $3)}
+| RangePrefixPlus DateTimeRange {$$ = $2}
+| DateTime RangeSepPlus Time {$$ = NewRange($1, NewDateTime($1.Date, $3, $1.TimeZone))}
+| DateTime RangeSepPlus Time TimeZone {$$ = NewRange(NewDateTime($1.Date, $1.Time, $4), NewDateTime($1.Date, $3, $4))}
+| Time RangeSepPlus DateTime {$$ = NewRange(NewDateTime($3.Date, $1, $3.TimeZone), $3)}
 
   // "Feb 3, 2023 - Feb 4, 2023"
-| DateTimeTZ RangeSepPlus DateTimeTZ {$$ = &DateTimeTZRange{Start: $1, End: $3}}
+| DateTime RangeSepPlus DateTime {$$ = &DateTimeRange{Start: $1, End: $3}}
 
   // "Feb 3-4"
 | Month Day RangeSepPlus Day {$$ = NewRangeWithStartEndDates(NewMDYDate($1, $2, nil), NewMDYDate($1, $4, nil))}
@@ -262,12 +262,12 @@ DateTimeTZRange:
 | WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month Year {$$ = NewRangeWithStartEndDates(NewWDMYDate($1, $2, $3, $8), NewWDMYDate($6, $5, $7, $8))}
 
   // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
-| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRange(NewDateTimeTZ(NewDMYDate($4, $6, $14), $1, $2), NewDateTimeTZ(NewDMYDate($8, $10, $14), $12, $13))}
+| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRange(NewDateTime(NewDMYDate($4, $6, $14), $1, $2), NewDateTime(NewDMYDate($8, $10, $14), $12, $13))}
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
   // "February 3rd, 9-12pm ET"
-| Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt {$$ = NewRange(NewDateTimeTZ($1, $2, $3), NewDateTimeTZ($1, $5, $6))}
+| Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt {$$ = NewRange(NewDateTime($1, $2, $3), NewDateTime($1, $5, $6))}
 ;
 
 
@@ -303,14 +303,14 @@ RangeSep:
 // Date Time
 //
 
-DateTimeTZ:
-  Date {$$ = NewDateTimeTZWithDate($1, nil)}
+DateTime:
+  Date {$$ = NewDateTimeWithDate($1, nil)}
 
-| Date Time TimeZoneOpt {$$ = NewDateTimeTZ($1, $2, $3)}
-| Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTimeTZ($1, $3, $4)}
-| Time TimeZoneOpt Date {$$ = NewDateTimeTZ($3, $1, $2)}
-| Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTimeTZ($4, $1, $2)}
-| RFC3339DateTimeTZ
+| Date Time TimeZoneOpt {$$ = NewDateTime($1, $2, $3)}
+| Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
+| Time TimeZoneOpt Date {$$ = NewDateTime($3, $1, $2)}
+| Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTime($4, $1, $2)}
+| RFC3339DateTime
 ;
 
 
@@ -355,13 +355,13 @@ TimeZone:
 
 
 //
-// RDC3339 DateTimeTZ
+// RDC3339 DateTime
 //
 
-RFC3339DateTimeTZ:
-  RFC3339Date {$$ = NewDateTimeTZWithDate($1, nil)}
-| RFC3339Date RFC3339Time {$$ = NewDateTimeTZ($1, $2, nil)}
-| RFC3339Date RFC3339Time RFC3339TimeZone {$$ = NewDateTimeTZ($1, $2, $3)}
+RFC3339DateTime:
+  RFC3339Date {$$ = NewDateTimeWithDate($1, nil)}
+| RFC3339Date RFC3339Time {$$ = NewDateTime($1, $2, nil)}
+| RFC3339Date RFC3339Time RFC3339TimeZone {$$ = NewDateTime($1, $2, $3)}
 ;
 
 RFC3339Date:

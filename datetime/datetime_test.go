@@ -9,7 +9,7 @@ import (
 )
 
 type toStringTest struct {
-	in   *DateTimeTZRanges
+	in   *DateTimeRanges
 	want string
 }
 
@@ -48,8 +48,8 @@ func testToStringFn(t *testing.T, tc toStringTest) func(*testing.T) {
 }
 
 // type newRangesTest struct {
-// 	got  *DateTimeTZRanges
-// 	want *DateTimeTZRanges
+// 	got  *DateTimeRanges
+// 	want *DateTimeRanges
 // }
 
 // func TestNewRanges(t *testing.T) {
