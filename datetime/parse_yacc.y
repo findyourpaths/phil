@@ -75,7 +75,6 @@ package datetime
 %type <TimeZone> RFC3339TimeZone
 
 %type <string> Day
-%type <string> FullYear
 %type <string> Month
 %type <string> Weekday
 %type <string> WeekdayOpt
@@ -334,16 +333,15 @@ DateTimeSep:
 
 TimeZoneOpt:
   {$$ = nil}
-| TimeZone
-| TimeZonePrefix TimeZone TimeZoneSuffix {$$ = $2}
+| TimeZone TimeZoneSuffixOpt {$$ = $1}
+| LPAREN TimeZone RPAREN {$$ = $2}
 | TimeZoneSep TimeZone {$$ = $2}
 | Z {$$ = nil}
 ;
-TimeZonePrefix:
-  LPAREN
-;
-TimeZoneSuffix:
-  RPAREN
+
+TimeZoneSuffixOpt:
+
+| TIME
 ;
 TimeZoneSep:
   IN
@@ -367,7 +365,7 @@ RFC3339DateTimeTZ:
 ;
 
 RFC3339Date:
-  FullYear SUB INT SUB INT {$$ = NewDMYDate($5, $3, $1)}
+  Year SUB INT SUB INT {$$ = NewDMYDate($5, $3, $1)}
 ;
 
 RFC3339Time:
@@ -391,15 +389,15 @@ Date:
   // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
 | WeekdayOpt Day DateSepPlus Day {$$ = NewAmbiguousDate($1, $2, $4, nil)}
 
-| FullYear {$$ = NewDMYDate(nil, nil, $1)}
-| FullYear DateSepPlus Day {$$ = NewDMYDate(nil, $3, $1)}
-| FullYear DateSepPlus Day DateSepPlus Day {$$ = NewDMYDate($5, $3, $1)}
+| Year {$$ = NewDMYDate(nil, nil, $1)}
+| Year DateSepPlus Day {$$ = NewDMYDate(nil, $3, $1)}
+| Year DateSepPlus Day DateSepPlus Day {$$ = NewDMYDate($5, $3, $1)}
 
   // "Feb"
 | Month {$$ = NewMDYDate($1, nil, nil)}
 
   // "Feb 2023"
-| Month FullYear {$$ = NewMDYDate($1, nil, $2)}
+| Month Year {$$ = NewMDYDate($1, nil, $2)}
 
   // "Feb 3 2023"
 | WeekdayOpt Month Day Year {$$ = NewWMDYDate($1, $2, $3, $4)}
@@ -417,7 +415,7 @@ Date:
 | WeekdayOpt Day Month {$$ = NewWDMYDate($1, $2, $3, nil)}
 
   // "2023 Feb 3"
-| WeekdayOpt FullYear Month Day {$$ = NewWDMYDate($1, $4, $3, $2)}
+| WeekdayOpt Year Month Day {$$ = NewWDMYDate($1, $4, $3, $2)}
 ;
 
 
@@ -481,13 +479,8 @@ MonthSuffix:
 ;
 
 
-FullYear:
-  YEAR
-| FullYear YearSuffixPlus
-;
 Year:
-  FullYear
-| INT
+  YEAR
 | Year YearSuffixPlus
 ;
 YearSuffixPlus:
@@ -549,7 +542,7 @@ TimePrefixPlus:
 ;
 TimePrefix:
   AT
-| COLON
+| TIME COLON
 | FROM
 | ON
 | TIME

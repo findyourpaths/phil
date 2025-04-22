@@ -240,6 +240,21 @@ func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
 
 func NewDateTimeTZFromRaw(dttz *DateTimeTZ) *DateTimeTZ {
 	// fmt.Printf("NewDateTimeTZFromRaw(dttz: %#v)\n", dttz)
+
+	// We may have an unofficial Name that we need to replace with an Abbreviation (e.g. "Eastern" -> "ET").
+	if dttz.TimeZone != nil &&
+		dttz.TimeZone.Name != "" {
+		n := dttz.TimeZone.Name
+		if _, err := time.LoadLocation(n); err != nil {
+			if abbrev := timeZoneAbbreviationsByNames[strings.ToLower(n)]; abbrev != "" {
+				dttz.TimeZone.Name = ""
+				if dttz.TimeZone.Abbreviation == "" {
+					dttz.TimeZone.Abbreviation = abbrev
+				}
+			}
+		}
+	}
+
 	if dttz.TimeZone == nil &&
 		dttz.Date != nil &&
 		dttz.Time != nil &&
@@ -525,6 +540,13 @@ var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
 // var noSecond = 0
 // var noNS = 0
 
+var ordinals = map[string]bool{
+	"st": true,
+	"nd": true,
+	"rd": true,
+	// "th": true, recognize this separately because it also shortens Thursday
+}
+
 var weekdaysByNames = map[string]int{
 	"su":        1,
 	"sun":       1,
@@ -590,11 +612,11 @@ var monthsByNames = map[string]int{
 	"december":  12,
 }
 
-var ordinals = map[string]bool{
-	"st": true,
-	"nd": true,
-	"rd": true,
-	// "th": true, recognize this separately because it also shortens Thursday
+var timeZoneAbbreviationsByNames = map[string]string{
+	"eastern":                      "ET",
+	"eastern (new york)":           "ET",
+	"eastern time (us and canada)": "ET",
+	"us/eastern":                   "ET",
 }
 
 func fixYear(yearAny any, year int) (int, bool) {

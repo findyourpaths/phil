@@ -184,6 +184,10 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return Z
 
 			default:
+				if ordinals[lowLit] {
+					return ORD_IND
+				}
+
 				if _, found := monthsByNames[lowLit]; found {
 					return MONTH_NAME
 				}
@@ -192,15 +196,17 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 					return WEEKDAY_NAME
 				}
 
-				if ordinals[lowLit] {
-					return ORD_IND
+				if _, found := timeZoneAbbreviationsByNames[lowLit]; found {
+					return TIME_ZONE
 				}
 
 				upLit := strings.ToUpper(lit)
 				// tz, err := tzTimezone.GetTzAbbreviationInfo(upLit)
 				// fmt.Println("upLit", upLit, "tz", tz, "err", err)
-				if tz, _ := timezoneTZ.GetTzAbbreviationInfo(upLit); tz != nil {
-					return TIME_ZONE_ABBREV
+				if upLit != "M" {
+					if tz, _ := timezoneTZ.GetTzAbbreviationInfo(upLit); tz != nil {
+						return TIME_ZONE_ABBREV
+					}
 				}
 				if tz, _ := timezoneTZ.GetTzInfo(upLit); tz != nil {
 					return TIME_ZONE
