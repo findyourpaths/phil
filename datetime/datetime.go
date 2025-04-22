@@ -9,8 +9,12 @@ import (
 	"time"
 )
 
-var parseDateMode string
 var minimumDTTZ *DateTimeTZ
+
+var parseDateMode string
+
+var DateModeNorthAmerican = "na"
+var DateModeRest = "rest"
 
 // A DateTimeTZs represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
@@ -173,6 +177,11 @@ func (dttz *DateTimeTZ) String() string {
 	if dttz == nil {
 		return ""
 	}
+	if dttz.Date != nil && dttz.Time != nil && dttz.TimeZone != nil {
+		if t := dttz.ToTime(); t != nil {
+			return t.Format(time.RFC3339)
+		}
+	}
 	return dttz.Date.String() + dttz.Time.String() + dttz.TimeZone.String()
 }
 
@@ -188,16 +197,23 @@ func (dttz *DateTimeTZ) ToTime() *time.Time {
 	}
 
 	var loc *time.Location
-	if dttz.TimeZone != nil {
-		if dttz.TimeZone.Name != "" {
-			loc = locationForName(dttz.TimeZone.Name)
-		}
-		if dttz.TimeZone.Offset != "" {
-			loc = locationForOffset(dttz, dttz.TimeZone.Offset)
-		}
-		if dttz.TimeZone.Abbreviation != "" {
-			loc = locationForAbbreviation(dttz, dttz.TimeZone.Abbreviation)
-		}
+	if dttz.TimeZone == nil {
+		fmt.Printf("no TimeZone found in DateTimeTZ")
+		return nil
+	}
+
+	if dttz.TimeZone.Name != "" {
+		loc = locationForName(dttz.TimeZone.Name)
+	}
+	if loc == nil && dttz.TimeZone.Offset != "" {
+		loc = locationForOffset(dttz, dttz.TimeZone.Offset)
+	}
+	if loc == nil && dttz.TimeZone.Abbreviation != "" {
+		loc = locationForAbbreviation(dttz, dttz.TimeZone.Abbreviation)
+	}
+	if loc == nil {
+		fmt.Printf("warning: no time Location found for TimeZone: %#v\n", dttz.TimeZone)
+		return nil
 	}
 
 	r := time.Date(dttz.Date.Year, dttz.Date.Month, dttz.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, loc)
@@ -205,37 +221,43 @@ func (dttz *DateTimeTZ) ToTime() *time.Time {
 	return &r
 }
 
-func NewDateTimeTZForNow() *DateTimeTZ {
-	tn := time.Now()
-
-	d := &Date{}
-	d.Year, d.Month, d.Day = tn.Date()
-	d.Weekday = int(tn.Weekday()) + 1
-
-	t := &Time{}
-	t.Hour, t.Minute, t.Second = tn.Clock()
-
-	tz := &TimeZone{}
-	var off int
-	tz.Abbreviation, off = tn.Zone()
-	offSign := "+"
-	if off < 0 {
-		offSign = "-"
-	}
-	offAbs := int(math.Abs(float64(off)))
-	offHH := offAbs / 3600
-	offMM := (offAbs - (offHH * 3600)) / 60
-	tz.Offset = fmt.Sprintf("%s%02d:%02d", offSign, offHH, offMM)
-
-	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: d, Time: t, TimeZone: tz})
-}
-
 func NewDateTimeTZ(date *Date, time *Time, timeZone *TimeZone) *DateTimeTZ {
 	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: date, Time: time, TimeZone: timeZone})
 }
 
+func NewDateTimeTZForNow() *DateTimeTZ {
+	t := time.Now()
+	abbrev, off := t.Zone()
+	return NewDateTimeTZWithTimeAndTimeZone(t, abbrev, &off)
+}
+
 func NewDateTimeTZWithDate(date *Date, timeZone *TimeZone) *DateTimeTZ {
 	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: date, TimeZone: timeZone})
+}
+
+func NewDateTimeTZWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *int) *DateTimeTZ {
+	d := &Date{}
+	d.Year, d.Month, d.Day = tt.Date()
+	d.Weekday = int(tt.Weekday()) + 1
+
+	t := &Time{}
+	t.Hour, t.Minute, t.Second = tt.Clock()
+
+	tz := &TimeZone{}
+	tz.Abbreviation = abbreviation
+
+	if offset != nil {
+		offSign := "+"
+		if *offset < 0 {
+			offSign = "-"
+		}
+		offAbs := int(math.Abs(float64(*offset)))
+		offHH := offAbs / 3600
+		offMM := (offAbs - (offHH * 3600)) / 60
+		tz.Offset = fmt.Sprintf("%s%02d:%02d", offSign, offHH, offMM)
+	}
+
+	return NewDateTimeTZFromRaw(&DateTimeTZ{Date: d, Time: t, TimeZone: tz})
 }
 
 func NewDateTimeTZFromRaw(dttz *DateTimeTZ) *DateTimeTZ {
@@ -266,6 +288,26 @@ func NewDateTimeTZFromRaw(dttz *DateTimeTZ) *DateTimeTZ {
 	return dttz
 }
 
+func DateMode(dttz *DateTimeTZ) string {
+	if dttz == nil || dttz.TimeZone == nil {
+		return DateModeRest
+	}
+
+	name := dttz.TimeZone.Name
+	if strings.HasPrefix(name, "America/") {
+		return DateModeNorthAmerican
+	}
+
+	abbrev := dttz.TimeZone.Abbreviation
+	if abbrev == "" {
+		abbrev = timeZoneAbbreviationsByNames[name]
+	}
+	if northAmericanTimeZoneAbbreviations[abbrev] {
+		return DateModeNorthAmerican
+	}
+	return DateModeRest
+}
+
 func locationForName(name string) *time.Location {
 	r, err := time.LoadLocation(name)
 	if err != nil {
@@ -291,32 +333,30 @@ func locationForOffset(dttz *DateTimeTZ, offset string) *time.Location {
 	return r
 }
 
-var PreferredLocationsByAbbrev = map[string]*time.Location{
-	"ET": locationForName("America/New_York"),
-	"CT": locationForName("America/Chicago"),
-}
-
 func locationForAbbreviation(dttz *DateTimeTZ, abbrev string) *time.Location {
+	// slog.Debug("locationForAbbreviation(dttz, abbrev)", "abbrev", abbrev)
+
+	name := PreferredLocationNamesByAbbrev[abbrev]
+	// slog.Debug("in locationForAbbreviation()", "name", name)
+	if name != "" {
+		if loc := locationForName(name); loc != nil {
+			return loc
+		}
+	}
+
 	tzs, _ := timezoneTZ.GetTzAbbreviationInfo(abbrev)
 	// for i, tz := range tzs {
-	// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), got tz[%d]: %#v\n", abbrev, i, tz)
+	// 	fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), got tz[%d]: %#v\n", abbrev, i, tz)
 	// }
-	if len(tzs) == 0 {
-		// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), returning nil\n", abbrev)
-		return nil
-	}
+
 	if len(tzs) == 1 {
 		r := locationForOffset(dttz, tzs[0].OffsetHHMM())
 		// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), returning %#v\n", abbrev, r)
 		return r
 	}
-	r := PreferredLocationsByAbbrev[abbrev]
-	if r == nil {
-		panic(fmt.Sprintf("no preferred Location for ambiguous time zone abbreviation %q", abbrev))
-		return nil
-	}
-	// fmt.Printf("in locationForAbbreviation(dttz, abbrev: %q), returning %#v\n", abbrev, r)
-	return r
+
+	fmt.Printf("warning: no preferred time Location found for time zone abbreviation %q\n", abbrev)
+	return nil
 }
 
 // A Date represents a date (year, month, day, weekday).
@@ -540,6 +580,50 @@ var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
 // var noSecond = 0
 // var noNS = 0
 
+func fixYear(yearAny any, year int) (int, bool) {
+	// fmt.Printf("fixYear(yearAny: %#v, year: %d)\n", yearAny, year)
+	if yearAny == nil {
+		return 0, true
+	}
+
+	return year, (year >= 1700 && year <= 2100)
+}
+
+var monthsByNames = map[string]int{
+	"jan":       1,
+	"january":   1,
+	"feb":       2,
+	"february":  2,
+	"mar":       3,
+	"march":     3,
+	"apr":       4,
+	"april":     4,
+	"may":       5,
+	"jun":       6,
+	"june":      6,
+	"jul":       7,
+	"july":      7,
+	"aug":       8,
+	"august":    8,
+	"sep":       9,
+	"sept":      9,
+	"september": 9,
+	"oct":       10,
+	"october":   10,
+	"nov":       11,
+	"november":  11,
+	"dec":       12,
+	"december":  12,
+}
+
+func monthNameToMonth(monthName string) int {
+	month, found := monthsByNames[strings.ToLower(monthName)]
+	if !found {
+		return 0
+	}
+	return month
+}
+
 var ordinals = map[string]bool{
 	"st": true,
 	"nd": true,
@@ -585,57 +669,6 @@ var weekdayNames = []string{
 	"Saturday",
 }
 
-var monthsByNames = map[string]int{
-	"jan":       1,
-	"january":   1,
-	"feb":       2,
-	"february":  2,
-	"mar":       3,
-	"march":     3,
-	"apr":       4,
-	"april":     4,
-	"may":       5,
-	"jun":       6,
-	"june":      6,
-	"jul":       7,
-	"july":      7,
-	"aug":       8,
-	"august":    8,
-	"sep":       9,
-	"sept":      9,
-	"september": 9,
-	"oct":       10,
-	"october":   10,
-	"nov":       11,
-	"november":  11,
-	"dec":       12,
-	"december":  12,
-}
-
-var timeZoneAbbreviationsByNames = map[string]string{
-	"eastern":                      "ET",
-	"eastern (new york)":           "ET",
-	"eastern time (us and canada)": "ET",
-	"us/eastern":                   "ET",
-}
-
-func fixYear(yearAny any, year int) (int, bool) {
-	// fmt.Printf("fixYear(yearAny: %#v, year: %d)\n", yearAny, year)
-	if yearAny == nil {
-		return 0, true
-	}
-
-	return year, (year >= 1700 && year <= 2100)
-}
-
-func monthNameToMonth(monthName string) int {
-	month, found := monthsByNames[strings.ToLower(monthName)]
-	if !found {
-		return 0
-	}
-	return month
-}
-
 func weekdayNameToWeekday(weekdayName string) int {
 	weekday, found := weekdaysByNames[strings.ToLower(weekdayName)]
 	if !found {
@@ -655,9 +688,42 @@ func hourNameToHour(hourName string) int {
 	return -1
 }
 
+var PreferredLocationNamesByAbbrev = map[string]string{
+	"ET":  "America/New_York",
+	"EDT": "America/New_York",
+	"EST": "America/New_York",
+	"CT":  "America/Chicago",
+	"CDT": "America/Chicago",
+	"CST": "America/Chicago",
+	"MT":  "America/Denver",
+	"MDT": "America/Denver",
+	"MST": "America/Denver",
+	"PT":  "America/Los_Angeles",
+	"PDT": "America/Los_Angeles",
+	"PST": "America/Los_Angeles",
+}
+
+var timeZoneAbbreviationsByNames = map[string]string{
+	"eastern":                      "ET",
+	"eastern (new york)":           "ET",
+	"eastern time (us and canada)": "ET",
+	"us/eastern":                   "ET",
+	"pacific":                      "PT",
+	"pacific (los angeles)":        "PT",
+	"pacific time (us and canada)": "PT",
+	"us/pacific":                   "PT",
+}
+
+var northAmericanTimeZoneAbbreviations = map[string]bool{
+	"CT": true,
+	"ET": true,
+	"MT": true,
+	"PT": true,
+}
+
 func NewAmbiguousDate(weekdayAny any, first string, second string, yearAny any) *Date {
 	// North American tends to parse dates as month-day-year.
-	if parseDateMode == "na" {
+	if parseDateMode == DateModeNorthAmerican {
 		return NewWMDYDate(weekdayAny, first, second, yearAny)
 	}
 	return NewWDMYDate(weekdayAny, first, second, yearAny)

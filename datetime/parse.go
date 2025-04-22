@@ -3,7 +3,6 @@ package datetime
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 	"sync"
 
 	"github.com/findyourpaths/phil/glr"
@@ -70,11 +69,7 @@ func Parse(minDTTZ *DateTimeTZ, dateMode string, in string) (*DateTimeTZRanges, 
 	minimumDTTZ = minDTTZ
 	debugf("minimumDTTZ: %q\n", minimumDTTZ.String())
 	if dateMode == "" {
-		if minDTTZ != nil && minDTTZ.TimeZone != nil && strings.HasPrefix(minDTTZ.TimeZone.Name, "America/") {
-			dateMode = "na"
-		} else {
-			dateMode = "rest"
-		}
+		dateMode = DateModeRest
 	}
 	parseDateMode = dateMode
 	debugf("parseDateMode: %q\n", parseDateMode)

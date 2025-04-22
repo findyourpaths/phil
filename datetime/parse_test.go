@@ -9,12 +9,13 @@ import (
 	"github.com/findyourpaths/phil/glr"
 	"github.com/google/go-cmp/cmp"
 	"github.com/k0kubun/pp/v3"
+	"github.com/sanity-io/litter"
 	"google.golang.org/protobuf/testing/protocmp"
 )
 
-var acceptBrokenTests = true
+// var acceptBrokenTests = true
 
-// var acceptBrokenTests = false
+var acceptBrokenTests = false
 
 // Run with
 // rm datetime_glr.go; time GOWORK=off go generate -v ./...
@@ -91,10 +92,12 @@ var DateTimeForFeb03_09AM_ET = NewDateTimeTZ(DateForFeb03, TimeFor09AM, TimeZone
 var DateTimeForFeb03_12PM_ET = NewDateTimeTZ(DateForFeb03, TimeFor12PM, TimeZoneForET)
 var DateTimeForFeb03_03PM_ET = NewDateTimeTZ(DateForFeb03, TimeFor03PM, TimeZoneForET)
 
+var DateTimeForFeb03_12PM_Eastern = NewDateTimeTZ(DateForFeb03, TimeFor12PM, TimeZoneForEastern)
+
 var DateTimeForFriday_12PM_ET = NewDateTimeTZ(DateForFriday, TimeFor12PM, TimeZoneForET)
 var DateTimeForFriday_03PM_ET = NewDateTimeTZ(DateForFriday, TimeFor03PM, TimeZoneForET)
 
-// var DateTimeForFeb03_12PM_East = NewDateTimeTZ(DateForFeb03, TimeFor12PM, TimeZoneForEast)
+var DateTimeFor2023Jan01_12AM_ET = NewDateTimeTZ(DateFor2023Jan1, TimeFor12AM, TimeZoneForET)
 
 var DateTimeFor2023Feb01_09AM_ET = NewDateTimeTZ(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)
 var DateTimeFor2023Feb01_12PM_ET = NewDateTimeTZ(DateFor2023Feb01, TimeFor12PM, TimeZoneForET)
@@ -127,16 +130,11 @@ var TimeFor09AM = &Time{Hour: 9}
 var TimeFor12PM = &Time{Hour: 12}
 var TimeFor03PM = &Time{Hour: 15}
 
-// var TimeZoneForEast = &TimeZone{Name: "US/Eastern"}
+var TimeZoneForEastern = &TimeZone{Name: "Eastern"}
 var TimeZoneForET = &TimeZone{Abbreviation: "ET"}
 var TimeZoneForADD0 = &TimeZone{Offset: "+00:00"}
 var TimeZoneForSUB0 = &TimeZone{Offset: "-00:00"}
 var TimeZoneForSUB5 = &TimeZone{Offset: "-05:00"}
-
-var DateTimeTZFor2023Jan1_12AM_ET = NewDateTimeTZ(DateFor2023Jan1, TimeFor12AM, TimeZoneForET)
-
-// var DateTimeTZForEast = NewDateTimeTZFromRaw(TimeZoneForEast)
-// var DateTimeTZForET = NewDateTimeTZFromRaw(TimeZoneForET)
 
 type parseTest struct {
 	dateMode string
@@ -214,19 +212,19 @@ func TestParse(t *testing.T) {
 		{in: "02.03", want: DateRangesForFeb03, dateMode: "na"},
 		{in: "02.03", want: DateRangesForMar02, dateMode: "rest"},
 		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
-		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
-		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},
+		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZDateTimeFor2023Jan01_12AM_ETET},
+		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},DateTimeFor2023Jan01_12AM_ET
 		{in: "02.03.", want: DateRangesForMar02, dateMode: "rest"},
 		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
-		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
-		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},
+		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: "rest", minDTTZDateTimeFor2023Jan01_12AM_ETET},
+		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},DateTimeFor2023Jan01_12AM_ET
 		{in: "2/3/2023", want: DateRangesFor2023Mar02, dateMode: "rest"},
 
 		// Extra tokens
 		{in: "Feb 3 Google Calendar ICS", want: DateRangesForFeb03},
 		{in: "Updated: Feb 3", want: DateRangesForFeb03},
 		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", minDTTZ: DateTimeTZFor2023Jan1_12AM_ET, isBroken: true},
-		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},
+		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},DateTimeFor2023Jan01_12AM_ET
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		// Need to replace scanner for these.
@@ -364,9 +362,9 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3 12pm (ET)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3 12pm - ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3 12pm in ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		// Need to update lexer for multiple tokens like this.
+		{in: "Feb 3 12pm Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_Eastern)},
 		{in: "Feb 3 12pm US/Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDTTZ: DateTimeTZFor2023Jan1_12AM_ET},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDTTZ: DateTimeFor2023Jan01_12AM_ET},
 		// {in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), minDTTZ: DateTimeTZForEast, wantDiff: true},
 		{in: "Starting February 3rd at 12pm (ET) - Virtually.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), dateMode: "na", isBroken: true},
@@ -494,8 +492,26 @@ func TestParse(t *testing.T) {
 		// TODO
 		//
 
+		// Tuesday 8/13 from 6:30 - 8:30 pm EST
+
+		// 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
+		// Tues/Thurs 6:30p-9:00p March/April
+		// 5 Mondays March thru May
+		// 2 Tuesdays Jan 7th & 21st 6:30p-8:30p
+		// 10 Mondays 6:30pm-8:30pm March 3rd - May 5th
+		// Tuesdays and Thursdays March or April 6:30pm - 9:00pm
+		// September 19 - October 24: Via Zoom with SeekHealing Online, every Thursday from 12 - 2 pm EST
+		// October 12 + 13: In-person at SeekHealing Waynesville, 10 am - 7 pm each day
+		// November 9 + 10: In-person at SeekHealing Asheville,10 am - 7 pm each day
+		// every Thursday from 12 - 1:30 pm EST through August 29th
+
 		// Wait until we are outputing ICAL before deciding how to parse repeating dates like the ones below.
 
+		// September 22 - November 3, 2024\nSundays 11:00–12:30 CT / 18.00-19.30 CET
+		// * August 8 - September 12th: Via Zoom with SeekHealing Online, every Thursday from 6:30 - 8:30 pm EST
+		// * August 10 + 11: In-person at SeekHealing Waynesville, 10 am - 7 pm each day
+		// * November 9 + 10: In-person at SeekHealing Asheville,10 am - 7 pm each day
+		// every Thursday from 5 - 6:15 pm at SeekHealing Asheville beginning August 8th
 		// 24-26 October (in person) & Weds 31st Integration eve (online)
 		// Tuesdays January 7th & 21st 6:30p-8:30p
 		// Sep 18, 2024 11:30 AM Eastern Time (US and Canada)
@@ -599,8 +615,9 @@ func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 		}
 		if !acceptBrokenTests && diff != "" {
 			pp.Default.SetColoringEnabled(false)
-			fmt.Printf("got:\n%s\n", pp.Sprint(got))
-			fmt.Printf("want:\n%s\n", pp.Sprint(tc.want))
+			// fmt.Printf("got:\n%s\n", litter.Sdump(got))
+			// fmt.Printf("want:\n%s\n", litter.Sdump(tc.want))
+			fmt.Printf("got vs. want:\n%s\n", litter.Sdump([]*DateTimeTZRanges{got, tc.want}))
 			t.Fatalf("unexpected difference:\n%v", diff)
 		}
 	}

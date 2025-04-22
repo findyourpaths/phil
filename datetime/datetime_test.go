@@ -16,6 +16,7 @@ type toStringTest struct {
 func TestToString(t *testing.T) {
 	tests := []toStringTest{
 		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM), want: "2023-02-03T12:00:00Z"},
+		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), want: "2023-02-03T12:00:00Z"},
 		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ADD0), want: "2023-02-03T12:00:00+00:00"},
 		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB0), want: "2023-02-03T12:00:00-00:00"},
 		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB5), want: "2023-02-03T12:00:00-05:00"},
