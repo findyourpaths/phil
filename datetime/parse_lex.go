@@ -148,6 +148,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return IN
 			case "midnight":
 				return TIME_NAME
+			case "next":
+				return NEXT
 			case "noon":
 				return TIME_NAME
 			case "of":
@@ -172,6 +174,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return THE
 			case "till":
 				return TILL
+			case "this":
+				return THIS
 			case "time":
 				return TIME
 			case "to":
@@ -199,6 +203,9 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				}
 
 				if _, found := weekdaysByNames[lowLit]; found {
+					if len(lowLit) < 4 {
+						return WEEKDAY_SHORT_NAME
+					}
 					return WEEKDAY_NAME
 				}
 

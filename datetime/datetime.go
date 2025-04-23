@@ -21,6 +21,8 @@ var DateModeUnknown = ""
 var DateModeNorthAmerican = "na"
 var DateModeRest = "rest"
 
+var DateModeNorthAmericanCountryCodes = map[string]bool{"CA": true, "US": true}
+
 // A DateTimes represents a sequence of date and time ranges. It's the
 // expected result of parsing a string for datetimes.
 //
@@ -283,7 +285,7 @@ func NewDateTimeWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *i
 }
 
 func NewDateTime(d *Date, t *Time, tz *TimeZone) *DateTime {
-	// fmt.Printf("NewDateTime(d %#v, t %#v, tz %#v)\n", d, t, tz)
+	// fmt.Printf("NewDateTime(d: %#v, t: %#v, tz %#v)\n", d, t, tz)
 	r := &DateTime{Date: d, Time: t, TimeZone: tz}
 
 	// If we have Date and Time info but no TimeZone, get it from Min if it exists.
@@ -409,7 +411,7 @@ func (d *Date) ToTime() *time.Time {
 }
 
 func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
-	// fmt.Printf("NewDateFromRaw(d %#v, tz %#v)\n", d, tz)
+	// fmt.Printf("NewDateFromRaw(d: %#v, tz: %#v)\n", d, tz)
 
 	// If there's no ambiguity with the Month and Day, just process the raw Date.
 	// fmt.Printf("checking whether Month and Day are ambiguous")
@@ -476,7 +478,7 @@ func setNewDateMonthAndDay(d *Date, month int, day int) *Date {
 }
 
 func maybeNewDateFromRaw(d *Date, tz *TimeZone) (*Date, error) {
-	// fmt.Printf("maybeNewDateFromRaw(d %#v, tz %#v)\n", d, tz)
+	// fmt.Printf("maybeNewDateFromRaw(d: %#v, tz: %#v)\n", d, tz)
 
 	// if Month and Day are both set, check consistency and set Year and Weekday.
 	if d.Month == 0 || d.Day == 0 {
@@ -533,8 +535,11 @@ func DateMode(tz *TimeZone) string {
 		return DateModeNorthAmerican
 	}
 
-	if strings.HasPrefix(name, "America/") {
-		return DateModeNorthAmerican
+	tzInfo, err := timezoneTZ.GetTzInfo(name)
+	if err != nil {
+		if DateModeNorthAmericanCountryCodes[tzInfo.CountryCode()] {
+			return DateModeNorthAmerican
+		}
 	}
 
 	return DateModeUnknown
@@ -857,21 +862,31 @@ func NewRawDateFromRelative(relativeName string) *Date {
 	if minimumDateTime == nil {
 		panic(fmt.Sprintf("semantic error: found relativeName %q but minimumDateTimeName is nil\n", relativeName))
 	}
+	minT := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
 
-	if strings.ToLower(relativeName) == "yesterday" {
-		t := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
-		y, m, d := t.AddDate(0, 0, -1).Date()
+	relName := strings.ToLower(relativeName)
+	if relName == "yesterday" {
+		y, m, d := minT.AddDate(0, 0, -1).Date()
 		return &Date{Day: d, Month: m, Year: y}
 	}
-	if strings.ToLower(relativeName) == "today" {
+	if relName == "today" {
 		return minimumDateTime.Date
 	}
-	if strings.ToLower(relativeName) == "tomorrow" {
-		t := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
-		y, m, d := t.AddDate(0, 0, 1).Date()
+	if relName == "tomorrow" {
+		y, m, d := minT.AddDate(0, 0, 1).Date()
 		return &Date{Day: d, Month: m, Year: y}
 	}
-	panic(fmt.Sprintf("semantic error: found unknown relativeName: %q\n", relativeName))
+
+	wd := weekdaysByNames[relName]
+	if wd == 0 {
+		panic(fmt.Sprintf("semantic error: found unknown relativeName: %q\n", relativeName))
+	}
+
+	fmt.Printf("in NewRawDateFromRelative(), wd name: %q\n", weekdayNames[wd])
+	daysUntilNext := ((int(wd) - int(minT.Weekday()) + 7) % 7) - 1
+	y, m, d := minT.AddDate(0, 0, daysUntilNext).Date()
+	fmt.Printf("in NewRawDateFromRelative(), y: %#v, m: %#v, d: %#v\n", y, m, d)
+	return &Date{Day: d, Month: m, Year: y}
 }
 
 func NewRawDateFromAmbiguous(weekdayAny any, first string, last string, yearAny any) *Date {

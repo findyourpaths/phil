@@ -22,6 +22,7 @@ package datetime
 %token ICS
 %token IN
 %token LPAREN
+%token NEXT
 %token OF
 %token ON
 %token ORD_IND
@@ -38,6 +39,7 @@ package datetime
 %token T
 %token TH
 %token THE
+%token THIS
 %token TILL
 %token TIME
 %token TO
@@ -53,6 +55,7 @@ package datetime
 %token <string> TIME_ZONE_ABBREV
 %token <string> RELATIVE_DAY
 %token <string> WEEKDAY_NAME
+%token <string> WEEKDAY_SHORT_NAME
 %token <string> YEAR
 
 
@@ -79,6 +82,8 @@ package datetime
 %type <string> Month
 %type <string> Weekday
 %type <string> WeekdayOpt
+%type <string> WeekdayName
+%type <string> WeekdayShortName
 %type <string> Year
 
 %type <strings> DayPlus
@@ -222,6 +227,9 @@ DayPlus1:
 
 DateTimeRange:
   DateTime {$$ = &DateTimeRange{Start: $1}}
+
+// TODO: we should handle semantics of this weekday, but not clear how.
+| DateTimeRange DateTimeSepOpt ON Weekday {$$ = $1}
 
 | RangePrefixPlus DateTimeRange {$$ = $2}
 | DateTime RangeSepPlus Time {$$ = NewRange($1, NewDateTime($1.Date, $3, $1.TimeZone))}
@@ -392,6 +400,8 @@ Date:
 | RELATIVE_DAY WeekdayOpt {$$ = NewRawDateFromRelative($1)}
 | RELATIVE_DAY Date {$$ = $2}
 
+| WeekdayName {$$ = NewRawDateFromRelative($1)}
+
   // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
 | WeekdayOpt Day DateSepPlus Day {$$ = NewRawDateFromAmbiguous($1, $2, $4, nil)}
 
@@ -455,6 +465,36 @@ DateSep:
 ;
 
 
+WeekdayOpt:
+  {$$ = ""}
+| Weekday WeekdaySepOpt
+;
+WeekdaySepOpt:
+
+| WeekdaySep
+;
+WeekdaySep:
+  COMMA
+| SUB
+;
+Weekday:
+  WeekdayPrefix Weekday {$$ = $2}
+| WeekdayName
+| WeekdayShortName
+;
+WeekdayPrefix:
+  NEXT
+| THIS
+;
+WeekdayName:
+  WEEKDAY_NAME
+;
+WeekdayShortName:
+  TH {$$ = "TH"}
+| WEEKDAY_SHORT_NAME
+;
+
+
 Day:
   INT
 | INT DaySuffixPlus
@@ -494,16 +534,6 @@ YearSuffixPlus:
 ;
 YearSuffix:
   COMMA
-;
-
-
-WeekdayOpt:
-  {$$ = ""}
-| Weekday
-;
-Weekday:
-  TH {$$ = "TH"}
-| WEEKDAY_NAME
 ;
 
 
