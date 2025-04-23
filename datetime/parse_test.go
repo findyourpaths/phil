@@ -234,21 +234,21 @@ func TestParse(t *testing.T) {
 
 		// Both
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
-		{in: "02.03", want: DateRangesForFeb03, dateMode: "na"},
-		{in: "02.03", want: DateRangesForMar02, dateMode: "rest"},
-		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: "rest", minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},
-		{in: "02.03.", want: DateRangesForMar02, dateMode: "rest"},
-		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: "rest", minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},
-		{in: "2/3/2023", want: DateRangesFor2023Mar02, dateMode: "rest"},
+		{in: "02.03", want: DateRangesForFeb03, dateMode: DateModeNorthAmerican},
+		{in: "02.03", want: DateRangesForMar02, dateMode: DateModeRest},
+		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican, minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: DateModeRest, minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03.", want: DateRangesForFeb03, dateMode: DateModeNorthAmerican},
+		{in: "02.03.", want: DateRangesForMar02, dateMode: DateModeRest},
+		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican, minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: DateModeRest, minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican},
+		{in: "2/3/2023", want: DateRangesFor2023Mar02, dateMode: DateModeRest},
 
 		// Extra tokens
 		{in: "Feb 3 Google Calendar ICS", want: DateRangesForFeb03},
 		{in: "Updated: Feb 3", want: DateRangesForFeb03},
-		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", isBroken: true},
+		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican, isBroken: true},
 		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
@@ -358,8 +358,8 @@ func TestParse(t *testing.T) {
 		{in: "Feb 1-2, 3-4", want: NewRanges(NewRangeWithStartEndDates(DateForFeb01, DateForFeb02), NewRangeWithStartEndDates(DateForFeb03, DateForFeb04))},
 		{in: "Feb 1-2, 3-4 2023", want: NewRanges(NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb02), NewRangeWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04))},
 		{in: "Feb 1-2; Mar 2-3", want: NewRanges(NewRangeWithStartEndDates(DateForFeb01, DateForFeb02), NewRangeWithStartEndDates(DateForMar02, DateForMar03))},
-		{in: "2/1, 2/2, 3/2, 3/3", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03), dateMode: "na"},
-		{in: "1/2, 2/2, 2/3, 3/3", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03), dateMode: "rest"},
+		{in: "2/1, 2/2, 3/2, 3/3", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03), dateMode: DateModeNorthAmerican},
+		{in: "1/2, 2/2, 2/3, 3/3", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForMar02, DateForMar03), dateMode: DateModeRest},
 		// 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
 		{in: "5 Wednesdays 2/1 & 2/8 & 2/15 & 2/22, 3/2", want: NewRangesWithStartDates(DateForFeb01, DateForFeb08, DateForFeb15, DateForFeb22, DateForMar01), isBroken: true},
 
@@ -393,7 +393,7 @@ func TestParse(t *testing.T) {
 		{in: "Date:Thu 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "Starting February 3rd at 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		//    Friday, 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V
-		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V", want: NewRangesWithStartDateTimes(DateTimeForFeb14_06PM), dateMode: "na"},
+		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V", want: NewRangesWithStartDateTimes(DateTimeForFeb14_06PM), dateMode: DateModeNorthAmerican},
 
 		// MDT with min
 		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Jan01_12AM_ET},
@@ -408,7 +408,7 @@ func TestParse(t *testing.T) {
 		{in: "FEBRUARY 3RD 12 PM ET, ON FRIDAY", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		// {in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), minDT: DateTimeForEast, wantDiff: true},
 		{in: "Starting February 3rd at 12pm (ET) - Virtually.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), dateMode: "na", isBroken: true},
+		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), dateMode: DateModeNorthAmerican, isBroken: true},
 
 		// DMT
 		{in: "Date:Fri 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
@@ -479,7 +479,7 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3 2023 9am ET to 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
 		{in: "Feb 3 @ 9:00 AM ET - Feb 3 @ 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3, 2023, 9:00 AM ET - Feb 3, 2023, 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
-		{in: "Friday, 2/3 12-3pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), dateMode: "na"},
+		{in: "Friday, 2/3 12-3pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), dateMode: DateModeNorthAmerican},
 		// Tuesday 8/13 from 6:30 - 8:30 pm EST
 		{in: "Friday 2/3 from 12:00 - 3 pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET)}, //, isBroken: true},
 		//    Sunday, October 6, 9am - 4pm Pacific Time
@@ -522,8 +522,8 @@ func TestParse(t *testing.T) {
 		// MDYT
 		{in: "Feb 3 2023 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 		// MDYTT
-		{in: "Thursday, February 3, 2023 9:00 AM 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
-		{in: "Thursday, February 3rd 2023 from 9:00 AM to 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+		{in: "Friday, February 3, 2023 9:00 AM 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+		{in: "Friday, February 3rd 2023 from 9:00 AM to 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
 		// DMYTT
 		{in: "When 3 Feb 2023 9:00 AM - 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
 		{in: "Fr. 3. Feb. 2023, 9:00-ca.12:00", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM), isBroken: true},
@@ -535,11 +535,16 @@ func TestParse(t *testing.T) {
 		// {in: "(2 Feb 2023 - 3 Feb 2023) 09:00 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeFor2023Feb04_03PM)},
 
 		// Both
-		// Need to fix parser for these
-		{in: "02.03.2023", want: DateRangesFor2023Feb03, dateMode: "na"},
-		{in: "02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "na"},
-		{in: "Th , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "na"},
-		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: "rest"},
+		{in: "02.03.2023", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican},
+		{in: "02.03.2023", want: DateRangesFor2023Mar02, dateMode: DateModeRest},
+		{in: "02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: DateModeNorthAmerican},
+		{in: "02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM), dateMode: DateModeRest},
+		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM), dateMode: DateModeNorthAmerican},
+		{in: "Fr , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: DateModeNorthAmerican},
+		{in: "Th , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM), dateMode: DateModeRest},
+		{in: "Fr , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: DateModeRest},
+		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM)},
+		{in: "Fr , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
 
 		//
 		// Failures
@@ -548,7 +553,7 @@ func TestParse(t *testing.T) {
 		{in: "814-555-1212 x123", want: nil},
 		{in: "102 W. Mahoning Street. Punxsutawney, PA 15767", want: nil},
 		// Need to fix these
-		{in: "We may request cookies to be set on your device.", want: nil, isBroken: true},
+		{in: "We may request cookies to be set on your device.", want: nil},
 		{in: "Winter Retreat for 6-12th graders!", want: nil},
 		{in: "For 6th-12th grade students @ SpringHill Camp", want: nil},
 

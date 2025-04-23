@@ -431,7 +431,6 @@ DatePrefixPlus:
 ;
 DatePrefix:
   DATE
-| Weekday
 | COLON
 | COMMA
 | ON

@@ -165,7 +165,7 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 		defer func() {
 			if e := recover(); e != nil {
 				err = errors.New(e.(string))
-				fmt.Printf("got panic error: %v", err)
+				// fmt.Printf("got panic error: %v", err)
 				debugf("%sgot panic error: %v", spaces, err)
 			}
 		}()

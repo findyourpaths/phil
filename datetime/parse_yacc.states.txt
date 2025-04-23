@@ -1,10 +1,10 @@
 
-0: shift/reduce conflict (shift 18(0), red'n 166(0)) on INT
-0: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-0: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+0: shift/reduce conflict (shift 18(0), red'n 165(0)) on INT
+0: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+0: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 0
 	$accept: .root $end 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	AT  shift 38
 	BEGINNING  shift 33
@@ -76,13 +76,13 @@ state 2
 	RangesSepPlus  goto 49
 	RangesSep  goto 50
 
-3: shift/reduce conflict (shift 18(0), red'n 166(0)) on INT
-3: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-3: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+3: shift/reduce conflict (shift 18(0), red'n 165(0)) on INT
+3: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+3: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 3
 	root:  RootPrefixPlus.root 
 	RootPrefixPlus:  RootPrefixPlus.RootPrefix 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	AT  shift 38
 	BEGINNING  shift 33
@@ -136,13 +136,13 @@ state 4
 	.  reduce 15 (src line 138)
 
 
-5: shift/reduce conflict (shift 18(0), red'n 166(0)) on INT
-5: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-5: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+5: shift/reduce conflict (shift 18(0), red'n 165(0)) on INT
+5: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+5: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 5
 	DateTimeRanges:  RangesPrefixPlus.DateTimeRanges 
 	RangesPrefixPlus:  RangesPrefixPlus.RangesPrefix 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	AT  shift 38
 	BEGINNING  shift 33
@@ -304,13 +304,13 @@ state 12
 	RangeSep  goto 78
 	RangeSepPlus  goto 77
 
-13: shift/reduce conflict (shift 18(0), red'n 166(0)) on INT
-13: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-13: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+13: shift/reduce conflict (shift 18(0), red'n 165(0)) on INT
+13: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+13: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 13
 	DateTimeRange:  RangePrefixPlus.DateTimeRange 
 	RangePrefixPlus:  RangePrefixPlus.RangePrefix 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	AT  shift 38
 	BEGINNING  shift 33
@@ -411,35 +411,35 @@ state 16
 	.  reduce 35 (src line 188)
 
 
-17: shift/reduce conflict (shift 110(0), red'n 156(0)) on COMMA
+17: shift/reduce conflict (shift 110(0), red'n 155(0)) on COMMA
 state 17
-	Month:  MONTH_NAME.    (156)
+	Month:  MONTH_NAME.    (155)
 	Month:  MONTH_NAME.MonthSuffixPlus 
 
 	COMMA  shift 110
-	.  reduce 156 (src line 475)
+	.  reduce 155 (src line 474)
 
 	MonthSuffixPlus  goto 108
 	MonthSuffix  goto 109
 
-18: shift/reduce conflict (shift 120(0), red'n 173(0)) on COLON
-18: shift/reduce conflict (shift 122(0), red'n 173(0)) on COMMA
- 18: reduce/reduce conflict  (red'ns 148 and 173) on DEC
-18: shift/reduce conflict (shift 118(0), red'n 173(0)) on P
- 18: reduce/reduce conflict  (red'ns 148 and 173) on SUB
- 18: reduce/reduce conflict  (red'ns 148 and 173) on THROUGH
-18: shift/reduce conflict (shift 124(0), red'n 173(0)) on TH
- 18: reduce/reduce conflict  (red'ns 148 and 173) on TILL
- 18: reduce/reduce conflict  (red'ns 148 and 173) on TO
- 18: reduce/reduce conflict  (red'ns 148 and 173) on UNTIL
- 18: reduce/reduce conflict  (red'ns 148 and 173) on INT
- 18: reduce/reduce conflict  (red'ns 148 and 173) on MONTH_NAME
+18: shift/reduce conflict (shift 120(0), red'n 172(0)) on COLON
+18: shift/reduce conflict (shift 122(0), red'n 172(0)) on COMMA
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on DEC
+18: shift/reduce conflict (shift 118(0), red'n 172(0)) on P
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on SUB
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on THROUGH
+18: shift/reduce conflict (shift 124(0), red'n 172(0)) on TH
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on TILL
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on TO
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on UNTIL
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on INT
+ 18: reduce/reduce conflict  (red'ns 147 and 172) on MONTH_NAME
 state 18
-	Day:  INT.    (148)
+	Day:  INT.    (147)
 	Day:  INT.DaySuffixPlus 
 	Time:  INT.Am 
 	Time:  INT.Pm 
-	Time:  INT.    (173)
+	Time:  INT.    (172)
 	Time:  INT.TimeSep INT 
 	Time:  INT.TimeSep INT TimeSep INT 
 	Time:  INT.TimeSep INT Am 
@@ -449,20 +449,20 @@ state 18
 	AM  shift 117
 	COLON  shift 120
 	COMMA  shift 122
-	DEC  reduce 148 (src line 459)
+	DEC  reduce 147 (src line 458)
 	ORD_IND  shift 123
 	P  shift 118
 	PM  shift 119
 	PERIOD  shift 121
-	SUB  reduce 148 (src line 459)
-	THROUGH  reduce 148 (src line 459)
+	SUB  reduce 147 (src line 458)
+	THROUGH  reduce 147 (src line 458)
 	TH  shift 124
-	TILL  reduce 148 (src line 459)
-	TO  reduce 148 (src line 459)
-	UNTIL  reduce 148 (src line 459)
-	INT  reduce 148 (src line 459)
-	MONTH_NAME  reduce 148 (src line 459)
-	.  reduce 173 (src line 523)
+	TILL  reduce 147 (src line 458)
+	TO  reduce 147 (src line 458)
+	UNTIL  reduce 147 (src line 458)
+	INT  reduce 147 (src line 458)
+	MONTH_NAME  reduce 147 (src line 458)
+	.  reduce 172 (src line 522)
 
 	DaySuffixPlus  goto 111
 	DaySuffix  goto 115
@@ -470,29 +470,10 @@ state 18
 	Pm  goto 113
 	TimeSep  goto 114
 
- 19: reduce/reduce conflict  (red'ns 134 and 167) on COLON
- 19: reduce/reduce conflict  (red'ns 134 and 167) on COMMA
- 19: reduce/reduce conflict  (red'ns 134 and 167) on ON
- 19: reduce/reduce conflict  (red'ns 134 and 167) on TIME
- 19: reduce/reduce conflict  (red'ns 134 and 167) on INT
- 19: reduce/reduce conflict  (red'ns 134 and 167) on MONTH_NAME
- 19: reduce/reduce conflict  (red'ns 134 and 167) on YEAR
 state 19
-	DatePrefix:  Weekday.    (134)
-	WeekdayOpt:  Weekday.    (167)
+	WeekdayOpt:  Weekday.    (166)
 
-	COLON  reduce 134 (src line 434)
-	COMMA  reduce 134 (src line 434)
-	DATE  reduce 134 (src line 434)
-	ON  reduce 134 (src line 434)
-	TH  reduce 134 (src line 434)
-	TIME  reduce 134 (src line 434)
-	INT  reduce 134 (src line 434)
-	MONTH_NAME  reduce 134 (src line 434)
-	RELATIVE_DAY  reduce 134 (src line 434)
-	WEEKDAY_NAME  reduce 134 (src line 434)
-	YEAR  reduce 134 (src line 434)
-	.  reduce 167 (src line 503)
+	.  reduce 166 (src line 502)
 
 
 state 20
@@ -538,17 +519,17 @@ state 24
 	TimePrefix  goto 128
 
 state 25
-	Time:  TIME_NAME.    (178)
+	Time:  TIME_NAME.    (177)
 
-	.  reduce 178 (src line 537)
+	.  reduce 177 (src line 536)
 
 
-26: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-26: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+26: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+26: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 26
 	Date:  DatePrefixPlus.Date 
 	DatePrefixPlus:  DatePrefixPlus.DatePrefix 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	COLON  shift 42
 	COMMA  shift 43
@@ -560,7 +541,7 @@ state 26
 	RELATIVE_DAY  shift 27
 	WEEKDAY_NAME  shift 31
 	YEAR  shift 37
-	.  reduce 166 (src line 501)
+	.  reduce 165 (src line 500)
 
 	Date  goto 129
 	Month  goto 133
@@ -574,34 +555,34 @@ state 26
 27: shift/reduce conflict (shift 43(0), red'n 116(0)) on COMMA
 27: shift/reduce conflict (shift 134(0), red'n 116(0)) on ON
 27: shift/reduce conflict (shift 135(0), red'n 116(0)) on TIME
- 27: reduce/reduce conflict  (red'ns 116 and 166) on $end
- 27: reduce/reduce conflict  (red'ns 116 and 166) on AND
- 27: reduce/reduce conflict  (red'ns 116 and 166) on AT
- 27: reduce/reduce conflict  (red'ns 116 and 166) on CALENDAR
-27: shift/reduce conflict (shift 42(0), red'n 166(0)) on COLON
-27: shift/reduce conflict (shift 43(0), red'n 166(0)) on COMMA
- 27: reduce/reduce conflict  (red'ns 116 and 166) on DEC
- 27: reduce/reduce conflict  (red'ns 116 and 166) on FROM
- 27: reduce/reduce conflict  (red'ns 116 and 166) on GOOGLE
- 27: reduce/reduce conflict  (red'ns 116 and 166) on ICS
-27: shift/reduce conflict (shift 134(0), red'n 166(0)) on ON
- 27: reduce/reduce conflict  (red'ns 116 and 166) on QUO
- 27: reduce/reduce conflict  (red'ns 116 and 166) on SUB
- 27: reduce/reduce conflict  (red'ns 116 and 166) on THROUGH
- 27: reduce/reduce conflict  (red'ns 116 and 166) on T
- 27: reduce/reduce conflict  (red'ns 116 and 166) on TILL
-27: shift/reduce conflict (shift 135(0), red'n 166(0)) on TIME
- 27: reduce/reduce conflict  (red'ns 116 and 166) on TO
- 27: reduce/reduce conflict  (red'ns 116 and 166) on UNTIL
- 27: reduce/reduce conflict  (red'ns 116 and 166) on INT
-27: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
- 27: reduce/reduce conflict  (red'ns 116 and 166) on TIME_NAME
-27: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on $end
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on AND
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on AT
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on CALENDAR
+27: shift/reduce conflict (shift 42(0), red'n 165(0)) on COLON
+27: shift/reduce conflict (shift 43(0), red'n 165(0)) on COMMA
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on DEC
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on FROM
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on GOOGLE
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on ICS
+27: shift/reduce conflict (shift 134(0), red'n 165(0)) on ON
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on QUO
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on SUB
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on THROUGH
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on T
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on TILL
+27: shift/reduce conflict (shift 135(0), red'n 165(0)) on TIME
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on TO
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on UNTIL
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on INT
+27: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+ 27: reduce/reduce conflict  (red'ns 116 and 165) on TIME_NAME
+27: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 27
 	Date:  RELATIVE_DAY.    (116)
 	Date:  RELATIVE_DAY.WeekdayOpt 
 	Date:  RELATIVE_DAY.Date 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	COLON  shift 42
 	COMMA  shift 43
@@ -655,15 +636,15 @@ state 29
 
 
 state 30
-	Weekday:  TH.    (168)
+	Weekday:  TH.    (167)
 
-	.  reduce 168 (src line 505)
+	.  reduce 167 (src line 504)
 
 
 state 31
-	Weekday:  WEEKDAY_NAME.    (169)
+	Weekday:  WEEKDAY_NAME.    (168)
 
-	.  reduce 169 (src line 507)
+	.  reduce 168 (src line 506)
 
 
 state 32
@@ -682,23 +663,23 @@ state 33
 	.  reduce 67 (src line 279)
 
 
- 34: reduce/reduce conflict  (red'ns 68 and 183) on AT
- 34: reduce/reduce conflict  (red'ns 68 and 183) on FROM
- 34: reduce/reduce conflict  (red'ns 68 and 183) on ON
- 34: reduce/reduce conflict  (red'ns 68 and 183) on TIME
- 34: reduce/reduce conflict  (red'ns 68 and 183) on INT
- 34: reduce/reduce conflict  (red'ns 68 and 183) on TIME_NAME
+ 34: reduce/reduce conflict  (red'ns 68 and 182) on AT
+ 34: reduce/reduce conflict  (red'ns 68 and 182) on FROM
+ 34: reduce/reduce conflict  (red'ns 68 and 182) on ON
+ 34: reduce/reduce conflict  (red'ns 68 and 182) on TIME
+ 34: reduce/reduce conflict  (red'ns 68 and 182) on INT
+ 34: reduce/reduce conflict  (red'ns 68 and 182) on TIME_NAME
 state 34
 	RangePrefix:  FROM.    (68)
-	TimePrefix:  FROM.    (183)
+	TimePrefix:  FROM.    (182)
 
 	.  reduce 68 (src line 281)
 
 
 state 35
-	TimePrefixPlus:  TimePrefix.    (179)
+	TimePrefixPlus:  TimePrefix.    (178)
 
-	.  reduce 179 (src line 545)
+	.  reduce 178 (src line 544)
 
 
 state 36
@@ -708,44 +689,44 @@ state 36
 
 
 state 37
-	Year:  YEAR.    (161)
+	Year:  YEAR.    (160)
 
-	.  reduce 161 (src line 488)
+	.  reduce 160 (src line 487)
 
 
 state 38
-	TimePrefix:  AT.    (181)
+	TimePrefix:  AT.    (180)
 
-	.  reduce 181 (src line 549)
+	.  reduce 180 (src line 548)
 
 
-39: shift/reduce conflict (shift 150(0), red'n 138(0)) on COLON
- 39: reduce/reduce conflict  (red'ns 138 and 185) on ON
- 39: reduce/reduce conflict  (red'ns 138 and 185) on TIME
- 39: reduce/reduce conflict  (red'ns 138 and 185) on INT
+39: shift/reduce conflict (shift 150(0), red'n 137(0)) on COLON
+ 39: reduce/reduce conflict  (red'ns 137 and 184) on ON
+ 39: reduce/reduce conflict  (red'ns 137 and 184) on TIME
+ 39: reduce/reduce conflict  (red'ns 137 and 184) on INT
 state 39
-	DatePrefix:  TIME.    (138)
+	DatePrefix:  TIME.    (137)
 	TimePrefix:  TIME.COLON 
-	TimePrefix:  TIME.    (185)
-
-	AT  reduce 185 (src line 554)
-	COLON  shift 150
-	FROM  reduce 185 (src line 554)
-	TIME_NAME  reduce 185 (src line 554)
-	.  reduce 138 (src line 438)
-
-
- 40: reduce/reduce conflict  (red'ns 137 and 184) on ON
- 40: reduce/reduce conflict  (red'ns 137 and 184) on TIME
- 40: reduce/reduce conflict  (red'ns 137 and 184) on INT
-state 40
-	DatePrefix:  ON.    (137)
-	TimePrefix:  ON.    (184)
+	TimePrefix:  TIME.    (184)
 
 	AT  reduce 184 (src line 553)
+	COLON  shift 150
 	FROM  reduce 184 (src line 553)
 	TIME_NAME  reduce 184 (src line 553)
 	.  reduce 137 (src line 437)
+
+
+ 40: reduce/reduce conflict  (red'ns 136 and 183) on ON
+ 40: reduce/reduce conflict  (red'ns 136 and 183) on TIME
+ 40: reduce/reduce conflict  (red'ns 136 and 183) on INT
+state 40
+	DatePrefix:  ON.    (136)
+	TimePrefix:  ON.    (183)
+
+	AT  reduce 183 (src line 552)
+	FROM  reduce 183 (src line 552)
+	TIME_NAME  reduce 183 (src line 552)
+	.  reduce 136 (src line 436)
 
 
 state 41
@@ -755,15 +736,15 @@ state 41
 
 
 state 42
-	DatePrefix:  COLON.    (135)
+	DatePrefix:  COLON.    (134)
 
-	.  reduce 135 (src line 435)
+	.  reduce 134 (src line 434)
 
 
 state 43
-	DatePrefix:  COMMA.    (136)
+	DatePrefix:  COMMA.    (135)
 
-	.  reduce 136 (src line 436)
+	.  reduce 135 (src line 435)
 
 
 44: shift/reduce conflict (shift 47(0), red'n 2(0)) on CALENDAR
@@ -804,13 +785,13 @@ state 48
 	.  reduce 12 (src line 128)
 
 
-49: shift/reduce conflict (shift 18(0), red'n 166(0)) on INT
-49: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-49: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+49: shift/reduce conflict (shift 18(0), red'n 165(0)) on INT
+49: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+49: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 49
 	DateTimeRanges:  DateTimeRanges RangesSepPlus.DateTimeRange 
 	RangesSepPlus:  RangesSepPlus.RangesSep 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	AND  shift 51
 	AT  shift 38
@@ -1003,18 +984,18 @@ state 60
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-61: shift/reduce conflict (shift 122(0), red'n 148(0)) on COMMA
-61: shift/reduce conflict (shift 161(0), red'n 148(0)) on PERIOD
-61: shift/reduce conflict (shift 124(0), red'n 148(0)) on TH
+61: shift/reduce conflict (shift 122(0), red'n 147(0)) on COMMA
+61: shift/reduce conflict (shift 161(0), red'n 147(0)) on PERIOD
+61: shift/reduce conflict (shift 124(0), red'n 147(0)) on TH
 state 61
-	Day:  INT.    (148)
+	Day:  INT.    (147)
 	Day:  INT.DaySuffixPlus 
 
 	COMMA  shift 122
 	ORD_IND  shift 123
 	PERIOD  shift 161
 	TH  shift 124
-	.  reduce 148 (src line 459)
+	.  reduce 147 (src line 458)
 
 	DaySuffixPlus  goto 111
 	DaySuffix  goto 115
@@ -1159,15 +1140,15 @@ state 76
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-77: shift/reduce conflict (shift 97(0), red'n 166(0)) on INT
-77: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-77: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+77: shift/reduce conflict (shift 97(0), red'n 165(0)) on INT
+77: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+77: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 77
 	DateTimeRange:  DateTime RangeSepPlus.Time 
 	DateTimeRange:  DateTime RangeSepPlus.Time TimeZone 
 	DateTimeRange:  DateTime RangeSepPlus.DateTime 
 	RangeSepPlus:  RangeSepPlus.RangeSep 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	AT  shift 38
 	COLON  shift 42
@@ -1294,13 +1275,13 @@ state 83
 	Month  goto 176
 	Year  goto 76
 
-84: shift/reduce conflict (shift 97(0), red'n 166(0)) on INT
-84: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-84: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+84: shift/reduce conflict (shift 97(0), red'n 165(0)) on INT
+84: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+84: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 84
 	DateTimeRange:  Time RangeSepPlus.DateTime 
 	RangeSepPlus:  RangeSepPlus.RangeSep 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	AT  shift 38
 	COLON  shift 42
@@ -1339,15 +1320,15 @@ state 84
 	TimePrefixPlus  goto 24
 	TimePrefix  goto 35
 
- 85: reduce/reduce conflict  (red'ns 85 and 166) on INT
-85: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-85: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+ 85: reduce/reduce conflict  (red'ns 85 and 165) on INT
+85: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+85: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 85
 	DateTimeRange:  Time TimeZoneOpt.DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year 
 	DateTime:  Time TimeZoneOpt.Date 
 	DateTime:  Time TimeZoneOpt.DateTimeSepPlus Date 
 	DateTimeSepOpt: .    (85)
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	COLON  shift 182
 	COMMA  shift 183
@@ -1488,12 +1469,12 @@ state 96
 	TimePrefixPlus  goto 24
 	TimePrefix  goto 35
 
-97: shift/reduce conflict (shift 120(0), red'n 173(0)) on COLON
-97: shift/reduce conflict (shift 118(0), red'n 173(0)) on P
+97: shift/reduce conflict (shift 120(0), red'n 172(0)) on COLON
+97: shift/reduce conflict (shift 118(0), red'n 172(0)) on P
 state 97
 	Time:  INT.Am 
 	Time:  INT.Pm 
-	Time:  INT.    (173)
+	Time:  INT.    (172)
 	Time:  INT.TimeSep INT 
 	Time:  INT.TimeSep INT TimeSep INT 
 	Time:  INT.TimeSep INT Am 
@@ -1505,7 +1486,7 @@ state 97
 	P  shift 118
 	PM  shift 119
 	PERIOD  shift 192
-	.  reduce 173 (src line 523)
+	.  reduce 172 (src line 522)
 
 	Am  goto 112
 	Pm  goto 113
@@ -1555,71 +1536,71 @@ state 104
 
 state 105
 	TimePrefix:  TIME.COLON 
-	TimePrefix:  TIME.    (185)
+	TimePrefix:  TIME.    (184)
 
 	COLON  shift 150
-	.  reduce 185 (src line 554)
+	.  reduce 184 (src line 553)
 
 
 state 106
-	TimePrefix:  FROM.    (183)
+	TimePrefix:  FROM.    (182)
+
+	.  reduce 182 (src line 551)
+
+
+state 107
+	TimePrefix:  ON.    (183)
 
 	.  reduce 183 (src line 552)
 
 
-state 107
-	TimePrefix:  ON.    (184)
-
-	.  reduce 184 (src line 553)
-
-
-108: shift/reduce conflict (shift 110(0), red'n 157(0)) on COMMA
+108: shift/reduce conflict (shift 110(0), red'n 156(0)) on COMMA
 state 108
-	Month:  MONTH_NAME MonthSuffixPlus.    (157)
+	Month:  MONTH_NAME MonthSuffixPlus.    (156)
 	MonthSuffixPlus:  MonthSuffixPlus.MonthSuffix 
 
 	COMMA  shift 110
-	.  reduce 157 (src line 477)
+	.  reduce 156 (src line 476)
 
 	MonthSuffix  goto 193
 
 state 109
-	MonthSuffixPlus:  MonthSuffix.    (158)
+	MonthSuffixPlus:  MonthSuffix.    (157)
 
-	.  reduce 158 (src line 479)
+	.  reduce 157 (src line 478)
 
 
 state 110
-	MonthSuffix:  COMMA.    (160)
+	MonthSuffix:  COMMA.    (159)
 
-	.  reduce 160 (src line 483)
+	.  reduce 159 (src line 482)
 
 
-111: shift/reduce conflict (shift 122(0), red'n 149(0)) on COMMA
-111: shift/reduce conflict (shift 161(0), red'n 149(0)) on PERIOD
-111: shift/reduce conflict (shift 124(0), red'n 149(0)) on TH
+111: shift/reduce conflict (shift 122(0), red'n 148(0)) on COMMA
+111: shift/reduce conflict (shift 161(0), red'n 148(0)) on PERIOD
+111: shift/reduce conflict (shift 124(0), red'n 148(0)) on TH
 state 111
-	Day:  INT DaySuffixPlus.    (149)
+	Day:  INT DaySuffixPlus.    (148)
 	DaySuffixPlus:  DaySuffixPlus.DaySuffix 
 
 	COMMA  shift 122
 	ORD_IND  shift 123
 	PERIOD  shift 161
 	TH  shift 124
-	.  reduce 149 (src line 461)
+	.  reduce 148 (src line 460)
 
 	DaySuffix  goto 194
 
 state 112
-	Time:  INT Am.    (171)
+	Time:  INT Am.    (170)
 
-	.  reduce 171 (src line 519)
+	.  reduce 170 (src line 518)
 
 
 state 113
-	Time:  INT Pm.    (172)
+	Time:  INT Pm.    (171)
 
-	.  reduce 172 (src line 520)
+	.  reduce 171 (src line 519)
 
 
 state 114
@@ -1633,65 +1614,65 @@ state 114
 
 
 state 115
-	DaySuffixPlus:  DaySuffix.    (150)
+	DaySuffixPlus:  DaySuffix.    (149)
 
-	.  reduce 150 (src line 463)
+	.  reduce 149 (src line 462)
 
 
 state 116
-	Am:  A.    (188)
+	Am:  A.    (187)
 
-	.  reduce 188 (src line 564)
+	.  reduce 187 (src line 563)
 
 
 state 117
-	Am:  AM.    (189)
+	Am:  AM.    (188)
 
-	.  reduce 189 (src line 566)
+	.  reduce 188 (src line 565)
 
 
 state 118
-	Pm:  P.    (190)
+	Pm:  P.    (189)
 
-	.  reduce 190 (src line 570)
+	.  reduce 189 (src line 569)
 
 
 state 119
-	Pm:  PM.    (191)
+	Pm:  PM.    (190)
 
-	.  reduce 191 (src line 572)
+	.  reduce 190 (src line 571)
 
 
 state 120
-	TimeSep:  COLON.    (186)
+	TimeSep:  COLON.    (185)
 
-	.  reduce 186 (src line 558)
+	.  reduce 185 (src line 557)
 
 
- 121: reduce/reduce conflict  (red'ns 154 and 187) on INT
+ 121: reduce/reduce conflict  (red'ns 153 and 186) on INT
 state 121
-	DaySuffix:  PERIOD.    (154)
-	TimeSep:  PERIOD.    (187)
-
-	.  reduce 154 (src line 470)
-
-
-state 122
-	DaySuffix:  COMMA.    (152)
-
-	.  reduce 152 (src line 467)
-
-
-state 123
-	DaySuffix:  ORD_IND.    (153)
+	DaySuffix:  PERIOD.    (153)
+	TimeSep:  PERIOD.    (186)
 
 	.  reduce 153 (src line 469)
 
 
-state 124
-	DaySuffix:  TH.    (155)
+state 122
+	DaySuffix:  COMMA.    (151)
 
-	.  reduce 155 (src line 471)
+	.  reduce 151 (src line 466)
+
+
+state 123
+	DaySuffix:  ORD_IND.    (152)
+
+	.  reduce 152 (src line 468)
+
+
+state 124
+	DaySuffix:  TH.    (154)
+
+	.  reduce 154 (src line 470)
 
 
 125: shift/reduce conflict (shift 197(0), red'n 13(0)) on COLON
@@ -1712,22 +1693,22 @@ state 126
 
 
 state 127
-	Time:  TimePrefixPlus Time.    (170)
+	Time:  TimePrefixPlus Time.    (169)
 
-	.  reduce 170 (src line 515)
+	.  reduce 169 (src line 514)
 
 
- 128: reduce/reduce conflict  (red'ns 179 and 180) on AT
- 128: reduce/reduce conflict  (red'ns 179 and 180) on FROM
- 128: reduce/reduce conflict  (red'ns 179 and 180) on ON
- 128: reduce/reduce conflict  (red'ns 179 and 180) on TIME
- 128: reduce/reduce conflict  (red'ns 179 and 180) on INT
- 128: reduce/reduce conflict  (red'ns 179 and 180) on TIME_NAME
+ 128: reduce/reduce conflict  (red'ns 178 and 179) on AT
+ 128: reduce/reduce conflict  (red'ns 178 and 179) on FROM
+ 128: reduce/reduce conflict  (red'ns 178 and 179) on ON
+ 128: reduce/reduce conflict  (red'ns 178 and 179) on TIME
+ 128: reduce/reduce conflict  (red'ns 178 and 179) on INT
+ 128: reduce/reduce conflict  (red'ns 178 and 179) on TIME_NAME
 state 128
-	TimePrefixPlus:  TimePrefix.    (179)
-	TimePrefixPlus:  TimePrefixPlus TimePrefix.    (180)
+	TimePrefixPlus:  TimePrefix.    (178)
+	TimePrefixPlus:  TimePrefixPlus TimePrefix.    (179)
 
-	.  reduce 179 (src line 545)
+	.  reduce 178 (src line 544)
 
 
 state 129
@@ -1804,15 +1785,15 @@ state 133
 	Year  goto 60
 
 state 134
-	DatePrefix:  ON.    (137)
+	DatePrefix:  ON.    (136)
 
-	.  reduce 137 (src line 437)
+	.  reduce 136 (src line 436)
 
 
 state 135
-	DatePrefix:  TIME.    (138)
+	DatePrefix:  TIME.    (137)
 
-	.  reduce 138 (src line 438)
+	.  reduce 137 (src line 437)
 
 
 136: shift/reduce conflict (shift 61(0), red'n 117(0)) on INT
@@ -1864,69 +1845,69 @@ state 139
 	Day  goto 202
 	DateSep  goto 203
 
-140: shift/reduce conflict (shift 160(0), red'n 162(0)) on COMMA
+140: shift/reduce conflict (shift 160(0), red'n 161(0)) on COMMA
 state 140
-	Year:  Year YearSuffixPlus.    (162)
+	Year:  Year YearSuffixPlus.    (161)
 	YearSuffixPlus:  YearSuffixPlus.YearSuffix 
 
 	COMMA  shift 160
-	.  reduce 162 (src line 490)
+	.  reduce 161 (src line 489)
 
 	YearSuffix  goto 204
 
 state 141
-	DateSepPlus:  DateSep.    (141)
+	DateSepPlus:  DateSep.    (140)
 
-	.  reduce 141 (src line 446)
+	.  reduce 140 (src line 445)
 
 
 state 142
-	YearSuffixPlus:  YearSuffix.    (163)
+	YearSuffixPlus:  YearSuffix.    (162)
 
-	.  reduce 163 (src line 492)
+	.  reduce 162 (src line 491)
 
 
 state 143
-	DateSep:  AND.    (143)
+	DateSep:  AND.    (142)
 
-	.  reduce 143 (src line 450)
+	.  reduce 142 (src line 449)
 
 
- 144: reduce/reduce conflict  (red'ns 144 and 165) on AND
- 144: reduce/reduce conflict  (red'ns 144 and 165) on COMMA
- 144: reduce/reduce conflict  (red'ns 144 and 165) on DEC
- 144: reduce/reduce conflict  (red'ns 144 and 165) on PERIOD
- 144: reduce/reduce conflict  (red'ns 144 and 165) on QUO
- 144: reduce/reduce conflict  (red'ns 144 and 165) on INT
+ 144: reduce/reduce conflict  (red'ns 143 and 164) on AND
+ 144: reduce/reduce conflict  (red'ns 143 and 164) on COMMA
+ 144: reduce/reduce conflict  (red'ns 143 and 164) on DEC
+ 144: reduce/reduce conflict  (red'ns 143 and 164) on PERIOD
+ 144: reduce/reduce conflict  (red'ns 143 and 164) on QUO
+ 144: reduce/reduce conflict  (red'ns 143 and 164) on INT
 state 144
-	DateSep:  COMMA.    (144)
-	YearSuffix:  COMMA.    (165)
+	DateSep:  COMMA.    (143)
+	YearSuffix:  COMMA.    (164)
 
-	AND  reduce 144 (src line 452)
-	COMMA  reduce 144 (src line 452)
-	DEC  reduce 144 (src line 452)
-	PERIOD  reduce 144 (src line 452)
-	QUO  reduce 144 (src line 452)
-	INT  reduce 144 (src line 452)
-	.  reduce 165 (src line 496)
+	AND  reduce 143 (src line 451)
+	COMMA  reduce 143 (src line 451)
+	DEC  reduce 143 (src line 451)
+	PERIOD  reduce 143 (src line 451)
+	QUO  reduce 143 (src line 451)
+	INT  reduce 143 (src line 451)
+	.  reduce 164 (src line 495)
 
 
 state 145
-	DateSep:  DEC.    (145)
+	DateSep:  DEC.    (144)
+
+	.  reduce 144 (src line 452)
+
+
+state 146
+	DateSep:  PERIOD.    (145)
 
 	.  reduce 145 (src line 453)
 
 
-state 146
-	DateSep:  PERIOD.    (146)
+state 147
+	DateSep:  QUO.    (146)
 
 	.  reduce 146 (src line 454)
-
-
-state 147
-	DateSep:  QUO.    (147)
-
-	.  reduce 147 (src line 455)
 
 
 148: shift/reduce conflict (shift 208(0), red'n 108(0)) on SUB
@@ -1949,9 +1930,9 @@ state 149
 
 
 state 150
-	TimePrefix:  TIME COLON.    (182)
+	TimePrefix:  TIME COLON.    (181)
 
-	.  reduce 182 (src line 551)
+	.  reduce 181 (src line 550)
 
 
 state 151
@@ -1972,20 +1953,20 @@ state 153
 	.  reduce 39 (src line 199)
 
 
- 154: reduce/reduce conflict  (red'ns 41 and 136) on COLON
- 154: reduce/reduce conflict  (red'ns 41 and 136) on COMMA
- 154: reduce/reduce conflict  (red'ns 41 and 136) on DATE
- 154: reduce/reduce conflict  (red'ns 41 and 136) on ON
- 154: reduce/reduce conflict  (red'ns 41 and 136) on TH
- 154: reduce/reduce conflict  (red'ns 41 and 136) on TIME
- 154: reduce/reduce conflict  (red'ns 41 and 136) on INT
- 154: reduce/reduce conflict  (red'ns 41 and 136) on MONTH_NAME
- 154: reduce/reduce conflict  (red'ns 41 and 136) on RELATIVE_DAY
- 154: reduce/reduce conflict  (red'ns 41 and 136) on WEEKDAY_NAME
- 154: reduce/reduce conflict  (red'ns 41 and 136) on YEAR
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on COLON
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on COMMA
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on DATE
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on ON
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on TH
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on TIME
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on INT
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on MONTH_NAME
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on RELATIVE_DAY
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on WEEKDAY_NAME
+ 154: reduce/reduce conflict  (red'ns 41 and 135) on YEAR
 state 154
 	RangesSep:  COMMA.    (41)
-	DatePrefix:  COMMA.    (136)
+	DatePrefix:  COMMA.    (135)
 
 	.  reduce 41 (src line 203)
 
@@ -2052,15 +2033,15 @@ state 159
 	RangeSep  goto 166
 
 state 160
-	YearSuffix:  COMMA.    (165)
+	YearSuffix:  COMMA.    (164)
 
-	.  reduce 165 (src line 496)
+	.  reduce 164 (src line 495)
 
 
 state 161
-	DaySuffix:  PERIOD.    (154)
+	DaySuffix:  PERIOD.    (153)
 
-	.  reduce 154 (src line 470)
+	.  reduce 153 (src line 469)
 
 
 162: shift/reduce conflict (shift 160(0), red'n 22(0)) on COMMA
@@ -2121,7 +2102,7 @@ state 166
 167: shift/reduce conflict (shift 71(0), red'n 128(0)) on TILL
 167: shift/reduce conflict (shift 72(0), red'n 128(0)) on TO
 167: shift/reduce conflict (shift 73(0), red'n 128(0)) on UNTIL
- 167: reduce/reduce conflict  (red'ns 128 and 139) on INT
+ 167: reduce/reduce conflict  (red'ns 128 and 138) on INT
 state 167
 	DateTimeRanges:  WeekdayOpt Month Day.DateSepOpt Day Time DateTimeSepOpt Time 
 	DateTimeRange:  WeekdayOpt Month Day.RangeSepPlus WeekdayOpt Month Day Year 
@@ -2129,7 +2110,7 @@ state 167
 	DateTimeRange:  WeekdayOpt Month Day.RangeSepPlus Day WeekdayOpt Month Year 
 	Date:  WeekdayOpt Month Day.Year 
 	Date:  WeekdayOpt Month Day.    (128)
-	DateSepOpt: .    (139)
+	DateSepOpt: .    (138)
 
 	AND  shift 143
 	COMMA  shift 170
@@ -2194,9 +2175,9 @@ state 169
 	DateSep  goto 203
 
 state 170
-	DateSep:  COMMA.    (144)
+	DateSep:  COMMA.    (143)
 
-	.  reduce 144 (src line 452)
+	.  reduce 143 (src line 451)
 
 
 state 171
@@ -2334,14 +2315,14 @@ state 180
 	.  reduce 82 (src line 312)
 
 
- 181: reduce/reduce conflict  (red'ns 86 and 166) on INT
-181: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-181: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+ 181: reduce/reduce conflict  (red'ns 86 and 165) on INT
+181: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+181: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 181
 	DateTime:  Time TimeZoneOpt DateTimeSepPlus.Date 
 	DateTimeSepOpt:  DateTimeSepPlus.    (86)
 	DateTimeSepPlus:  DateTimeSepPlus.DateTimeSep 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	COLON  shift 182
 	COMMA  shift 183
@@ -2368,38 +2349,38 @@ state 181
 	DatePrefixPlus  goto 26
 	DatePrefix  goto 36
 
- 182: reduce/reduce conflict  (red'ns 89 and 135) on COLON
- 182: reduce/reduce conflict  (red'ns 89 and 135) on COMMA
- 182: reduce/reduce conflict  (red'ns 89 and 135) on DATE
- 182: reduce/reduce conflict  (red'ns 89 and 135) on ON
- 182: reduce/reduce conflict  (red'ns 89 and 135) on TH
- 182: reduce/reduce conflict  (red'ns 89 and 135) on TIME
- 182: reduce/reduce conflict  (red'ns 89 and 135) on INT
- 182: reduce/reduce conflict  (red'ns 89 and 135) on MONTH_NAME
- 182: reduce/reduce conflict  (red'ns 89 and 135) on RELATIVE_DAY
- 182: reduce/reduce conflict  (red'ns 89 and 135) on WEEKDAY_NAME
- 182: reduce/reduce conflict  (red'ns 89 and 135) on YEAR
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on COLON
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on COMMA
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on DATE
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on ON
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on TH
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on TIME
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on INT
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on MONTH_NAME
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on RELATIVE_DAY
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on WEEKDAY_NAME
+ 182: reduce/reduce conflict  (red'ns 89 and 134) on YEAR
 state 182
 	DateTimeSep:  COLON.    (89)
-	DatePrefix:  COLON.    (135)
+	DatePrefix:  COLON.    (134)
 
 	.  reduce 89 (src line 326)
 
 
- 183: reduce/reduce conflict  (red'ns 90 and 136) on COLON
- 183: reduce/reduce conflict  (red'ns 90 and 136) on COMMA
- 183: reduce/reduce conflict  (red'ns 90 and 136) on DATE
- 183: reduce/reduce conflict  (red'ns 90 and 136) on ON
- 183: reduce/reduce conflict  (red'ns 90 and 136) on TH
- 183: reduce/reduce conflict  (red'ns 90 and 136) on TIME
- 183: reduce/reduce conflict  (red'ns 90 and 136) on INT
- 183: reduce/reduce conflict  (red'ns 90 and 136) on MONTH_NAME
- 183: reduce/reduce conflict  (red'ns 90 and 136) on RELATIVE_DAY
- 183: reduce/reduce conflict  (red'ns 90 and 136) on WEEKDAY_NAME
- 183: reduce/reduce conflict  (red'ns 90 and 136) on YEAR
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on COLON
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on COMMA
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on DATE
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on ON
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on TH
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on TIME
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on INT
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on MONTH_NAME
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on RELATIVE_DAY
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on WEEKDAY_NAME
+ 183: reduce/reduce conflict  (red'ns 90 and 135) on YEAR
 state 183
 	DateTimeSep:  COMMA.    (90)
-	DatePrefix:  COMMA.    (136)
+	DatePrefix:  COMMA.    (135)
 
 	.  reduce 90 (src line 328)
 
@@ -2489,27 +2470,27 @@ state 191
 
 
 state 192
-	TimeSep:  PERIOD.    (187)
+	TimeSep:  PERIOD.    (186)
 
-	.  reduce 187 (src line 560)
+	.  reduce 186 (src line 559)
 
 
 state 193
-	MonthSuffixPlus:  MonthSuffixPlus MonthSuffix.    (159)
+	MonthSuffixPlus:  MonthSuffixPlus MonthSuffix.    (158)
 
-	.  reduce 159 (src line 481)
+	.  reduce 158 (src line 480)
 
 
 state 194
-	DaySuffixPlus:  DaySuffixPlus DaySuffix.    (151)
+	DaySuffixPlus:  DaySuffixPlus DaySuffix.    (150)
 
-	.  reduce 151 (src line 465)
+	.  reduce 150 (src line 464)
 
 
-195: shift/reduce conflict (shift 120(0), red'n 174(0)) on COLON
-195: shift/reduce conflict (shift 118(0), red'n 174(0)) on P
+195: shift/reduce conflict (shift 120(0), red'n 173(0)) on COLON
+195: shift/reduce conflict (shift 118(0), red'n 173(0)) on P
 state 195
-	Time:  INT TimeSep INT.    (174)
+	Time:  INT TimeSep INT.    (173)
 	Time:  INT TimeSep INT.TimeSep INT 
 	Time:  INT TimeSep INT.Am 
 	Time:  INT TimeSep INT.Pm 
@@ -2520,7 +2501,7 @@ state 195
 	P  shift 118
 	PM  shift 119
 	PERIOD  shift 192
-	.  reduce 174 (src line 526)
+	.  reduce 173 (src line 525)
 
 	Am  goto 241
 	Pm  goto 242
@@ -2601,15 +2582,15 @@ state 202
 	DateSep  goto 141
 
 state 203
-	DateSepPlus:  DateSepPlus DateSep.    (142)
+	DateSepPlus:  DateSepPlus DateSep.    (141)
 
-	.  reduce 142 (src line 448)
+	.  reduce 141 (src line 447)
 
 
 state 204
-	YearSuffixPlus:  YearSuffixPlus YearSuffix.    (164)
+	YearSuffixPlus:  YearSuffixPlus YearSuffix.    (163)
 
-	.  reduce 164 (src line 494)
+	.  reduce 163 (src line 493)
 
 
 state 205
@@ -2760,13 +2741,13 @@ state 221
 
 	Day  goto 261
 
-222: shift/reduce conflict (shift 61(0), red'n 166(0)) on INT
+222: shift/reduce conflict (shift 61(0), red'n 165(0)) on INT
 state 222
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus.WeekdayOpt Month Day Year 
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus.WeekdayOpt Day Month Year 
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus.Day WeekdayOpt Month Year 
 	RangeSepPlus:  RangeSepPlus.RangeSep 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	DEC  shift 68
 	SUB  shift 69
@@ -2777,10 +2758,10 @@ state 222
 	UNTIL  shift 73
 	INT  shift 61
 	WEEKDAY_NAME  shift 31
-	.  reduce 166 (src line 501)
+	.  reduce 165 (src line 500)
 
 	Day  goto 263
-	Weekday  goto 264
+	Weekday  goto 19
 	WeekdayOpt  goto 262
 	RangeSep  goto 166
 
@@ -2796,7 +2777,7 @@ state 223
 	YearSuffix  goto 142
 
 state 224
-	DateSepOpt:  DateSepPlus.    (140)
+	DateSepOpt:  DateSepPlus.    (139)
 	DateSepPlus:  DateSepPlus.DateSep 
 
 	AND  shift 143
@@ -2804,30 +2785,30 @@ state 224
 	DEC  shift 145
 	PERIOD  shift 146
 	QUO  shift 147
-	.  reduce 140 (src line 444)
+	.  reduce 139 (src line 443)
 
 	DateSep  goto 203
 
- 225: reduce/reduce conflict  (red'ns 73 and 145) on DEC
- 225: reduce/reduce conflict  (red'ns 73 and 145) on INT
+ 225: reduce/reduce conflict  (red'ns 73 and 144) on DEC
+ 225: reduce/reduce conflict  (red'ns 73 and 144) on INT
 state 225
 	RangeSep:  DEC.    (73)
-	DateSep:  DEC.    (145)
+	DateSep:  DEC.    (144)
 
-	AND  reduce 145 (src line 453)
-	COMMA  reduce 145 (src line 453)
-	PERIOD  reduce 145 (src line 453)
-	QUO  reduce 145 (src line 453)
+	AND  reduce 144 (src line 452)
+	COMMA  reduce 144 (src line 452)
+	PERIOD  reduce 144 (src line 452)
+	QUO  reduce 144 (src line 452)
 	.  reduce 73 (src line 293)
 
 
-226: shift/reduce conflict (shift 61(0), red'n 166(0)) on INT
+226: shift/reduce conflict (shift 61(0), red'n 165(0)) on INT
 state 226
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus.WeekdayOpt Month Day Year 
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus.WeekdayOpt Day Month Year 
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus.Day WeekdayOpt Month Year 
 	RangeSepPlus:  RangeSepPlus.RangeSep 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	DEC  shift 68
 	SUB  shift 69
@@ -2838,11 +2819,11 @@ state 226
 	UNTIL  shift 73
 	INT  shift 61
 	WEEKDAY_NAME  shift 31
-	.  reduce 166 (src line 501)
+	.  reduce 165 (src line 500)
 
-	Day  goto 266
-	Weekday  goto 264
-	WeekdayOpt  goto 265
+	Day  goto 265
+	Weekday  goto 19
+	WeekdayOpt  goto 264
 	RangeSep  goto 166
 
 227: shift/reduce conflict (shift 160(0), red'n 126(0)) on COMMA
@@ -2871,7 +2852,7 @@ state 228
 	QUO  shift 147
 	.  reduce 119 (src line 396)
 
-	DateSepPlus  goto 267
+	DateSepPlus  goto 266
 	DateSep  goto 141
 
 state 229
@@ -2898,12 +2879,12 @@ state 230
 
 	TimeZoneSuffixOpt  goto 184
 
-231: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-231: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
+231: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+231: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
 state 231
 	DateTime:  Time TimeZoneOpt.Date 
 	DateTime:  Time TimeZoneOpt.DateTimeSepPlus Date 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	COLON  shift 182
 	COMMA  shift 183
@@ -2919,14 +2900,14 @@ state 231
 	RELATIVE_DAY  shift 27
 	WEEKDAY_NAME  shift 31
 	YEAR  shift 37
-	.  reduce 166 (src line 501)
+	.  reduce 165 (src line 500)
 
 	Date  goto 180
 	Month  goto 133
 	Weekday  goto 19
 	WeekdayOpt  goto 131
 	Year  goto 132
-	DateTimeSepPlus  goto 268
+	DateTimeSepPlus  goto 267
 	DateTimeSep  goto 98
 	DatePrefixPlus  goto 26
 	DatePrefix  goto 36
@@ -2945,7 +2926,7 @@ state 232
 	.  reduce 95 (src line 336)
 
 	TimeZone  goto 86
-	TimeZoneOpt  goto 269
+	TimeZoneOpt  goto 268
 	TimeZoneSep  goto 88
 
 233: shift/reduce conflict (shift 68(0), red'n 128(0)) on DEC
@@ -2976,16 +2957,16 @@ state 233
 
 state 234
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day.DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year 
-	DateSepOpt: .    (139)
+	DateSepOpt: .    (138)
 
 	AND  shift 143
 	COMMA  shift 170
 	DEC  shift 145
 	PERIOD  shift 146
 	QUO  shift 147
-	.  reduce 139 (src line 442)
+	.  reduce 138 (src line 441)
 
-	DateSepOpt  goto 270
+	DateSepOpt  goto 269
 	DateSepPlus  goto 224
 	DateSep  goto 141
 
@@ -3012,7 +2993,7 @@ state 237
 	TIME_NAME  shift 25
 	.  error
 
-	Time  goto 271
+	Time  goto 270
 	TimePrefixPlus  goto 24
 	TimePrefix  goto 35
 
@@ -3039,20 +3020,20 @@ state 239
 state 240
 	Time:  INT TimeSep INT TimeSep.INT 
 
-	INT  shift 272
+	INT  shift 271
 	.  error
 
 
 state 241
-	Time:  INT TimeSep INT Am.    (176)
+	Time:  INT TimeSep INT Am.    (175)
 
-	.  reduce 176 (src line 532)
+	.  reduce 175 (src line 531)
 
 
 state 242
-	Time:  INT TimeSep INT Pm.    (177)
+	Time:  INT TimeSep INT Pm.    (176)
 
-	.  reduce 177 (src line 535)
+	.  reduce 176 (src line 534)
 
 
 state 243
@@ -3082,7 +3063,7 @@ state 245
 state 246
 	RFC3339Date:  Year SUB INT SUB.INT 
 
-	INT  shift 273
+	INT  shift 272
 	.  error
 
 
@@ -3098,27 +3079,27 @@ state 247
 	INT  shift 61
 	.  error
 
-	Day  goto 274
+	Day  goto 273
 	DateSep  goto 203
 
 state 248
 	RFC3339TimeZone:  ADD INT.COLON INT 
 
-	COLON  shift 275
+	COLON  shift 274
 	.  error
 
 
 state 249
 	RFC3339TimeZone:  SUB INT.COLON INT 
 
-	COLON  shift 276
+	COLON  shift 275
 	.  error
 
 
 state 250
 	RFC3339Time:  T INT COLON.INT COLON INT 
 
-	INT  shift 277
+	INT  shift 276
 	.  error
 
 
@@ -3128,7 +3109,7 @@ state 251
 	YEAR  shift 37
 	.  error
 
-	Year  goto 278
+	Year  goto 277
 
 state 252
 	DateTimeRanges:  Month Day RangeSep Day Day.RangeSep Day 
@@ -3142,7 +3123,7 @@ state 252
 	UNTIL  shift 73
 	.  error
 
-	RangeSep  goto 279
+	RangeSep  goto 278
 
 state 253
 	DateTimeRanges:  Month Day RangeSep Day Month.Day RangeSep Day 
@@ -3151,7 +3132,7 @@ state 253
 	INT  shift 61
 	.  error
 
-	Day  goto 280
+	Day  goto 279
 
 254: shift/reduce conflict (shift 160(0), red'n 33(0)) on COMMA
 state 254
@@ -3181,7 +3162,7 @@ state 256
 	YEAR  shift 37
 	.  error
 
-	Year  goto 281
+	Year  goto 280
 
 state 257
 	DateTimeRanges:  DayPlus Month AND DayPlus Month.Year 
@@ -3189,7 +3170,7 @@ state 257
 	YEAR  shift 37
 	.  error
 
-	Year  goto 282
+	Year  goto 281
 
 state 258
 	DateTimeRanges:  Day RangeSep Day Day RangeSep.Day Month 
@@ -3198,7 +3179,7 @@ state 258
 	INT  shift 61
 	.  error
 
-	Day  goto 283
+	Day  goto 282
 
 state 259
 	DateTimeRanges:  Day RangeSep Day Month Day.RangeSep Day Month 
@@ -3212,7 +3193,7 @@ state 259
 	UNTIL  shift 73
 	.  error
 
-	RangeSep  goto 284
+	RangeSep  goto 283
 
 260: shift/reduce conflict (shift 160(0), red'n 55(0)) on COMMA
 state 260
@@ -3236,7 +3217,7 @@ state 261
 	TIME_NAME  shift 25
 	.  error
 
-	Time  goto 285
+	Time  goto 284
 	TimePrefixPlus  goto 24
 	TimePrefix  goto 35
 
@@ -3248,27 +3229,21 @@ state 262
 	MONTH_NAME  shift 17
 	.  error
 
-	Day  goto 287
-	Month  goto 286
+	Day  goto 286
+	Month  goto 285
 
 state 263
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus Day.WeekdayOpt Month Year 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	TH  shift 30
 	WEEKDAY_NAME  shift 31
-	.  reduce 166 (src line 501)
+	.  reduce 165 (src line 500)
 
-	Weekday  goto 264
-	WeekdayOpt  goto 288
+	Weekday  goto 19
+	WeekdayOpt  goto 287
 
 state 264
-	WeekdayOpt:  Weekday.    (167)
-
-	.  reduce 167 (src line 503)
-
-
-state 265
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt.Month Day Year 
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt.Day Month Year 
 
@@ -3276,21 +3251,21 @@ state 265
 	MONTH_NAME  shift 17
 	.  error
 
-	Day  goto 290
-	Month  goto 289
+	Day  goto 289
+	Month  goto 288
 
-state 266
+state 265
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus Day.WeekdayOpt Month Year 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	TH  shift 30
 	WEEKDAY_NAME  shift 31
-	.  reduce 166 (src line 501)
+	.  reduce 165 (src line 500)
 
-	Weekday  goto 264
-	WeekdayOpt  goto 291
+	Weekday  goto 19
+	WeekdayOpt  goto 290
 
-state 267
+state 266
 	Date:  WeekdayOpt Day DateSepPlus Day DateSepPlus.Year 
 	DateSepPlus:  DateSepPlus.DateSep 
 
@@ -3302,15 +3277,15 @@ state 267
 	YEAR  shift 37
 	.  error
 
-	Year  goto 292
+	Year  goto 291
 	DateSep  goto 203
 
-268: shift/reduce conflict (shift 17(0), red'n 166(0)) on MONTH_NAME
-268: shift/reduce conflict (shift 37(0), red'n 166(0)) on YEAR
-state 268
+267: shift/reduce conflict (shift 17(0), red'n 165(0)) on MONTH_NAME
+267: shift/reduce conflict (shift 37(0), red'n 165(0)) on YEAR
+state 267
 	DateTime:  Time TimeZoneOpt DateTimeSepPlus.Date 
 	DateTimeSepPlus:  DateTimeSepPlus.DateTimeSep 
-	WeekdayOpt: .    (166)
+	WeekdayOpt: .    (165)
 
 	COLON  shift 182
 	COMMA  shift 183
@@ -3326,7 +3301,7 @@ state 268
 	RELATIVE_DAY  shift 27
 	WEEKDAY_NAME  shift 31
 	YEAR  shift 37
-	.  reduce 166 (src line 501)
+	.  reduce 165 (src line 500)
 
 	Date  goto 235
 	Month  goto 133
@@ -3337,21 +3312,21 @@ state 268
 	DatePrefixPlus  goto 26
 	DatePrefix  goto 36
 
-state 269
+state 268
 	DateTime:  Date Time TimeZoneOpt.    (80)
 
 	.  reduce 80 (src line 310)
 
 
-state 270
+state 269
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt.Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year 
 
 	MONTH_NAME  shift 17
 	.  error
 
-	Month  goto 293
+	Month  goto 292
 
-state 271
+state 270
 	DateTimeRange:  Date Time TimeZoneOpt RangeSepOpt Time.TimeZoneOpt 
 	TimeZoneOpt: .    (95)
 
@@ -3365,50 +3340,50 @@ state 271
 	.  reduce 95 (src line 336)
 
 	TimeZone  goto 86
-	TimeZoneOpt  goto 294
+	TimeZoneOpt  goto 293
 	TimeZoneSep  goto 88
 
+state 271
+	Time:  INT TimeSep INT TimeSep INT.    (174)
+
+	.  reduce 174 (src line 528)
+
+
 state 272
-	Time:  INT TimeSep INT TimeSep INT.    (175)
-
-	.  reduce 175 (src line 529)
-
-
-state 273
 	RFC3339Date:  Year SUB INT SUB INT.    (110)
 
 	.  reduce 110 (src line 369)
 
 
-state 274
+state 273
 	Date:  Year DateSepPlus Day DateSepPlus Day.    (122)
 
 	.  reduce 122 (src line 400)
 
 
-state 275
+state 274
 	RFC3339TimeZone:  ADD INT COLON.INT 
+
+	INT  shift 294
+	.  error
+
+
+state 275
+	RFC3339TimeZone:  SUB INT COLON.INT 
 
 	INT  shift 295
 	.  error
 
 
 state 276
-	RFC3339TimeZone:  SUB INT COLON.INT 
-
-	INT  shift 296
-	.  error
-
-
-state 277
 	RFC3339Time:  T INT COLON INT.COLON INT 
 
-	COLON  shift 297
+	COLON  shift 296
 	.  error
 
 
-278: shift/reduce conflict (shift 160(0), red'n 21(0)) on COMMA
-state 278
+277: shift/reduce conflict (shift 160(0), red'n 21(0)) on COMMA
+state 277
 	DateTimeRanges:  Month DayPlus AND Month DayPlus Year.    (21)
 	Year:  Year.YearSuffixPlus 
 
@@ -3418,16 +3393,16 @@ state 278
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-state 279
+state 278
 	DateTimeRanges:  Month Day RangeSep Day Day RangeSep.Day 
 	DateTimeRanges:  Month Day RangeSep Day Day RangeSep.Day Year 
 
 	INT  shift 61
 	.  error
 
-	Day  goto 298
+	Day  goto 297
 
-state 280
+state 279
 	DateTimeRanges:  Month Day RangeSep Day Month Day.RangeSep Day 
 	DateTimeRanges:  Month Day RangeSep Day Month Day.RangeSep Day Year 
 
@@ -3439,10 +3414,10 @@ state 280
 	UNTIL  shift 73
 	.  error
 
-	RangeSep  goto 299
+	RangeSep  goto 298
 
-281: shift/reduce conflict (shift 160(0), red'n 56(0)) on COMMA
-state 281
+280: shift/reduce conflict (shift 160(0), red'n 56(0)) on COMMA
+state 280
 	DateTimeRange:  Month Day RangeSepPlus Month Day Year.    (56)
 	Year:  Year.YearSuffixPlus 
 
@@ -3452,8 +3427,8 @@ state 281
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-282: shift/reduce conflict (shift 160(0), red'n 23(0)) on COMMA
-state 282
+281: shift/reduce conflict (shift 160(0), red'n 23(0)) on COMMA
+state 281
 	DateTimeRanges:  DayPlus Month AND DayPlus Month Year.    (23)
 	Year:  Year.YearSuffixPlus 
 
@@ -3463,25 +3438,25 @@ state 282
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-state 283
+state 282
 	DateTimeRanges:  Day RangeSep Day Day RangeSep Day.Month 
 	DateTimeRanges:  Day RangeSep Day Day RangeSep Day.Month Year 
 
 	MONTH_NAME  shift 17
 	.  error
 
-	Month  goto 300
+	Month  goto 299
 
-state 284
+state 283
 	DateTimeRanges:  Day RangeSep Day Month Day RangeSep.Day Month 
 	DateTimeRanges:  Day RangeSep Day Month Day RangeSep.Day Month Year 
 
 	INT  shift 61
 	.  error
 
-	Day  goto 301
+	Day  goto 300
 
-state 285
+state 284
 	DateTimeRanges:  WeekdayOpt Month Day DateSepOpt Day Time.DateTimeSepOpt Time 
 	DateTimeSepOpt: .    (85)
 
@@ -3493,20 +3468,28 @@ state 285
 	T  shift 104
 	.  reduce 85 (src line 318)
 
-	DateTimeSepOpt  goto 302
-	DateTimeSepPlus  goto 303
+	DateTimeSepOpt  goto 301
+	DateTimeSepPlus  goto 302
 	DateTimeSep  goto 98
 
-state 286
+state 285
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Month.Day Year 
 
 	INT  shift 61
 	.  error
 
-	Day  goto 304
+	Day  goto 303
+
+state 286
+	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day.Month Year 
+
+	MONTH_NAME  shift 17
+	.  error
+
+	Month  goto 304
 
 state 287
-	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day.Month Year 
+	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt.Month Year 
 
 	MONTH_NAME  shift 17
 	.  error
@@ -3514,39 +3497,31 @@ state 287
 	Month  goto 305
 
 state 288
-	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt.Month Year 
-
-	MONTH_NAME  shift 17
-	.  error
-
-	Month  goto 306
-
-state 289
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Month.Day Year 
 
 	INT  shift 61
 	.  error
 
-	Day  goto 307
+	Day  goto 306
+
+state 289
+	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day.Month Year 
+
+	MONTH_NAME  shift 17
+	.  error
+
+	Month  goto 307
 
 state 290
-	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day.Month Year 
+	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt.Month Year 
 
 	MONTH_NAME  shift 17
 	.  error
 
 	Month  goto 308
 
+291: shift/reduce conflict (shift 160(0), red'n 127(0)) on COMMA
 state 291
-	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt.Month Year 
-
-	MONTH_NAME  shift 17
-	.  error
-
-	Month  goto 309
-
-292: shift/reduce conflict (shift 160(0), red'n 127(0)) on COMMA
-state 292
 	Date:  WeekdayOpt Day DateSepPlus Day DateSepPlus Year.    (127)
 	Year:  Year.YearSuffixPlus 
 
@@ -3556,7 +3531,7 @@ state 292
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-state 293
+state 292
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month.RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year 
 
 	DEC  shift 68
@@ -3568,70 +3543,70 @@ state 293
 	.  error
 
 	RangeSep  goto 78
-	RangeSepPlus  goto 310
+	RangeSepPlus  goto 309
 
-state 294
+state 293
 	DateTimeRange:  Date Time TimeZoneOpt RangeSepOpt Time TimeZoneOpt.    (64)
 
 	.  reduce 64 (src line 271)
 
 
-state 295
+state 294
 	RFC3339TimeZone:  ADD INT COLON INT.    (113)
 
 	.  reduce 113 (src line 379)
 
 
-state 296
+state 295
 	RFC3339TimeZone:  SUB INT COLON INT.    (114)
 
 	.  reduce 114 (src line 380)
 
 
-state 297
+state 296
 	RFC3339Time:  T INT COLON INT COLON.INT 
 
-	INT  shift 311
+	INT  shift 310
 	.  error
 
 
-state 298
+state 297
 	DateTimeRanges:  Month Day RangeSep Day Day RangeSep Day.    (24)
 	DateTimeRanges:  Month Day RangeSep Day Day RangeSep Day.Year 
 
 	YEAR  shift 37
 	.  reduce 24 (src line 159)
 
-	Year  goto 312
+	Year  goto 311
 
-state 299
+state 298
 	DateTimeRanges:  Month Day RangeSep Day Month Day RangeSep.Day 
 	DateTimeRanges:  Month Day RangeSep Day Month Day RangeSep.Day Year 
 
 	INT  shift 61
 	.  error
 
-	Day  goto 313
+	Day  goto 312
 
-state 300
+state 299
 	DateTimeRanges:  Day RangeSep Day Day RangeSep Day Month.    (25)
 	DateTimeRanges:  Day RangeSep Day Day RangeSep Day Month.Year 
 
 	YEAR  shift 37
 	.  reduce 25 (src line 161)
 
-	Year  goto 314
+	Year  goto 313
 
-state 301
+state 300
 	DateTimeRanges:  Day RangeSep Day Month Day RangeSep Day.Month 
 	DateTimeRanges:  Day RangeSep Day Month Day RangeSep Day.Month Year 
 
 	MONTH_NAME  shift 17
 	.  error
 
-	Month  goto 315
+	Month  goto 314
 
-state 302
+state 301
 	DateTimeRanges:  WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt.Time 
 
 	AT  shift 38
@@ -3642,11 +3617,11 @@ state 302
 	TIME_NAME  shift 25
 	.  error
 
-	Time  goto 316
+	Time  goto 315
 	TimePrefixPlus  goto 24
 	TimePrefix  goto 35
 
-state 303
+state 302
 	DateTimeSepOpt:  DateTimeSepPlus.    (86)
 	DateTimeSepPlus:  DateTimeSepPlus.DateTimeSep 
 
@@ -3660,8 +3635,16 @@ state 303
 
 	DateTimeSep  goto 191
 
-state 304
+state 303
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Month Day.Year 
+
+	YEAR  shift 37
+	.  error
+
+	Year  goto 316
+
+state 304
+	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day Month.Year 
 
 	YEAR  shift 37
 	.  error
@@ -3669,7 +3652,7 @@ state 304
 	Year  goto 317
 
 state 305
-	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day Month.Year 
+	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt Month.Year 
 
 	YEAR  shift 37
 	.  error
@@ -3677,7 +3660,7 @@ state 305
 	Year  goto 318
 
 state 306
-	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt Month.Year 
+	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Month Day.Year 
 
 	YEAR  shift 37
 	.  error
@@ -3685,7 +3668,7 @@ state 306
 	Year  goto 319
 
 state 307
-	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Month Day.Year 
+	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day Month.Year 
 
 	YEAR  shift 37
 	.  error
@@ -3693,7 +3676,7 @@ state 307
 	Year  goto 320
 
 state 308
-	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day Month.Year 
+	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month.Year 
 
 	YEAR  shift 37
 	.  error
@@ -3701,14 +3684,6 @@ state 308
 	Year  goto 321
 
 state 309
-	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month.Year 
-
-	YEAR  shift 37
-	.  error
-
-	Year  goto 322
-
-state 310
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus.Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year 
 	RangeSepPlus:  RangeSepPlus.RangeSep 
 
@@ -3721,17 +3696,17 @@ state 310
 	INT  shift 61
 	.  error
 
-	Day  goto 323
+	Day  goto 322
 	RangeSep  goto 166
 
-state 311
+state 310
 	RFC3339Time:  T INT COLON INT COLON INT.    (111)
 
 	.  reduce 111 (src line 373)
 
 
-312: shift/reduce conflict (shift 160(0), red'n 28(0)) on COMMA
-state 312
+311: shift/reduce conflict (shift 160(0), red'n 28(0)) on COMMA
+state 311
 	DateTimeRanges:  Month Day RangeSep Day Day RangeSep Day Year.    (28)
 	Year:  Year.YearSuffixPlus 
 
@@ -3741,17 +3716,17 @@ state 312
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-state 313
+state 312
 	DateTimeRanges:  Month Day RangeSep Day Month Day RangeSep Day.    (26)
 	DateTimeRanges:  Month Day RangeSep Day Month Day RangeSep Day.Year 
 
 	YEAR  shift 37
 	.  reduce 26 (src line 164)
 
-	Year  goto 324
+	Year  goto 323
 
-314: shift/reduce conflict (shift 160(0), red'n 29(0)) on COMMA
-state 314
+313: shift/reduce conflict (shift 160(0), red'n 29(0)) on COMMA
+state 313
 	DateTimeRanges:  Day RangeSep Day Day RangeSep Day Month Year.    (29)
 	Year:  Year.YearSuffixPlus 
 
@@ -3761,23 +3736,23 @@ state 314
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-state 315
+state 314
 	DateTimeRanges:  Day RangeSep Day Month Day RangeSep Day Month.    (27)
 	DateTimeRanges:  Day RangeSep Day Month Day RangeSep Day Month.Year 
 
 	YEAR  shift 37
 	.  reduce 27 (src line 166)
 
-	Year  goto 325
+	Year  goto 324
 
-state 316
+state 315
 	DateTimeRanges:  WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt Time.    (34)
 
 	.  reduce 34 (src line 184)
 
 
-317: shift/reduce conflict (shift 160(0), red'n 57(0)) on COMMA
-state 317
+316: shift/reduce conflict (shift 160(0), red'n 57(0)) on COMMA
+state 316
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Month Day Year.    (57)
 	Year:  Year.YearSuffixPlus 
 
@@ -3787,8 +3762,8 @@ state 317
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-318: shift/reduce conflict (shift 160(0), red'n 58(0)) on COMMA
-state 318
+317: shift/reduce conflict (shift 160(0), red'n 58(0)) on COMMA
+state 317
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day Month Year.    (58)
 	Year:  Year.YearSuffixPlus 
 
@@ -3798,8 +3773,8 @@ state 318
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-319: shift/reduce conflict (shift 160(0), red'n 59(0)) on COMMA
-state 319
+318: shift/reduce conflict (shift 160(0), red'n 59(0)) on COMMA
+state 318
 	DateTimeRange:  WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt Month Year.    (59)
 	Year:  Year.YearSuffixPlus 
 
@@ -3809,8 +3784,8 @@ state 319
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-320: shift/reduce conflict (shift 160(0), red'n 60(0)) on COMMA
-state 320
+319: shift/reduce conflict (shift 160(0), red'n 60(0)) on COMMA
+state 319
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Month Day Year.    (60)
 	Year:  Year.YearSuffixPlus 
 
@@ -3820,8 +3795,8 @@ state 320
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-321: shift/reduce conflict (shift 160(0), red'n 61(0)) on COMMA
-state 321
+320: shift/reduce conflict (shift 160(0), red'n 61(0)) on COMMA
+state 320
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day Month Year.    (61)
 	Year:  Year.YearSuffixPlus 
 
@@ -3831,8 +3806,8 @@ state 321
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-322: shift/reduce conflict (shift 160(0), red'n 62(0)) on COMMA
-state 322
+321: shift/reduce conflict (shift 160(0), red'n 62(0)) on COMMA
+state 321
 	DateTimeRange:  WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month Year.    (62)
 	Year:  Year.YearSuffixPlus 
 
@@ -3842,23 +3817,23 @@ state 322
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-state 323
+state 322
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day.DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year 
-	DateSepOpt: .    (139)
+	DateSepOpt: .    (138)
 
 	AND  shift 143
 	COMMA  shift 170
 	DEC  shift 145
 	PERIOD  shift 146
 	QUO  shift 147
-	.  reduce 139 (src line 442)
+	.  reduce 138 (src line 441)
 
-	DateSepOpt  goto 326
+	DateSepOpt  goto 325
 	DateSepPlus  goto 224
 	DateSep  goto 141
 
-324: shift/reduce conflict (shift 160(0), red'n 30(0)) on COMMA
-state 324
+323: shift/reduce conflict (shift 160(0), red'n 30(0)) on COMMA
+state 323
 	DateTimeRanges:  Month Day RangeSep Day Month Day RangeSep Day Year.    (30)
 	Year:  Year.YearSuffixPlus 
 
@@ -3868,8 +3843,8 @@ state 324
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-325: shift/reduce conflict (shift 160(0), red'n 31(0)) on COMMA
-state 325
+324: shift/reduce conflict (shift 160(0), red'n 31(0)) on COMMA
+state 324
 	DateTimeRanges:  Day RangeSep Day Month Day RangeSep Day Month Year.    (31)
 	Year:  Year.YearSuffixPlus 
 
@@ -3879,15 +3854,15 @@ state 325
 	YearSuffixPlus  goto 140
 	YearSuffix  goto 142
 
-state 326
+state 325
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt.Month DateTimeSepOpt Time TimeZoneOpt Year 
 
 	MONTH_NAME  shift 17
 	.  error
 
-	Month  goto 327
+	Month  goto 326
 
-state 327
+state 326
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month.DateTimeSepOpt Time TimeZoneOpt Year 
 	DateTimeSepOpt: .    (85)
 
@@ -3899,11 +3874,11 @@ state 327
 	T  shift 104
 	.  reduce 85 (src line 318)
 
-	DateTimeSepOpt  goto 328
-	DateTimeSepPlus  goto 303
+	DateTimeSepOpt  goto 327
+	DateTimeSepPlus  goto 302
 	DateTimeSep  goto 98
 
-state 328
+state 327
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt.Time TimeZoneOpt Year 
 
 	AT  shift 38
@@ -3914,11 +3889,11 @@ state 328
 	TIME_NAME  shift 25
 	.  error
 
-	Time  goto 329
+	Time  goto 328
 	TimePrefixPlus  goto 24
 	TimePrefix  goto 35
 
-state 329
+state 328
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time.TimeZoneOpt Year 
 	TimeZoneOpt: .    (95)
 
@@ -3932,19 +3907,19 @@ state 329
 	.  reduce 95 (src line 336)
 
 	TimeZone  goto 86
-	TimeZoneOpt  goto 330
+	TimeZoneOpt  goto 329
 	TimeZoneSep  goto 88
 
-state 330
+state 329
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt.Year 
 
 	YEAR  shift 37
 	.  error
 
-	Year  goto 331
+	Year  goto 330
 
-331: shift/reduce conflict (shift 160(0), red'n 63(0)) on COMMA
-state 331
+330: shift/reduce conflict (shift 160(0), red'n 63(0)) on COMMA
+state 330
 	DateTimeRange:  Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year.    (63)
 	Year:  Year.YearSuffixPlus 
 
@@ -3960,14 +3935,14 @@ Rule not reduced: DatePrefixPlus:  DatePrefixPlus DatePrefix
 Rule not reduced: TimePrefixPlus:  TimePrefixPlus TimePrefix 
 
 53 terminals, 55 nonterminals
-192 grammar rules, 332/16000 states
-157 shift/reduce, 158 reduce/reduce conflicts reported
+191 grammar rules, 331/16000 states
+157 shift/reduce, 151 reduce/reduce conflicts reported
 154 working sets used
 memory: parser 460/240000
 30 extra closures
-751 shift entries, 57 exceptions
-282 goto entries
-224 entries saved by goto default
-Optimizer space used: output 761/240000
-761 table entries, 173 zero
-maximum spread: 53, maximum offset: 330
+751 shift entries, 46 exceptions
+278 goto entries
+228 entries saved by goto default
+Optimizer space used: output 756/240000
+756 table entries, 172 zero
+maximum spread: 53, maximum offset: 329

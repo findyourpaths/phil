@@ -410,38 +410,85 @@ func (d *Date) ToTime() *time.Time {
 
 func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
 	// fmt.Printf("NewDateFromRaw(d %#v, tz %#v)\n", d, tz)
-	if len(d.unknown) == 2 {
-		dm := DateMode(tz)
-		if dm == DateModeUnknown {
-			dm = parseDateMode
-		}
-		if dm == DateModeUnknown && minimumDateTime != nil {
-			dm = DateMode(minimumDateTime.TimeZone)
-		}
 
-		if dm == DateModeRest {
-			d.Day = findInt(dayUnit, d.unknown[0])
-			d.Month = time.Month(findInt(monthUnit, d.unknown[1]))
-		} else {
-			d.Month = time.Month(findInt(monthUnit, d.unknown[0]))
-			d.Day = findInt(dayUnit, d.unknown[1])
+	// If there's no ambiguity with the Month and Day, just process the raw Date.
+	// fmt.Printf("checking whether Month and Day are ambiguous")
+	if len(d.unknown) != 2 {
+		r, err := maybeNewDateFromRaw(d, tz)
+		if err != nil {
+			panic(err.Error())
 		}
-		d.unknown = nil
+		return r
 	}
 
-	// fmt.Printf("if Month and Day are both set, check consistency and set Year and Weekday.")
+	dm := DateMode(tz)
+	if dm == DateModeUnknown {
+		dm = parseDateMode
+	}
+	if dm == DateModeUnknown && minimumDateTime != nil {
+		dm = DateMode(minimumDateTime.TimeZone)
+	}
+	// fmt.Printf("found DateMode: %q\n", dm)
+
+	// If we now know the DateMode for the Month and Day, process the raw Date.
+	u0 := d.unknown[0]
+	u1 := d.unknown[1]
+
+	// fmt.Printf("going with DateModeRest\n")
+	if dm == DateModeRest {
+		setNewDateMonthAndDay(d, findInt(monthUnit, u1), findInt(dayUnit, u0))
+		r, err := maybeNewDateFromRaw(d, tz)
+		if err != nil {
+			panic(err.Error())
+		}
+		return r
+	}
+	// fmt.Printf("going with DateModeNorthAmerican\n")
+	if dm == DateModeNorthAmerican {
+		setNewDateMonthAndDay(d, findInt(monthUnit, u0), findInt(dayUnit, u1))
+		r, err := maybeNewDateFromRaw(d, tz)
+		if err != nil {
+			panic(err.Error())
+		}
+		return r
+	}
+
+	// At this point, we have the ambiguous Month and Day, and we don't know the DateMode. Try NA first.
+	// fmt.Printf("trying with DateModeNorthAmerican\n")
+	setNewDateMonthAndDay(d, findInt(monthUnit, u0), findInt(dayUnit, u1))
+	r, err := maybeNewDateFromRaw(d, tz)
+	if err == nil {
+		return r
+	}
+	// fmt.Printf("trying with DateModeRest\n")
+	setNewDateMonthAndDay(d, findInt(monthUnit, u1), findInt(dayUnit, u0))
+	r, err = maybeNewDateFromRaw(d, tz)
+	if err == nil {
+		return r
+	}
+	panic(err.Error())
+}
+
+func setNewDateMonthAndDay(d *Date, month int, day int) *Date {
+	d.Month = time.Month(month)
+	d.Day = day
+	return d
+}
+
+func maybeNewDateFromRaw(d *Date, tz *TimeZone) (*Date, error) {
+	// fmt.Printf("maybeNewDateFromRaw(d %#v, tz %#v)\n", d, tz)
+
 	// if Month and Day are both set, check consistency and set Year and Weekday.
 	if d.Month == 0 || d.Day == 0 {
-		return d
+		return d, nil
 	}
 
-	// fmt.Printf("Fix year by setting date to be no earlier than minimumDateTime.")
 	// Fix year by setting date to be no earlier than minimumDateTime.
 	if d.Year == 0 {
 		setNewDateYear(d)
 	}
 
-	// fmt.Printf("before type switch\n")
+	// Check the extracted Weekday with the computed Weekday.
 	extWD := 0
 	switch dwd := d.wd.(type) {
 	case string:
@@ -454,20 +501,19 @@ func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
 			extWD = findInt(weekdayUnit, d.wd)
 		}
 	}
-	// fmt.Printf("after type switch\n")
 
 	wd := extWD
 	if d.Year != 0 {
 		t := time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
 		wd = weekdaysByNames[strings.ToLower(t.Weekday().String())]
 		if extWD != 0 && extWD != wd {
-			panic(fmt.Sprintf("semantic error: extracted weekday of %q doesn't match computed weekday of %q for %s\n",
-				weekdayNames[extWD], weekdayNames[wd], d.String()))
+			return nil, fmt.Errorf("semantic error: extracted weekday of %q doesn't match computed weekday of %q for %s\n",
+				weekdayNames[extWD], weekdayNames[wd], d.String())
 		}
 	}
 	// d.Weekday = wd
 
-	return d
+	return d, nil
 }
 
 func DateMode(tz *TimeZone) string {
@@ -726,16 +772,16 @@ var weekdaysByNames = map[string]int{
 	"wed":       4,
 	"weds":      4,
 	"wednesday": 4,
-	//	"th":        4, recognize this separately because it also appears in "4th"
-	"thu":      5,
-	"thus":     5,
-	"thursday": 5,
-	"fr":       6,
-	"fri":      6,
-	"friday":   6,
-	"sa":       7,
-	"sat":      7,
-	"saturday": 7,
+	"th":        5,
+	"thu":       5,
+	"thus":      5,
+	"thursday":  5,
+	"fr":        6,
+	"fri":       6,
+	"friday":    6,
+	"sa":        7,
+	"sat":       7,
+	"saturday":  7,
 }
 
 var weekdayNames = []string{
