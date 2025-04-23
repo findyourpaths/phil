@@ -70,9 +70,6 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	debugf("minimumDateTime: %q\n", minimumDateTime.String())
 	// fmt.Printf("minimumDateTime: %q\n", minimumDateTime.String())
 	parseDateMode = dateMode
-	if parseDateMode == "" {
-		parseDateMode = DateMode(minimumDateTime)
-	}
 	debugf("parseDateMode: %q\n", parseDateMode)
 
 	// parseTimeZone = timeZone

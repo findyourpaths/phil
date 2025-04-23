@@ -305,7 +305,7 @@ RangeSep:
 //
 
 DateTime:
-  Date {$$ = NewDateTimeWithDate($1, nil)}
+  Date {$$ = NewDateTimeWithDate($1)}
 
 | Date Time TimeZoneOpt {$$ = NewDateTime($1, $2, $3)}
 | Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
@@ -361,7 +361,7 @@ TimeZone:
 //
 
 RFC3339DateTime:
-  RFC3339Date {$$ = NewDateTimeWithDate($1, nil)}
+  RFC3339Date {$$ = NewDateTimeWithDate($1)}
 | RFC3339Date RFC3339Time {$$ = NewDateTime($1, $2, nil)}
 | RFC3339Date RFC3339Time RFC3339TimeZone {$$ = NewDateTime($1, $2, $3)}
 ;

@@ -1040,7 +1040,7 @@ yydefault:
 	case 79:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTime = NewDateTimeWithDate(yyDollar[1].Date, nil)
+			yyVAL.DateTime = NewDateTimeWithDate(yyDollar[1].Date)
 		}
 	case 80:
 		yyDollar = yyS[yypt-3 : yypt+1]
@@ -1105,7 +1105,7 @@ yydefault:
 	case 107:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyVAL.DateTime = NewDateTimeWithDate(yyDollar[1].Date, nil)
+			yyVAL.DateTime = NewDateTimeWithDate(yyDollar[1].Date)
 		}
 	case 108:
 		yyDollar = yyS[yypt-2 : yypt+1]

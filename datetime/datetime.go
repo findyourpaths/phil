@@ -15,6 +15,9 @@ var minimumDateTime *DateTime
 
 var parseDateMode string
 
+var DateModeUnknown = ""
+
+// North American tends to parse dates as month-day-year.
 var DateModeNorthAmerican = "na"
 var DateModeRest = "rest"
 
@@ -57,7 +60,7 @@ func NewRangesWithStartDateTimes(starts ...*DateTime) *DateTimeRanges {
 func NewRangesWithStartDates(starts ...*Date) *DateTimeRanges {
 	r := &DateTimeRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeRange{Start: NewDateTimeWithDate(start, nil)})
+		r.Items = append(r.Items, &DateTimeRange{Start: NewDateTimeWithDate(start)})
 	}
 	return r
 }
@@ -244,19 +247,8 @@ func (dt *DateTime) ToTime() *time.Time {
 	return &r
 }
 
-func NewDateTime(date *Date, time *Time, timeZone *TimeZone) *DateTime {
-	// We don't want gaps in the time scales (e.g. Month and Hour, but not Day).
-	bits := []bool{date.Year != 0, int(date.Month) != 0, date.Day != 0, time != nil && time.Hour != 0}
-	start := lo.IndexOf(bits, true)
-	end := lo.LastIndexOf(bits, true)
-	for i := start; i < end; i++ {
-		if !bits[i] {
-			// fmt.Printf("found gap in DateTime at i: %d in bits: %#v\n", i, bits)
-			panic(fmt.Sprintf("semantic error: found gap in DateTime at i: %d in YMDH bits: %#v\n", i, bits))
-		}
-	}
-
-	return NewDateTimeFromRaw(&DateTime{Date: date, Time: time, TimeZone: timeZone})
+func NewDateTimeWithDate(date *Date) *DateTime {
+	return NewDateTime(date, nil, nil)
 }
 
 func NewDateTimeForNow() *DateTime {
@@ -265,14 +257,10 @@ func NewDateTimeForNow() *DateTime {
 	return NewDateTimeWithTimeAndTimeZone(t, abbrev, &off)
 }
 
-func NewDateTimeWithDate(date *Date, timeZone *TimeZone) *DateTime {
-	return NewDateTimeFromRaw(&DateTime{Date: date, TimeZone: timeZone})
-}
-
 func NewDateTimeWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *int) *DateTime {
 	d := &Date{}
 	d.Year, d.Month, d.Day = tt.Date()
-	d.Weekday = int(tt.Weekday()) + 1
+	d.wd = int(tt.Weekday()) + 1
 
 	t := &Time{}
 	t.Hour, t.Minute, t.Second = tt.Clock()
@@ -291,58 +279,57 @@ func NewDateTimeWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *i
 		tz.Offset = fmt.Sprintf("%s%02d:%02d", offSign, offHH, offMM)
 	}
 
-	return NewDateTimeFromRaw(&DateTime{Date: d, Time: t, TimeZone: tz})
+	return NewDateTime(d, t, tz)
 }
 
-func NewDateTimeFromRaw(dt *DateTime) *DateTime {
-	// fmt.Printf("NewDateTimeFromRaw(dt: %#v)\n", dt)
+func NewDateTime(d *Date, t *Time, tz *TimeZone) *DateTime {
+	// fmt.Printf("NewDateTime(d %#v, t %#v, tz %#v)\n", d, t, tz)
+	r := &DateTime{Date: d, Time: t, TimeZone: tz}
 
-	// We may have an unofficial Name that we need to replace with an Abbreviation (e.g. "Eastern" -> "ET").
-	if dt.TimeZone != nil &&
-		dt.TimeZone.Name != "" {
-		n := dt.TimeZone.Name
+	// If we have Date and Time info but no TimeZone, get it from Min if it exists.
+	if r.TimeZone == nil &&
+		r.Date != nil &&
+		r.Time != nil &&
+		minimumDateTime != nil &&
+		minimumDateTime.TimeZone != nil {
+		// fmt.Printf("in NewDateTimeFromRaw(), setting time zone to %#v\n", minimumDT.TimeZone)
+		r.TimeZone = minimumDateTime.TimeZone
+	}
+
+	// If we have an unofficial TimeZone Name, replace it with an Abbreviation (e.g. "Eastern" -> "ET").
+	if r.TimeZone != nil &&
+		r.TimeZone.Name != "" {
+		n := r.TimeZone.Name
 		if _, err := time.LoadLocation(n); err != nil {
 			if abbrev := timeZoneAbbreviationsByNames[strings.ToLower(n)]; abbrev != "" {
-				dt.TimeZone.Name = ""
-				if dt.TimeZone.Abbreviation == "" {
-					dt.TimeZone.Abbreviation = abbrev
+				r.TimeZone.Name = ""
+				if r.TimeZone.Abbreviation == "" {
+					r.TimeZone.Abbreviation = abbrev
 				}
 			}
 		}
 	}
 
-	if dt.TimeZone == nil &&
-		dt.Date != nil &&
-		dt.Time != nil &&
-		minimumDateTime != nil &&
-		minimumDateTime.TimeZone != nil {
-		// fmt.Printf("in NewDateTimeFromRaw(), setting time zone to %#v\n", minimumDT.TimeZone)
-		dt.TimeZone = minimumDateTime.TimeZone
+	// Finalize Date based on TimeZone if ambiguous.
+	r.Date = NewDateFromRaw(r.Date, r.TimeZone)
+
+	// Do semantic check that we don't have gaps in the time scales (e.g. Month and Hour, but not Day).
+	bits := []bool{
+		r.Date.Year != 0,
+		int(r.Date.Month) != 0,
+		r.Date.Day != 0,
+		r.Time != nil && r.Time.Hour != 0,
+	}
+	start := lo.IndexOf(bits, true)
+	end := lo.LastIndexOf(bits, true)
+	for i := start; i < end; i++ {
+		if !bits[i] {
+			// fmt.Printf("found gap in DateTime at i: %d in bits: %#v\n", i, bits)
+			panic(fmt.Sprintf("semantic error: found gap in DateTime at i: %d in YMDH bits: %#v\n", i, bits))
+		}
 	}
 
-	// potential switch ambiguous date based on final time zone
-
-	return dt
-}
-
-func DateMode(dt *DateTime) string {
-	if dt == nil || dt.TimeZone == nil {
-		return DateModeRest
-	}
-
-	name := dt.TimeZone.Name
-	if strings.HasPrefix(name, "America/") {
-		return DateModeNorthAmerican
-	}
-
-	abbrev := dt.TimeZone.Abbreviation
-	if abbrev == "" {
-		abbrev = timeZoneAbbreviationsByNames[name]
-	}
-	if northAmericanTimeZoneAbbreviations[abbrev] {
-		return DateModeNorthAmerican
-	}
-	return DateModeRest
+	return r
 }
 
 func locationForName(name string) *time.Location {
@@ -400,10 +387,12 @@ func locationForAbbreviation(dt *DateTime, abbrev string) *time.Location {
 //
 // When a field is unspecified, it holds 0.
 type Date struct {
-	Year    int        // Year (e.g., 2014), starting at 1.
-	Month   time.Month // Month of the year, starting at 1 for January.
-	Day     int        // Day of the month, starting at 1.
-	Weekday int        // Day of the week, starting at 1 for Sunday
+	Year  int        // Year (e.g., 2014), starting at 1.
+	Month time.Month // Month of the year, starting at 1 for January.
+	Day   int        // Day of the month, starting at 1.
+	// Weekday int        // Day of the week, starting at 1 for Sunday.
+	unknown []any // Unprocessed Day and Month, with order depending upon the DateMode.
+	wd      any   // Unprocessed Weekday, to be confirmed with computed Weekday.
 }
 
 // String returns the date in RFC3339 full-date format.
@@ -419,62 +408,121 @@ func (d *Date) ToTime() *time.Time {
 	return &r
 }
 
-func NewDateFromRaw(date *Date) *Date {
-	// fmt.Printf("NewDateFromRaw(date: %#v)\n", date)
+func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
+	// fmt.Printf("NewDateFromRaw(d %#v, tz %#v)\n", d, tz)
+	if len(d.unknown) == 2 {
+		dm := DateMode(tz)
+		if dm == DateModeUnknown {
+			dm = parseDateMode
+		}
+		if dm == DateModeUnknown && minimumDateTime != nil {
+			dm = DateMode(minimumDateTime.TimeZone)
+		}
 
-	// fmt.Printf("checking month and day\n")
-	if date.Month == 0 || date.Day == 0 {
-		// Date has unspecified fields, don't try to check consistency.
-		return date
+		if dm == DateModeRest {
+			d.Day = findInt(dayUnit, d.unknown[0])
+			d.Month = time.Month(findInt(monthUnit, d.unknown[1]))
+		} else {
+			d.Month = time.Month(findInt(monthUnit, d.unknown[0]))
+			d.Day = findInt(dayUnit, d.unknown[1])
+		}
+		d.unknown = nil
 	}
 
+	// fmt.Printf("if Month and Day are both set, check consistency and set Year and Weekday.")
+	// if Month and Day are both set, check consistency and set Year and Weekday.
+	if d.Month == 0 || d.Day == 0 {
+		return d
+	}
+
+	// fmt.Printf("Fix year by setting date to be no earlier than minimumDateTime.")
 	// Fix year by setting date to be no earlier than minimumDateTime.
-	if date.Year == 0 {
-		setNewDateYear(date)
+	if d.Year == 0 {
+		setNewDateYear(d)
 	}
 
-	t := time.Date(date.Year, date.Month, date.Day, 0, 0, 0, 0, time.UTC)
-	tw := weekdaysByNames[strings.ToLower(t.Weekday().String())]
-	if date.Weekday == 0 {
-		date.Weekday = tw
-		return date
+	// fmt.Printf("before type switch\n")
+	extWD := 0
+	switch dwd := d.wd.(type) {
+	case string:
+		if dwd != "" {
+			extWD = findInt(weekdayUnit, d.wd)
+		}
+	default:
+		// TODO: should we do a type-specific nil check here?
+		if dwd == nil {
+			extWD = findInt(weekdayUnit, d.wd)
+		}
 	}
-	if date.Weekday != tw {
-		panic(fmt.Sprintf("semantic error: extracted weekday of %q doesn't actual match weekday of %q for %s\n",
-			weekdayNames[tw], weekdayNames[date.Weekday], date.String()))
+	// fmt.Printf("after type switch\n")
+
+	wd := extWD
+	if d.Year != 0 {
+		t := time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
+		wd = weekdaysByNames[strings.ToLower(t.Weekday().String())]
+		if extWD != 0 && extWD != wd {
+			panic(fmt.Sprintf("semantic error: extracted weekday of %q doesn't match computed weekday of %q for %s\n",
+				weekdayNames[extWD], weekdayNames[wd], d.String()))
+		}
 	}
-	return date
+	// d.Weekday = wd
+
+	return d
 }
 
-func setNewDateYear(date *Date) *Date {
+func DateMode(tz *TimeZone) string {
+	// fmt.Printf("DateMode(tz: %#v)\n", tz)
+	if tz == nil {
+		return DateModeUnknown
+	}
+
+	abbrev := tz.Abbreviation
+	name := tz.Name
+
+	// fmt.Printf("in DateMode(), name: %q, abbrev: %q\n", name, abbrev)
+	if abbrev == "" {
+		abbrev = timeZoneAbbreviationsByNames[name]
+	}
+	if northAmericanTimeZoneAbbreviations[abbrev] {
+		return DateModeNorthAmerican
+	}
+
+	if strings.HasPrefix(name, "America/") {
+		return DateModeNorthAmerican
+	}
+
+	return DateModeUnknown
+}
+
+func setNewDateYear(d *Date) *Date {
 	// fmt.Printf("checking minimumDT: %#v\n", minimumDateTime)
 	if minimumDateTime == nil {
-		date.Year = 0
-		return date
+		d.Year = 0
+		return d
 	}
 
 	minTime := minimumDateTime.ToTime()
 	// fmt.Printf("checking minTime: %#v\n", minTime)
 	if minTime == nil {
-		date.Year = 0
-		return date
+		d.Year = 0
+		return d
 	}
 
-	date.Year = minimumDateTime.Date.Year
-	dateTime := date.ToTime()
+	d.Year = minimumDateTime.Date.Year
+	dateTime := d.ToTime()
 	// fmt.Printf("checking same year dateTime: %#v\n", dateTime)
 	if dateTime.After(*minTime) {
-		return date
+		return d
 	}
 
-	date.Year = minimumDateTime.Date.Year + 1
-	dateTime = date.ToTime()
+	d.Year = minimumDateTime.Date.Year + 1
+	dateTime = d.ToTime()
 	// fmt.Printf("checking next year dateTime: %#v\n", dateTime)
 	if dateTime.After(*minTime) {
-		return date
+		return d
 	}
 
-	panic(fmt.Sprintf("semantic error: unclear how to set year given minimumDateTime: %s\n", minimumDateTime.String()))
+	panic(fmt.Sprintf("semantic error: unclear how to set year with minimumDateTime: %s\n", minimumDateTime.String()))
 }
 
 // A Time represents a time with nanosecond precision.
@@ -532,8 +580,8 @@ func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 	return &TimeZone{Name: name, Abbreviation: abbrev, Offset: offset}
 }
 
-func findInt(tunit timeUnit, valAny any) int {
-	// fmt.Printf("findInt(tunit: %#v, valAny (%T): %#v)\n", tunit, valAny, valAny)
+func findInt(tUnit timeUnit, valAny any) int {
+	// fmt.Printf("findInt(tUnit: %#v, valAny (%T): %#v)\n", tUnit, valAny, valAny)
 	r := -1
 	var ok bool
 	if valAny != nil {
@@ -558,26 +606,26 @@ func findInt(tunit timeUnit, valAny any) int {
 			if err == nil {
 				r = rInt
 			} else {
-				if tunit.stringToIntFn != nil {
-					r = tunit.stringToIntFn(valAny.(string))
+				if tUnit.stringToIntFn != nil {
+					r = tUnit.stringToIntFn(valAny.(string))
 				}
 			}
 		}
 	}
 
-	if tunit.fixFn != nil {
-		r, ok = tunit.fixFn(valAny, r)
+	if tUnit.fixFn != nil {
+		r, ok = tUnit.fixFn(valAny, r)
 	} else if valAny == nil {
 		return 0
 	}
 
 	// debugf("in findInt(), r: %d, ok: %t\n", r, ok)
-	if !ok && (r < tunit.min || r > tunit.max) {
+	if !ok && (r < tUnit.min || r > tUnit.max) {
 		// fmt.Printf("ok: %#v\n", ok)
 		// fmt.Printf("r: %#v\n", r)
 		// fmt.Printf("r < tunit.min: %#v\n", r < tunit.min)
 		// fmt.Printf("r > tunit.max: %#v\n", r > tunit.max)
-		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tunit, "valAny", valAny))
+		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tUnit, "valAny", valAny))
 	}
 	// debugf("in findInt(), returning: %d\n", r)
 
@@ -767,7 +815,7 @@ func NewRawDateFromRelative(relativeName string) *Date {
 	if strings.ToLower(relativeName) == "yesterday" {
 		t := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
 		y, m, d := t.AddDate(0, 0, -1).Date()
-		return NewDateFromRaw(&Date{Day: d, Month: m, Year: y})
+		return &Date{Day: d, Month: m, Year: y}
 	}
 	if strings.ToLower(relativeName) == "today" {
 		return minimumDateTime.Date
@@ -775,17 +823,14 @@ func NewRawDateFromRelative(relativeName string) *Date {
 	if strings.ToLower(relativeName) == "tomorrow" {
 		t := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
 		y, m, d := t.AddDate(0, 0, 1).Date()
-		return NewDateFromRaw(&Date{Day: d, Month: m, Year: y})
+		return &Date{Day: d, Month: m, Year: y}
 	}
 	panic(fmt.Sprintf("semantic error: found unknown relativeName: %q\n", relativeName))
 }
 
-func NewRawDateFromAmbiguous(weekdayAny any, first string, second string, yearAny any) *Date {
-	// North American tends to parse dates as month-day-year.
-	if parseDateMode == DateModeNorthAmerican {
-		return NewRawDateFromWMDY(weekdayAny, first, second, yearAny)
-	}
-	return NewRawDateFromWDMY(weekdayAny, first, second, yearAny)
+func NewRawDateFromAmbiguous(weekdayAny any, first string, last string, yearAny any) *Date {
+	year := findInt(yearUnit, yearAny)
+	return &Date{unknown: []any{first, last}, Year: year, wd: weekdayAny}
 }
 
 func NewRawDateFromDsMYs(daysAny []string, monthAny any, yearAny any) []*Date {
@@ -801,16 +846,15 @@ func NewRawDateFromDMY(dayAny any, monthAny any, yearAny any) *Date {
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	return NewDateFromRaw(&Date{Day: day, Month: time.Month(month), Year: year})
+	return &Date{Day: day, Month: time.Month(month), Year: year}
 }
 
 func NewRawDateFromWDMY(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
-	// fmt.Printf("NewRawDateFromDMY(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
-	weekday := 0 // findInt(weekdayUnit, weekdayAny)
+	// fmt.Printf("NewRawDateFromWDMY(weekdayAny: %#v, dayAny: %#v, monthAny %#v, yearAny %#v)\n", weekdayAny, dayAny, monthAny, yearAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	return NewDateFromRaw(&Date{Day: day, Month: time.Month(month), Year: year, Weekday: weekday})
+	return &Date{Day: day, Month: time.Month(month), Year: year, wd: weekdayAny}
 }
 
 func NewRawDateFromMDsYs(monthAny any, daysAny []string, yearAny any) []*Date {

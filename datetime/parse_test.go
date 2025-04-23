@@ -8,9 +8,9 @@ import (
 
 	"github.com/findyourpaths/phil/glr"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/k0kubun/pp/v3"
 	"github.com/sanity-io/litter"
-	"google.golang.org/protobuf/testing/protocmp"
 )
 
 var acceptBrokenTests = true
@@ -22,37 +22,37 @@ var acceptBrokenTests = true
 // time go test -v ./...
 // DEBUG=true time go test -v -run '^TestExtractDatetimesRanges/102'
 
-var DateForFeb = NewDateFromRaw(&Date{Month: 2})
-var DateForMar = NewDateFromRaw(&Date{Month: 3})
+var DateForFeb = &Date{Month: 2}
+var DateForMar = &Date{Month: 3}
 
-var DateForFeb01 = NewDateFromRaw(&Date{Month: 2, Day: 1})
-var DateForFeb02 = NewDateFromRaw(&Date{Month: 2, Day: 2})
-var DateForFeb03 = NewDateFromRaw(&Date{Month: 2, Day: 3})
-var DateForFeb04 = NewDateFromRaw(&Date{Month: 2, Day: 4})
-var DateForFeb05 = NewDateFromRaw(&Date{Month: 2, Day: 5})
-var DateForFeb06 = NewDateFromRaw(&Date{Month: 2, Day: 6})
-var DateForFeb08 = NewDateFromRaw(&Date{Month: 2, Day: 8})
-var DateForFeb14 = NewDateFromRaw(&Date{Month: 2, Day: 14})
-var DateForFeb15 = NewDateFromRaw(&Date{Month: 2, Day: 15})
-var DateForFeb22 = NewDateFromRaw(&Date{Month: 2, Day: 22})
-var DateForMar01 = NewDateFromRaw(&Date{Month: 3, Day: 1})
-var DateForMar02 = NewDateFromRaw(&Date{Month: 3, Day: 2})
-var DateForMar03 = NewDateFromRaw(&Date{Month: 3, Day: 3})
-var DateForMar04 = NewDateFromRaw(&Date{Month: 3, Day: 4})
-var DateForApr03 = NewDateFromRaw(&Date{Month: time.April, Day: 3})
+var DateForFeb01 = &Date{Month: 2, Day: 1}
+var DateForFeb02 = &Date{Month: 2, Day: 2}
+var DateForFeb03 = &Date{Month: 2, Day: 3}
+var DateForFeb04 = &Date{Month: 2, Day: 4}
+var DateForFeb05 = &Date{Month: 2, Day: 5}
+var DateForFeb06 = &Date{Month: 2, Day: 6}
+var DateForFeb08 = &Date{Month: 2, Day: 8}
+var DateForFeb14 = &Date{Month: 2, Day: 14}
+var DateForFeb15 = &Date{Month: 2, Day: 15}
+var DateForFeb22 = &Date{Month: 2, Day: 22}
+var DateForMar01 = &Date{Month: 3, Day: 1}
+var DateForMar02 = &Date{Month: 3, Day: 2}
+var DateForMar03 = &Date{Month: 3, Day: 3}
+var DateForMar04 = &Date{Month: 3, Day: 4}
+var DateForApr03 = &Date{Month: time.April, Day: 3}
 
-var DateForFriday = NewDateFromRaw(&Date{Weekday: 6})
+// var DateForFriday = &Date{Weekday: 6}
 
 var DateRangesForFeb03 = NewRangesWithStartDates(DateForFeb03)
 var DateRangesFromFeb02ToFeb05 = NewRangesWithStartEndDates(DateForFeb02, DateForFeb05)
 var DateRangesFromFeb03ToFeb04 = NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)
 var DateRangesForMar02 = NewRangesWithStartDates(DateForMar02)
 
-var DateFor2023 = NewDateFromRaw(&Date{Year: 2023})
-var DateFor2024 = NewDateFromRaw(&Date{Year: 2024})
+var DateFor2023 = &Date{Year: 2023}
+var DateFor2024 = &Date{Year: 2024}
 
-var DateFor2023Feb = NewDateFromRaw(&Date{Year: 2023, Month: 2})
-var DateFor2023Mar = NewDateFromRaw(&Date{Year: 2023, Month: 3})
+var DateFor2023Feb = &Date{Year: 2023, Month: 2}
+var DateFor2023Mar = &Date{Year: 2023, Month: 3}
 
 var DateRangesFor2023Feb = NewRangesWithStartDates(DateFor2023Feb)
 
@@ -108,14 +108,16 @@ var DateTimeFor2023Feb03_12PM = NewDateTime(DateFor2023Feb03, TimeFor12PM, nil)
 var DateTimeFor2023Feb03_03PM = NewDateTime(DateFor2023Feb03, TimeFor03PM, nil)
 var DateTimeFor2023Feb04_03PM = NewDateTime(DateFor2023Feb04, TimeFor03PM, nil)
 
+var DateTimeFor2023Mar02_03PM = NewDateTime(DateFor2023Mar02, TimeFor03PM, nil)
+
 var DateTimeForFeb03_09AM_ET = NewDateTime(DateForFeb03, TimeFor09AM, TimeZoneForET)
 var DateTimeForFeb03_12PM_ET = NewDateTime(DateForFeb03, TimeFor12PM, TimeZoneForET)
 var DateTimeForFeb03_03PM_ET = NewDateTime(DateForFeb03, TimeFor03PM, TimeZoneForET)
 
 var DateTimeForFeb03_12PM_Eastern = NewDateTime(DateForFeb03, TimeFor12PM, TimeZoneForEastern)
 
-var DateTimeForFriday_12PM_ET = NewDateTime(DateForFriday, TimeFor12PM, TimeZoneForET)
-var DateTimeForFriday_03PM_ET = NewDateTime(DateForFriday, TimeFor03PM, TimeZoneForET)
+// var DateTimeForFriday_12PM_ET = NewDateTime(DateForFriday, TimeFor12PM, TimeZoneForET)
+// var DateTimeForFriday_03PM_ET = NewDateTime(DateForFriday, TimeFor03PM, TimeZoneForET)
 
 var DateTimeFor2023Jan01_12AM_ET = NewDateTime(DateFor2023Jan1, TimeFor12AM, TimeZoneForET)
 
@@ -140,8 +142,10 @@ var DateTimeFor2023Feb08_12PM_ET = NewDateTime(DateFor2023Feb08, TimeFor12PM, Ti
 
 var DateTimeFor2023Feb15_09AM_ET = NewDateTime(DateFor2023Feb15, TimeFor09AM, TimeZoneForET)
 var DateTimeFor2023Feb15_12PM_ET = NewDateTime(DateFor2023Feb15, TimeFor12PM, TimeZoneForET)
+
 var DateTimeFor2023Feb22_09AM_ET = NewDateTime(DateFor2023Feb22, TimeFor09AM, TimeZoneForET)
 var DateTimeFor2023Feb22_12PM_ET = NewDateTime(DateFor2023Feb22, TimeFor12PM, TimeZoneForET)
+
 var DateTimeFor2023Mar01_09AM_ET = NewDateTime(DateFor2023Mar01, TimeFor09AM, TimeZoneForET)
 var DateTimeFor2023Mar01_12PM_ET = NewDateTime(DateFor2023Mar01, TimeFor12PM, TimeZoneForET)
 
@@ -202,29 +206,28 @@ func TestParse(t *testing.T) {
 		// MD
 		{in: "Feb 3", want: DateRangesForFeb03},
 		{in: "February 3", want: DateRangesForFeb03},
-		{in: "Thu Feb 3", want: DateRangesForFeb03},
-		{in: "Thu 3 Feb", want: DateRangesForFeb03},
+		{in: "Fri Feb 3", want: DateRangesForFeb03},
 		{in: "Fri 3 Feb", want: DateRangesForFeb03},
 
 		// DM
 		{in: "3 Feb", want: DateRangesForFeb03},
 		{in: "3, Feb", want: DateRangesForFeb03},
 		{in: "3rd of Feb", want: DateRangesForFeb03},
-		{in: "thu 3 Feb", want: DateRangesForFeb03},
+		{in: "fri 3 Feb", want: DateRangesForFeb03},
 
 		// MDY
 		{in: "Feb 3 2023", want: DateRangesFor2023Feb03},
 		{in: "February 3 2023", want: DateRangesFor2023Feb03},
 		{in: "February 3, 2023", want: DateRangesFor2023Feb03},
 		{in: "February 3rd, 2023", want: DateRangesFor2023Feb03},
-		{in: "Thu Feb 3, 2023", want: DateRangesFor2023Feb03},
-		{in: "Thursday Feb 3rd 2023", want: DateRangesFor2023Feb03},
+		{in: "Fri Feb 3, 2023", want: DateRangesFor2023Feb03},
+		{in: "Friday Feb 3rd 2023", want: DateRangesFor2023Feb03},
 		{in: "Time:Feb 3 2023", want: DateRangesFor2023Feb03},
 		// DMY
 		{in: "3 Feb 2023", want: DateRangesFor2023Feb03},
 		{in: "3rd Feb 2023", want: DateRangesFor2023Feb03},
 		{in: "3 February, 2023", want: DateRangesFor2023Feb03},
-		{in: "Thursday 3rd Feb 2023", want: DateRangesFor2023Feb03},
+		{in: "Friday 3rd Feb 2023", want: DateRangesFor2023Feb03},
 
 		// MY
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
@@ -301,7 +304,7 @@ func TestParse(t *testing.T) {
 		// DM
 		{in: "3-4 Feb", want: DateRangesFromFeb03ToFeb04},
 		{in: "3 Feb - 4 Feb", want: DateRangesFromFeb03ToFeb04},
-		{in: "Thu Feb 3 - Fri Feb 4", want: DateRangesFromFeb03ToFeb04},
+		{in: "Fri Feb 3 - Sat Feb 4", want: DateRangesFromFeb03ToFeb04},
 		{in: "3 February - 2 March", want: NewRangesWithStartEndDates(DateForFeb03, DateForMar02)},
 		// Various separators
 		{in: "Feb 3-4", want: DateRangesFromFeb03ToFeb04},
@@ -321,7 +324,7 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3-4 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "Feb 3 - 4 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "Feb 3 2023 - Feb 4 2023", want: DateRangesFrom2023Feb03To2023Feb04},
-		{in: "Thu Feb 3, 2023 - Fri Feb 4, 2023", want: DateRangesFrom2023Feb03To2023Feb04},
+		{in: "Fri Feb 3, 2023 - Sat Feb 4, 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "Fri 3 Feb - Sat 4 February 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "Fri 3rd Feb - Sat 4th February 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "Fri Feb 3rd - Sat 4th February 2023", want: DateRangesFrom2023Feb03To2023Feb04},
@@ -408,18 +411,23 @@ func TestParse(t *testing.T) {
 		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), dateMode: "na", isBroken: true},
 
 		// DMT
-		{in: "Date:Thu 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
-		{in: "Thursday 3 Feb 3:00pm (doors) | 11pm (curfew)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
+		{in: "Date:Fri 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
+		{in: "Friday 3 Feb 3:00pm (doors) | 11pm (curfew)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
 		// Need to update sorting algorithm for this.
-		{in: "Thu, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
+		{in: "Fri, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
+		{in: "Thu, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM)},
+		{in: "Fri, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
+		{in: "Thu, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM)},
 
 		// MDYT
 		{in: "Feb. 3, 2023 12:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
 		{in: "Feb 3, 2023 @ 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "Thursday, February 3rd 2023 from 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		// Not sure if this is a range or multiple.
+		{in: "Friday, February 3rd 2023 from 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+
 		// MDYTT
+		// Not sure if this is a range or multiple.
 		{in: "Feb. 3, 2023 12:00pm, 3:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM, DateTimeFor2023Feb03_03PM), isBroken: true},
+
 		// MDYTZ
 		{in: "Feb 3 2023 12pm ET", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET)},
 		//    Sep 18, 2024 11:30 AM Eastern Time (US and Canada)
@@ -473,7 +481,7 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3, 2023, 9:00 AM ET - Feb 3, 2023, 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
 		{in: "Friday, 2/3 12-3pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), dateMode: "na"},
 		// Tuesday 8/13 from 6:30 - 8:30 pm EST
-		{in: "Friday 2/3 from 12:00 - 3 pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), isBroken: true},
+		{in: "Friday 2/3 from 12:00 - 3 pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET)}, //, isBroken: true},
 		//    Sunday, October 6, 9am - 4pm Pacific Time
 		{in: "Friday, February 3, 9am - 12pm Eastern Time", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "February 3, 2023 from 9:00 am to noon ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
@@ -506,7 +514,7 @@ func TestParse(t *testing.T) {
 			NewRange(DateTimeFor2023Mar01_09AM_ET, DateTimeFor2023Mar01_12PM_ET)), isBroken: true},
 
 		// DTT
-		{in: "Friday 12 to 3 PM Eastern", want: NewRangesWithStartEndDateTimes(DateTimeForFriday_12PM_ET, DateTimeForFriday_03PM_ET), isBroken: true},
+		{in: "Friday 12 to 3 PM Eastern", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_12PM_ET, DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Feb01_09AM_ET}, //, isBroken: true},
 
 		// DMTT
 		{in: "3 Feb 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
@@ -653,7 +661,20 @@ func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 		if !tc.isBroken && (got == nil && tc.want == nil) {
 			return
 		}
-		diff := cmp.Diff(got, tc.want, protocmp.Transform())
+
+		// Clear Weekdays which would just be annoying to test. Trust that we would find with semantic checks.
+		// if got != nil {
+		// 	for _, dtr := range got.Items {
+		// 		if dtr.Start != nil && dtr.Start.Date != nil {
+		// 			dtr.Start.Date.Weekday = 0
+		// 		}
+		// 		if dtr.End != nil && dtr.End.Date != nil {
+		// 			dtr.End.Date.Weekday = 0
+		// 		}
+		// 	}
+		// }
+
+		diff := cmp.Diff(got, tc.want, cmpopts.IgnoreUnexported(Date{})) //, protocmp.Transform())
 		// fmt.Printf("diff == \"\": %t\n", diff == "")
 		// fmt.Printf("tc.isBroken: %t\n", tc.isBroken)
 
