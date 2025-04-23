@@ -758,8 +758,8 @@ var ignorableTimeZoneAbbreviations = map[string]bool{
 	"V": true,
 }
 
-func NewRelativeDate(relativeName string) *Date {
-	// fmt.Printf("NewRelativeDate(relativeName: %q), minimumDateTime: %s\n", relativeName, minimumDateTime.String())
+func NewRawDateFromRelative(relativeName string) *Date {
+	// fmt.Printf("NewRawDateFromRelative(relativeName: %q), minimumDateTime: %s\n", relativeName, minimumDateTime.String())
 	if minimumDateTime == nil {
 		panic(fmt.Sprintf("semantic error: found relativeName %q but minimumDateTimeName is nil\n", relativeName))
 	}
@@ -780,32 +780,32 @@ func NewRelativeDate(relativeName string) *Date {
 	panic(fmt.Sprintf("semantic error: found unknown relativeName: %q\n", relativeName))
 }
 
-func NewAmbiguousDate(weekdayAny any, first string, second string, yearAny any) *Date {
+func NewRawDateFromAmbiguous(weekdayAny any, first string, second string, yearAny any) *Date {
 	// North American tends to parse dates as month-day-year.
 	if parseDateMode == DateModeNorthAmerican {
-		return NewWMDYDate(weekdayAny, first, second, yearAny)
+		return NewRawDateFromWMDY(weekdayAny, first, second, yearAny)
 	}
-	return NewWDMYDate(weekdayAny, first, second, yearAny)
+	return NewRawDateFromWDMY(weekdayAny, first, second, yearAny)
 }
 
-func NewDsMYDates(daysAny []string, monthAny any, yearAny any) []*Date {
+func NewRawDateFromDsMYs(daysAny []string, monthAny any, yearAny any) []*Date {
 	rs := []*Date{}
 	for _, dayAny := range daysAny {
-		rs = append(rs, NewDMYDate(dayAny, monthAny, yearAny))
+		rs = append(rs, NewRawDateFromDMY(dayAny, monthAny, yearAny))
 	}
 	return rs
 }
 
-func NewDMYDate(dayAny any, monthAny any, yearAny any) *Date {
-	// fmt.Printf("NewDMYDate(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
+func NewRawDateFromDMY(dayAny any, monthAny any, yearAny any) *Date {
+	// fmt.Printf("NewRawDateFromDMY(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
 	return NewDateFromRaw(&Date{Day: day, Month: time.Month(month), Year: year})
 }
 
-func NewWDMYDate(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
-	// fmt.Printf("NewDMYDate(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
+func NewRawDateFromWDMY(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
+	// fmt.Printf("NewRawDateFromDMY(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
 	weekday := 0 // findInt(weekdayUnit, weekdayAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
@@ -813,24 +813,24 @@ func NewWDMYDate(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
 	return NewDateFromRaw(&Date{Day: day, Month: time.Month(month), Year: year, Weekday: weekday})
 }
 
-func NewMDsYDates(monthAny any, daysAny []string, yearAny any) []*Date {
+func NewRawDateFromMDsYs(monthAny any, daysAny []string, yearAny any) []*Date {
 	rs := []*Date{}
 	for _, dayAny := range daysAny {
-		rs = append(rs, NewMDYDate(monthAny, dayAny, yearAny))
+		rs = append(rs, NewRawDateFromMDY(monthAny, dayAny, yearAny))
 	}
 	return rs
 }
 
-func NewMDYDate(monthAny any, dayAny any, yearAny any) *Date {
-	return NewDMYDate(dayAny, monthAny, yearAny)
+func NewRawDateFromMDY(monthAny any, dayAny any, yearAny any) *Date {
+	return NewRawDateFromDMY(dayAny, monthAny, yearAny)
 }
 
-func NewWMDYDate(weekdayAny any, monthAny any, dayAny any, yearAny any) *Date {
-	return NewWDMYDate(weekdayAny, dayAny, monthAny, yearAny)
+func NewRawDateFromWMDY(weekdayAny any, monthAny any, dayAny any, yearAny any) *Date {
+	return NewRawDateFromWDMY(weekdayAny, dayAny, monthAny, yearAny)
 }
 
-func NewYMDDate(yearAny any, monthAny any, dayAny any) *Date {
-	return NewDMYDate(dayAny, monthAny, yearAny)
+func NewRawDateFromYMD(yearAny any, monthAny any, dayAny any) *Date {
+	return NewRawDateFromDMY(dayAny, monthAny, yearAny)
 }
 
 func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
