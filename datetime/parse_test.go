@@ -138,7 +138,7 @@ var TimeZoneForSUB5 = &TimeZone{Offset: "-05:00"}
 
 type parseTest struct {
 	dateMode string
-	minDT  *DateTime
+	minDT    *DateTime
 
 	in       string
 	want     *DateTimeRanges
@@ -213,18 +213,18 @@ func TestParse(t *testing.T) {
 		{in: "02.03", want: DateRangesForMar02, dateMode: "rest"},
 		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
 		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: "rest", minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03.", want: DateRangesForFeb03, dateMode: "na"},
 		{in: "02.03.", want: DateRangesForMar02, dateMode: "rest"},
 		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
 		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: "rest", minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: "na"},
 		{in: "2/3/2023", want: DateRangesFor2023Mar02, dateMode: "rest"},
 
 		// Extra tokens
 		{in: "Feb 3 Google Calendar ICS", want: DateRangesForFeb03},
 		{in: "Updated: Feb 3", want: DateRangesForFeb03},
-		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", minDT: DateTimeFor2023Jan01_12AM_ET, isBroken: true},
-		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03, minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "Workshop Update (2/3/23)", want: DateRangesFor2023Feb03, dateMode: "na", isBroken: true},
+		{in: "Workshop: Feb 3 2023  VIRTUAL", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		{in: "Release date: February 3, 2023", want: DateRangesFor2023Feb03},
 		// Need to replace scanner for these.
@@ -357,6 +357,9 @@ func TestParse(t *testing.T) {
 		{in: "Starting February 3rd at 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "FEBRUARY 3RD 12 PM ET, ON FRIDAY", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 
+		// MDT with min
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Jan01_12AM_ET},
+
 		// MDTZ
 		{in: "Feb 3 12pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3 12pm (ET)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
@@ -364,7 +367,6 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3 12pm in ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3 12pm Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_Eastern)},
 		{in: "Feb 3 12pm US/Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Jan01_12AM_ET},
 		// {in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), minDT: DateTimeForEast, wantDiff: true},
 		{in: "Starting February 3rd at 12pm (ET) - Virtually.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET), dateMode: "na", isBroken: true},
@@ -613,7 +615,9 @@ func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 			}
 			return
 		}
-		if !acceptBrokenTests && diff != "" {
+		if diff != "" &&
+			(!acceptBrokenTests ||
+				(acceptBrokenTests && !tc.isBroken)) {
 			pp.Default.SetColoringEnabled(false)
 			// fmt.Printf("got:\n%s\n", litter.Sdump(got))
 			// fmt.Printf("want:\n%s\n", litter.Sdump(tc.want))

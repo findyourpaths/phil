@@ -68,6 +68,7 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 
 	minimumDateTime = minDateTime
 	debugf("minimumDateTime: %q\n", minimumDateTime.String())
+	// fmt.Printf("minimumDateTime: %q\n", minimumDateTime.String())
 	if dateMode == "" {
 		dateMode = DateModeRest
 	}

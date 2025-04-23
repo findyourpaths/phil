@@ -394,11 +394,10 @@ func NewDateFromRaw(date *Date) *Date {
 		return date
 	}
 
-	// // fmt.Printf("checking year\n")
-	// // Fix year by setting date to be no earlier than 30 days before parseDT.
-	// if date.Year == 0 {
-	// 	setNewDateYear(date)
-	// }
+	// Fix year by setting date to be no earlier than minimumDateTime.
+	if date.Year == 0 {
+		setNewDateYear(date)
+	}
 
 	t := time.Date(date.Year, date.Month, date.Day, 0, 0, 0, 0, time.UTC)
 	tw := weekdaysByNames[strings.ToLower(t.Weekday().String())]
@@ -413,7 +412,7 @@ func NewDateFromRaw(date *Date) *Date {
 }
 
 func setNewDateYear(date *Date) *Date {
-	// fmt.Printf("checking minimumDT: %#v\n", minimumDT)
+	// fmt.Printf("checking minimumDT: %#v\n", minimumDateTime)
 	if minimumDateTime == nil {
 		date.Year = 0
 		return date
@@ -440,7 +439,7 @@ func setNewDateYear(date *Date) *Date {
 		return date
 	}
 
-	fmt.Printf("unclear why none of the above work")
+	fmt.Printf("warning: unclear how to set year give minimumDateTime")
 	date.Year = 0
 	return date
 }
