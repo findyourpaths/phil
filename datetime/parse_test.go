@@ -438,7 +438,7 @@ func TestParse(t *testing.T) {
 
 		// MDTT
 		// Need to fix parser for this.
-		{in: "February 3: 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM), isBroken: true},
+		{in: "February 3: 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "Feb 3 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "Feb 3 @ 9:00 AM - Feb 3 @ 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
 		{in: "February, 3 9:00 - 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
@@ -464,16 +464,18 @@ func TestParse(t *testing.T) {
 			NewRange(DateTimeForFeb22_09AM, DateTimeForFeb22_12PM),
 			NewRange(DateTimeForMar01_09AM, DateTimeForMar01_12PM)), isBroken: true},
 
-		// MDTZ
+		// MDTTZ
 		{in: "Feb 3rd - 9.00 AM- 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "February 3rd, 9-12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3 2023 9am - 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
 		{in: "Feb 3 2023 9am ET to 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
 		{in: "Feb 3 @ 9:00 AM ET - Feb 3 @ 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
 		{in: "Feb 3, 2023, 9:00 AM ET - Feb 3, 2023, 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
+		{in: "Friday, 2/3 12-3pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), dateMode: "na"},
+		// Tuesday 8/13 from 6:30 - 8:30 pm EST
+		{in: "Friday 2/3 from 12:00 - 3 pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), isBroken: true},
 		//    Sunday, October 6, 9am - 4pm Pacific Time
 		{in: "Friday, February 3, 9am - 12pm Eastern Time", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
-		{in: "Friday, 2/3 12-3pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), dateMode: "na"},
 		{in: "February 3, 2023 from 9:00 am to noon ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
 		// {in: "February 3, 2023 / 9:00 AM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_09AM), wantDiff: true},
 		{in: "February 3, 2023 / 9:00 AM - 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
@@ -545,8 +547,6 @@ func TestParse(t *testing.T) {
 		//
 		// TODO
 		//
-
-		// Tuesday 8/13 from 6:30 - 8:30 pm EST
 
 		// 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
 		// Tues/Thurs 6:30p-9:00p March/April

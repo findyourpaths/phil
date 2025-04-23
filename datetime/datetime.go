@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/samber/lo"
 )
 
 var minimumDateTime *DateTime
@@ -65,16 +67,16 @@ func NewRangesWithStartDates(starts ...*Date) *DateTimeRanges {
 // "Feb 3".
 func NewRangesWithStartEndRanges(start *DateTimeRange, end *DateTimeRange) *DateTimeRanges {
 	if start.Start.Date.String() != start.End.Date.String() {
-		panic(fmt.Sprintf("start range must begin and end on same date: start: %q, end: %q", start.Start, start.End))
+		panic(fmt.Sprintf("semantic error: start range must begin and end on same date: start: %q, end: %q", start.Start, start.End))
 	}
 	if end.Start.Date.String() != end.End.Date.String() {
-		panic(fmt.Sprintf("end range must begin and end on same date: start: %q, end: %q", end.Start, end.End))
+		panic(fmt.Sprintf("semantic error: end range must begin and end on same date: start: %q, end: %q", end.Start, end.End))
 	}
 	if start.Start.Time.String() != end.Start.Time.String() {
-		panic(fmt.Sprintf("start and end ranges must start with the same time: start: %q, end: %q", start, end))
+		panic(fmt.Sprintf("semantic error: start and end ranges must start with the same time: start: %q, end: %q", start, end))
 	}
 	if start.End.Time.String() != end.End.Time.String() {
-		panic(fmt.Sprintf("start and end ranges must end with the same time: start: %q, end: %q", start, end))
+		panic(fmt.Sprintf("semantic error: start and end ranges must end with the same time: start: %q, end: %q", start, end))
 	}
 
 	r := &DateTimeRanges{}
@@ -148,7 +150,7 @@ func (rng *DateTimeRange) AddDate(years int, months int, days int) *DateTimeRang
 
 func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 	if start.TimeZone != nil && end.TimeZone != nil && *(start.TimeZone) != *(end.TimeZone) {
-		fmt.Printf("warning: in NewRange, start and end TimeZones are different")
+		panic(fmt.Sprintf("semantic error: start TimeZone %#v is different from end TimeZone: %#v\n", start.TimeZone, end.TimeZone))
 	}
 	if start.TimeZone == nil && end.TimeZone != nil {
 		start.TimeZone = end.TimeZone
@@ -185,7 +187,7 @@ type DateTime struct {
 
 func (dt *DateTime) Location() *time.Location {
 	if dt.TimeZone == nil {
-		fmt.Printf("warning: no TimeZone found in DateTime")
+		fmt.Printf("warning: no TimeZone found in DateTime, returning nil Location")
 		return nil
 	}
 
@@ -210,7 +212,7 @@ func (dt *DateTime) Location() *time.Location {
 		}
 	}
 
-	fmt.Printf("warning: no time Location found for TimeZone: %#v\n", dt.TimeZone)
+	fmt.Printf("warning: no time Location found for TimeZone: %#v, returning nil\n", dt.TimeZone)
 	return nil
 }
 
@@ -243,6 +245,17 @@ func (dt *DateTime) ToTime() *time.Time {
 }
 
 func NewDateTime(date *Date, time *Time, timeZone *TimeZone) *DateTime {
+	// We don't want gaps in the time scales (e.g. Month and Hour, but not Day).
+	bits := []bool{date.Year != 0, int(date.Month) != 0, date.Day != 0, time != nil && time.Hour != 0}
+	start := lo.IndexOf(bits, true)
+	end := lo.LastIndexOf(bits, true)
+	for i := start; i < end; i++ {
+		if !bits[i] {
+			// fmt.Printf("found gap in DateTime at i: %d in bits: %#v\n", i, bits)
+			panic(fmt.Sprintf("semantic error: found gap in DateTime at i: %d in YMDH bits: %#v\n", i, bits))
+		}
+	}
+
 	return NewDateTimeFromRaw(&DateTime{Date: date, Time: time, TimeZone: timeZone})
 }
 
@@ -306,6 +319,9 @@ func NewDateTimeFromRaw(dt *DateTime) *DateTime {
 		// fmt.Printf("in NewDateTimeFromRaw(), setting time zone to %#v\n", minimumDT.TimeZone)
 		dt.TimeZone = minimumDateTime.TimeZone
 	}
+
+	// potential switch ambiguous date based on final time zone
+
 	return dt
 }
 
@@ -333,7 +349,6 @@ func locationForName(name string) *time.Location {
 	r, err := time.LoadLocation(name)
 	if err != nil {
 		panic(fmt.Sprintf("error getting time zone location from name (%q): %v", name, err))
-		return nil
 	}
 	// fmt.Printf("in locationForName(dt, name: %q), returning %#v\n", name, r)
 	return r
@@ -347,7 +362,6 @@ func locationForOffset(dt *DateTime, offset string) *time.Location {
 	t, err := time.Parse(time.RFC3339, fakeStr)
 	if err != nil {
 		panic(fmt.Sprintf("error parsing fake time string (%q) for offset %q: %v", fakeStr, offset, err))
-		return nil
 	}
 	r := t.Location()
 	// fmt.Printf("in locationForOffset(dt, offset: %q), returning %#v\n", offset, r)
@@ -376,8 +390,7 @@ func locationForAbbreviation(dt *DateTime, abbrev string) *time.Location {
 		return r
 	}
 
-	fmt.Printf("warning: no preferred time Location found for time zone abbreviation %q\n", abbrev)
-	return nil
+	panic(fmt.Sprintf("error: no preferred time Location found for time zone abbreviation %q\n", abbrev))
 }
 
 // A Date represents a date (year, month, day, weekday).
@@ -427,7 +440,8 @@ func NewDateFromRaw(date *Date) *Date {
 		return date
 	}
 	if date.Weekday != tw {
-		panic(fmt.Sprintf("extracted weekday of %q doesn't actual match weekday of %q for %4d-%2d-%2d", weekdayNames[tw], weekdayNames[date.Weekday], date.Year, date.Month, date.Day))
+		panic(fmt.Sprintf("semantic error: extracted weekday of %q doesn't actual match weekday of %q for %s\n",
+			weekdayNames[tw], weekdayNames[date.Weekday], date.String()))
 	}
 	return date
 }
@@ -460,9 +474,7 @@ func setNewDateYear(date *Date) *Date {
 		return date
 	}
 
-	fmt.Printf("warning: unclear how to set year give minimumDateTime")
-	date.Year = 0
-	return date
+	panic(fmt.Sprintf("semantic error: unclear how to set year given minimumDateTime: %s\n", minimumDateTime.String()))
 }
 
 // A Time represents a time with nanosecond precision.
@@ -749,8 +761,7 @@ var ignorableTimeZoneAbbreviations = map[string]bool{
 func NewRelativeDate(relativeName string) *Date {
 	// fmt.Printf("NewRelativeDate(relativeName: %q), minimumDateTime: %s\n", relativeName, minimumDateTime.String())
 	if minimumDateTime == nil {
-		panic("in NewRelativeDate, minimumDateTimeName is nil\n")
-		return nil
+		panic(fmt.Sprintf("semantic error: found relativeName %q but minimumDateTimeName is nil\n", relativeName))
 	}
 
 	if strings.ToLower(relativeName) == "yesterday" {
@@ -766,8 +777,7 @@ func NewRelativeDate(relativeName string) *Date {
 		y, m, d := t.AddDate(0, 0, 1).Date()
 		return NewDateFromRaw(&Date{Day: d, Month: m, Year: y})
 	}
-	fmt.Printf("warning: in NewRelativeDate, unknown relativeName: %q\n", relativeName)
-	return nil
+	panic(fmt.Sprintf("semantic error: found unknown relativeName: %q\n", relativeName))
 }
 
 func NewAmbiguousDate(weekdayAny any, first string, second string, yearAny any) *Date {
@@ -826,7 +836,7 @@ func NewYMDDate(yearAny any, monthAny any, dayAny any) *Date {
 func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
 	if r.Hour > 12 {
-		panic(fmt.Sprintln("found hour but failed AM bounds check", "r.Hour", r.Hour))
+		panic(fmt.Sprintf("semantic error: found hour %#v but failed AM bounds check\n", r.Hour))
 	}
 	r.Hour = r.Hour % 12
 	return r
@@ -835,7 +845,7 @@ func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 func NewPMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
 	if r.Hour > 12 {
-		panic(fmt.Sprintln("found hour but failed PM bounds check", "r.Hour", r.Hour))
+		panic(fmt.Sprintf("semantic error: found hour %#v but failed PM bounds check\n", r.Hour))
 	}
 	r.Hour = (r.Hour % 12) + 12
 	return r
