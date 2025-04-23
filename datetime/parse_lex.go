@@ -176,10 +176,16 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return TIME
 			case "to":
 				return TO
+			case "today":
+				return RELATIVE_DAY
+			case "tomorrow":
+				return RELATIVE_DAY
 			case "until":
 				return UNTIL
 			case "when":
 				return WHEN
+			case "yesterday":
+				return RELATIVE_DAY
 			case "z":
 				return Z
 
@@ -203,7 +209,7 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				upLit := strings.ToUpper(lit)
 				// tz, err := tzTimezone.GetTzAbbreviationInfo(upLit)
 				// fmt.Println("upLit", upLit, "tz", tz, "err", err)
-				if upLit != "M" {
+				if !ignorableTimeZoneAbbreviations[upLit] {
 					if tz, _ := timezoneTZ.GetTzAbbreviationInfo(upLit); tz != nil {
 						return TIME_ZONE_ABBREV
 					}

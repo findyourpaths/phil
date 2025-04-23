@@ -67,7 +67,7 @@ func NewRangesWithStartEndRanges(start *DateTimeRange, end *DateTimeRange) *Date
 	if start.Start.Date.String() != start.End.Date.String() {
 		panic(fmt.Sprintf("start range must begin and end on same date: start: %q, end: %q", start.Start, start.End))
 	}
-	if end.Start.Date.String() != end.Start.Date.String() {
+	if end.Start.Date.String() != end.End.Date.String() {
 		panic(fmt.Sprintf("end range must begin and end on same date: start: %q, end: %q", end.Start, end.End))
 	}
 	if start.Start.Time.String() != end.Start.Time.String() {
@@ -147,6 +147,16 @@ func (rng *DateTimeRange) AddDate(years int, months int, days int) *DateTimeRang
 // }
 
 func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
+	if start.TimeZone != nil && end.TimeZone != nil && *(start.TimeZone) != *(end.TimeZone) {
+		fmt.Printf("warning: in NewRange, start and end TimeZones are different")
+	}
+	if start.TimeZone == nil && end.TimeZone != nil {
+		start.TimeZone = end.TimeZone
+	}
+	if start.TimeZone != nil && end.TimeZone == nil {
+		end.TimeZone = start.TimeZone
+	}
+
 	return &DateTimeRange{
 		Start: start,
 		End:   end,
@@ -173,6 +183,37 @@ type DateTime struct {
 	TimeZone *TimeZone
 }
 
+func (dt *DateTime) Location() *time.Location {
+	if dt.TimeZone == nil {
+		fmt.Printf("warning: no TimeZone found in DateTime")
+		return nil
+	}
+
+	if dt.TimeZone.Name != "" {
+		r := locationForName(dt.TimeZone.Name)
+		if r != nil {
+			return r
+		}
+	}
+
+	if dt.TimeZone.Offset != "" {
+		r := locationForOffset(dt, dt.TimeZone.Offset)
+		if r != nil {
+			return r
+		}
+	}
+
+	if dt.TimeZone.Abbreviation != "" {
+		r := locationForAbbreviation(dt, dt.TimeZone.Abbreviation)
+		if r != nil {
+			return r
+		}
+	}
+
+	fmt.Printf("warning: no time Location found for TimeZone: %#v\n", dt.TimeZone)
+	return nil
+}
+
 func (dt *DateTime) String() string {
 	if dt == nil {
 		return ""
@@ -196,27 +237,7 @@ func (dt *DateTime) ToTime() *time.Time {
 		t = dt.Time
 	}
 
-	var loc *time.Location
-	if dt.TimeZone == nil {
-		fmt.Printf("no TimeZone found in DateTime")
-		return nil
-	}
-
-	if dt.TimeZone.Name != "" {
-		loc = locationForName(dt.TimeZone.Name)
-	}
-	if loc == nil && dt.TimeZone.Offset != "" {
-		loc = locationForOffset(dt, dt.TimeZone.Offset)
-	}
-	if loc == nil && dt.TimeZone.Abbreviation != "" {
-		loc = locationForAbbreviation(dt, dt.TimeZone.Abbreviation)
-	}
-	if loc == nil {
-		fmt.Printf("warning: no time Location found for TimeZone: %#v\n", dt.TimeZone)
-		return nil
-	}
-
-	r := time.Date(dt.Date.Year, dt.Date.Month, dt.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, loc)
+	r := time.Date(dt.Date.Year, dt.Date.Month, dt.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, dt.Location())
 	// fmt.Printf("in dt.ToTime(), r: %#v\n", r)
 	return &r
 }
@@ -718,6 +739,35 @@ var northAmericanTimeZoneAbbreviations = map[string]bool{
 	"ET": true,
 	"MT": true,
 	"PT": true,
+}
+
+var ignorableTimeZoneAbbreviations = map[string]bool{
+	"M": true,
+	"V": true,
+}
+
+func NewRelativeDate(relativeName string) *Date {
+	// fmt.Printf("NewRelativeDate(relativeName: %q), minimumDateTime: %s\n", relativeName, minimumDateTime.String())
+	if minimumDateTime == nil {
+		panic("in NewRelativeDate, minimumDateTimeName is nil\n")
+		return nil
+	}
+
+	if strings.ToLower(relativeName) == "yesterday" {
+		t := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
+		y, m, d := t.AddDate(0, 0, -1).Date()
+		return NewDateFromRaw(&Date{Day: d, Month: m, Year: y})
+	}
+	if strings.ToLower(relativeName) == "today" {
+		return minimumDateTime.Date
+	}
+	if strings.ToLower(relativeName) == "tomorrow" {
+		t := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
+		y, m, d := t.AddDate(0, 0, 1).Date()
+		return NewDateFromRaw(&Date{Day: d, Month: m, Year: y})
+	}
+	fmt.Printf("warning: in NewRelativeDate, unknown relativeName: %q\n", relativeName)
+	return nil
 }
 
 func NewAmbiguousDate(weekdayAny any, first string, second string, yearAny any) *Date {

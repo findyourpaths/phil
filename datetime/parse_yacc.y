@@ -51,6 +51,7 @@ package datetime
 %token <string> TIME_NAME
 %token <string> TIME_ZONE
 %token <string> TIME_ZONE_ABBREV
+%token <string> RELATIVE_DAY
 %token <string> WEEKDAY_NAME
 %token <string> YEAR
 
@@ -324,6 +325,7 @@ DateTimeSepPlus:
 ;
 DateTimeSep:
   COLON
+| COMMA
 | DEC
 | QUO
 | SUB
@@ -385,6 +387,10 @@ RFC3339TimeZone:
 
 Date:
   DatePrefixPlus Date {$$ = $2}
+
+| RELATIVE_DAY {$$ = NewRelativeDate($1)}
+| RELATIVE_DAY WeekdayOpt {$$ = NewRelativeDate($1)}
+| RELATIVE_DAY Date {$$ = $2}
 
   // "02.03", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
 | WeekdayOpt Day DateSepPlus Day {$$ = NewAmbiguousDate($1, $2, $4, nil)}
