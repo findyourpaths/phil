@@ -141,7 +141,7 @@ ColonOpt:
 
 
 DateTimeRanges:
-  DateTimeRange {$$ = &DateTimeRanges{Items: []*DateTimeRange{$1}}}
+  DateTimeRange {$$ = NewRanges($1)}
 
 | RangesPrefixPlus DateTimeRanges {$$ = $2}
 | DateTimeRanges RangesSepPlus DateTimeRange {$$ = AppendDateTimeRanges($1, $3)}
@@ -181,9 +181,9 @@ DateTimeRanges:
 | Day RangeSep Day Month Day RangeSep Day Month Year {$$ = NewRanges(NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, $9), NewRawDateFromDMY($3, $4, $9)), NewRangeWithStartEndDates(NewRawDateFromDMY($5, $8, $9), NewRawDateFromDMY($7, $8, $9)))}
 
   // "Feb 3, Mar 4"
-| Month Day Month Day {$$ = NewRanges(NewRangeWithStart(NewRawDateFromMDY($1, $2, nil)), NewRangeWithStart(NewRawDateFromMDY($3, $4, nil)))}
+| Month Day Month Day {$$ = NewRanges(NewRangeWithStartDate(NewRawDateFromMDY($1, $2, nil)), NewRangeWithStartDate(NewRawDateFromMDY($3, $4, nil)))}
   // "Feb 3, Mar 4 2023"
-| Month Day Month Day Year {$$ = NewRanges(NewRangeWithStart(NewRawDateFromMDY($1, $2, $5)), NewRangeWithStart(NewRawDateFromMDY($3, $4, $5)))}
+| Month Day Month Day Year {$$ = NewRanges(NewRangeWithStartDate(NewRawDateFromMDY($1, $2, $5)), NewRangeWithStartDate(NewRawDateFromMDY($3, $4, $5)))}
 
   // "Wednesdays February 1st & 8th 12:00p-3:00p"
 | WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt Time {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $8, nil)), NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $8, nil)))}
@@ -226,7 +226,7 @@ DayPlus1:
 //
 
 DateTimeRange:
-  DateTime {$$ = &DateTimeRange{Start: $1}}
+  DateTime {$$ = NewRangeWithStart($1)}
 
 // TODO: we should handle semantics of this weekday, but not clear how.
 | DateTimeRange DateTimeSepOpt ON Weekday {$$ = $1}
@@ -237,41 +237,29 @@ DateTimeRange:
 | Time RangeSepPlus DateTime {$$ = NewRange(NewDateTime($3.Date, $1, $3.TimeZone), $3)}
 
   // "Feb 3, 2023 - Feb 4, 2023"
-| DateTime RangeSepPlus DateTime {$$ = &DateTimeRange{Start: $1, End: $3}}
-
-  // "Feb 3-4"
-| Month Day RangeSepPlus Day {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, nil), NewRawDateFromMDY($1, $4, nil))}
-  // "3-4 Feb"
-| Day RangeSepPlus Day Month {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, nil), NewRawDateFromDMY($3, $4, nil))}
-
-  // "Feb 3-4, 2023"
-| Month Day RangeSepPlus Day Year {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, $5), NewRawDateFromMDY($1, $4, $5))}
-  // "3-4 Feb 2023"
-| Day RangeSepPlus Day Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, $5), NewRawDateFromDMY($3, $4, $5))}
-
-  // "Feb 3 - Mar 4, 2023"
-| Month Day RangeSepPlus Month Day Year {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, $6), NewRawDateFromMDY($4, $5, $6))}
+| DateTime RangeSepPlus DateTime {$$ = NewRange($1, $3)}
 
   // "Thu Feb 3 - Sat Mar 4, 2023"
-| WeekdayOpt Month Day RangeSepPlus WeekdayOpt Month Day Year {$$ = NewRangeWithStartEndDates(NewRawDateFromWMDY($1, $2, $3, $8), NewRawDateFromWMDY($5, $6, $7, $8))}
+| Date RangeSepPlus Day {$$ = NewRangeWithStartEndDates($1, NewRawDateFromDMY($3, nil, nil))}
 
-  // "Thu Feb 3 - Sat 4 Mar, 2023"
-| WeekdayOpt Month Day RangeSepPlus WeekdayOpt Day Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromWMDY($1, $2, $3, $8), NewRawDateFromWDMY($5, $6, $7, $8))}
+  // "Thu Feb 3 - Sat Mar 4, 2023"
+| Day RangeSepPlus Date {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, nil, nil), $3)}
 
-  // "Thu Feb 3 - 4 Sat Mar, 2023"
-| WeekdayOpt Month Day RangeSepPlus Day WeekdayOpt Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromWMDY($1, $2, $3, $8), NewRawDateFromWDMY($6, $5, $7, $8))}
+/*   // "Feb 3-4" */
+/* | Month Day RangeSepPlus Day {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, nil), NewRawDateFromMDY($1, $4, nil))} */
+/*   // "3-4 Feb" */
+/* | Day RangeSepPlus Day Month {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, nil), NewRawDateFromDMY($3, $4, nil))} */
 
-  // "Thu 3 Feb - Sat Mar 4, 2023"
-| WeekdayOpt Day Month RangeSepPlus WeekdayOpt Month Day Year {$$ = NewRangeWithStartEndDates(NewRawDateFromWDMY($1, $2, $3, $8), NewRawDateFromWMDY($5, $6, $7, $8))}
+  // "Feb 3-4, 2023"
+| Date RangeSepPlus Day Year {$$ = NewRangeWithStartEndDates($1, NewRawDateFromMDY(nil, $3, $4))}
+/*   // "3-4 Feb 2023" */
+/* | Day RangeSepPlus Day Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, $5), NewRawDateFromDMY($3, $4, $5))} */
 
-  // "Thu 3 Feb - Sat 4 Mar, 2023"
-| WeekdayOpt Day Month RangeSepPlus WeekdayOpt Day Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromWDMY($1, $2, $3, $8), NewRawDateFromWDMY($5, $6, $7, $8))}
-
-  // "Thu 3 Feb - Sat 4 Mar, 2023"
-| WeekdayOpt Day Month RangeSepPlus Day WeekdayOpt Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromWDMY($1, $2, $3, $8), NewRawDateFromWDMY($6, $5, $7, $8))}
+/*   // "Feb 3 - Mar 4, 2023" */
+/* | Month Day RangeSepPlus Month Day Year {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, $6), NewRawDateFromMDY($4, $5, $6))} */
 
   // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
-| Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRange(NewDateTime(NewRawDateFromDMY($4, $6, $14), $1, $2), NewDateTime(NewRawDateFromDMY($8, $10, $14), $12, $13))}
+/* | Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRange(NewDateTime(NewRawDateFromDMY($4, $6, $14), $1, $2), NewDateTime(NewRawDateFromDMY($8, $10, $14), $12, $13))} */
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
@@ -315,10 +303,13 @@ RangeSep:
 DateTime:
   Date {$$ = NewDateTimeWithDate($1)}
 
+| Date DateTimeSepPlus TimeZoneOpt {$$ = NewDateTime($1, nil, $3)}
 | Date Time TimeZoneOpt {$$ = NewDateTime($1, $2, $3)}
 | Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
 | Time TimeZoneOpt Date {$$ = NewDateTime($3, $1, $2)}
 | Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTime($4, $1, $2)}
+// 9:00am 3rd Feb - 4th Feb 3:00pm 2023
+| Date Time Year TimeZoneOpt {$$ = NewDateTime(NewRawDateFromDMY($1.Day, $1.Month, $3), $2, $4)}
 | RFC3339DateTime
 ;
 

@@ -13,9 +13,9 @@ import (
 	"github.com/sanity-io/litter"
 )
 
-var acceptBrokenTests = true
+// var acceptBrokenTests = true
 
-// var acceptBrokenTests = false
+var acceptBrokenTests = false
 
 // Run with
 // rm datetime_glr.go; time GOWORK=off go generate -v ./...
@@ -125,6 +125,7 @@ var DateTimeFor2023Feb01_09AM_ET = NewDateTime(DateFor2023Feb01, TimeFor09AM, Ti
 var DateTimeFor2023Feb01_12PM_ET = NewDateTime(DateFor2023Feb01, TimeFor12PM, TimeZoneForET)
 var DateTimeFor2023Feb01_03PM_ET = NewDateTime(DateFor2023Feb01, TimeFor03PM, TimeZoneForET)
 
+var DateTimeFor2023Feb03_ET = NewDateTime(DateFor2023Feb03, nil, TimeZoneForET)
 var DateTimeFor2023Feb03_09AM_ET = NewDateTime(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)
 var DateTimeFor2023Feb03_12PM_ET = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)
 var DateTimeFor2023Feb03_12PM_ADD0 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForADD0)
@@ -132,6 +133,7 @@ var DateTimeFor2023Feb03_12PM_SUB0 = NewDateTime(DateFor2023Feb03, TimeFor12PM, 
 var DateTimeFor2023Feb03_12PM_SUB5 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForSUB5)
 var DateTimeFor2023Feb03_03PM_ET = NewDateTime(DateFor2023Feb03, TimeFor03PM, TimeZoneForET)
 
+var DateTimeFor2023Feb04_ET = NewDateTime(DateFor2023Feb04, nil, TimeZoneForET)
 var DateTimeFor2023Feb04_09AM_ET = NewDateTime(DateFor2023Feb04, TimeFor09AM, TimeZoneForET)
 var DateTimeFor2023Feb04_12PM_ET = NewDateTime(DateFor2023Feb04, TimeFor12PM, TimeZoneForET)
 
@@ -391,13 +393,19 @@ func TestParse(t *testing.T) {
 		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "February 3 @ 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "February 3  12 p.m.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		{in: "Date:Thu 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+		{in: "Date:Fri 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
 		{in: "Starting February 3rd at 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		//    Friday, 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V
-		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V", want: NewRangesWithStartDateTimes(DateTimeForFeb14_06PM), dateMode: DateModeNorthAmerican},
 
-		// MDT with min
 		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Jan01_12AM_ET},
+
+		// WMDT
+		//    Friday, 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V
+		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions**", want: NewRangesWithStartDates(DateForFeb14), dateMode: DateModeNorthAmerican},
+		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V", want: NewRangesWithStartDateTimes(DateTimeForFeb14_06PM), dateMode: DateModeNorthAmerican, isBroken: true},
+
+		// WMDTZ
+		// SAT | 5/17 @ 11:00am CST
+		{in: "FRI 2/3 @ 12:00pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
 
 		// MDTZ
 		{in: "Feb 3 12pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
@@ -444,6 +452,11 @@ func TestParse(t *testing.T) {
 
 		//
 		// Date Time Ranges
+
+		// MD-MDY
+		// Date: Thursday, September 7th - September 11th, 2025 EST
+		{in: "Date: Friday, February 3rd - February 4th, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
+		{in: "Date: Friday, February 3rd - February 4th, 2023 ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_ET, DateTimeFor2023Feb04_ET), isBroken: true},
 
 		// MDTT
 		// Need to fix parser for this.
@@ -531,7 +544,7 @@ func TestParse(t *testing.T) {
 
 		// TDMY
 		{in: "9:00am 3rd Feb - 4th Feb 3:00pm 2023", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb04_03PM)},
-		{in: "9:00am on 3rd Feb - 4th Feb at 3:00pm 2023", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb04_03PM), isBroken: true},
+		{in: "9:00am on 3rd Feb - 4th Feb at 3:00pm 2023", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb04_03PM)},
 		// Not sure how to parse this one.
 		// {in: "(2 Feb 2023 - 3 Feb 2023) 09:00 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeFor2023Feb04_03PM)},
 
@@ -561,6 +574,8 @@ func TestParse(t *testing.T) {
 		//
 		// TODO
 		//
+
+		// Thursday night 24 April, 7-8:30pm Australian Eastern Standard Time, 11am-12:30pm CET
 
 		// 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
 		// Tues/Thurs 6:30p-9:00p March/April

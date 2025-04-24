@@ -133,7 +133,7 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 			}
 		}
 		debugf("%sfailed to find alternative\n", spaces)
-		return nil, nil // fmt.Errorf("failed to find alternative")
+		return nil, fmt.Errorf("failed to find alternative")
 	}
 	if n.Term != "" {
 		debugf("%sreturning term: %q\n", spaces, n.Term)
@@ -175,6 +175,9 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 		pp.Default.SetColoringEnabled(false)
 		debugf("%sreturning computed value:\n%s\nerr: %v\n", spaces, pp.Sprint(r), err)
 	}
+
+	// pp.Default.SetColoringEnabled(false)
+	// fmt.Printf("%sreturning computed value:\n%s\nerr: %v\n", spaces, pp.Sprint(r), err)
 	return r, err
 }
 

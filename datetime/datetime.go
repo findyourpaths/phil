@@ -54,7 +54,7 @@ func NewRanges(rngs ...*DateTimeRange) *DateTimeRanges {
 func NewRangesWithStartDateTimes(starts ...*DateTime) *DateTimeRanges {
 	r := &DateTimeRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeRange{Start: start})
+		r.Items = append(r.Items, NewRangeWithStart(start))
 	}
 	return r
 }
@@ -62,7 +62,7 @@ func NewRangesWithStartDateTimes(starts ...*DateTime) *DateTimeRanges {
 func NewRangesWithStartDates(starts ...*Date) *DateTimeRanges {
 	r := &DateTimeRanges{}
 	for _, start := range starts {
-		r.Items = append(r.Items, &DateTimeRange{Start: NewDateTimeWithDate(start)})
+		r.Items = append(r.Items, NewRangeWithStartDate(start))
 	}
 	return r
 }
@@ -85,6 +85,7 @@ func NewRangesWithStartEndRanges(start *DateTimeRange, end *DateTimeRange) *Date
 	}
 
 	r := &DateTimeRanges{}
+	r.Items = append(r.Items, start)
 	r.Items = append(r.Items, end)
 	return r
 }
@@ -153,31 +154,70 @@ func (rng *DateTimeRange) AddDate(years int, months int, days int) *DateTimeRang
 // 	return &DateTimeRange{Frequency: WEEKLY}
 // }
 
+func NewRangeWithStartDate(startD *Date) *DateTimeRange {
+	return NewRangeWithStartEndDates(startD, nil)
+}
+
+func NewRangeWithStartEndDates(startD *Date, endD *Date) *DateTimeRange {
+	var startDT *DateTime
+	if startD != nil {
+		startDT = &DateTime{Date: startD}
+	}
+	var endDT *DateTime
+	if endD != nil {
+		endDT = &DateTime{Date: endD}
+	}
+	return NewRange(startDT, endDT)
+}
+
+func NewRangeWithStart(startDT *DateTime) *DateTimeRange {
+	return NewRange(startDT, nil)
+}
+
 func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
-	if start.TimeZone != nil && end.TimeZone != nil && *(start.TimeZone) != *(end.TimeZone) {
-		panic(fmt.Sprintf("semantic error: start TimeZone %#v is different from end TimeZone: %#v\n", start.TimeZone, end.TimeZone))
-	}
-	if start.TimeZone == nil && end.TimeZone != nil {
-		start.TimeZone = end.TimeZone
-	}
-	if start.TimeZone != nil && end.TimeZone == nil {
-		end.TimeZone = start.TimeZone
+	if start != nil && end != nil {
+		// Check that start and end TimeZones don't conflict, and if one is missing, copy from the other.
+		if start.TimeZone != nil && end.TimeZone != nil && *(start.TimeZone) != *(end.TimeZone) {
+			panic(fmt.Sprintf("semantic error: start TimeZone %#v is different from end TimeZone: %#v\n", start.TimeZone, end.TimeZone))
+		}
+		if start.TimeZone == nil && end.TimeZone != nil {
+			start.TimeZone = end.TimeZone
+		}
+		if start.TimeZone != nil && end.TimeZone == nil {
+			end.TimeZone = start.TimeZone
+		}
+
+		// fmt.Printf("checking Dates\n")
+		if start.Date != nil && end.Date != nil {
+			// fmt.Printf("checking Days\n")
+			// If both have Days but one Month is missing, copy from the other.
+			if start.Date.Day != 0 && end.Date.Day != 0 {
+				if start.Date.Month == 0 && end.Date.Month != 0 {
+					start.Date.Month = end.Date.Month
+				}
+				if start.Date.Month != 0 && end.Date.Month == 0 {
+					end.Date.Month = start.Date.Month
+				}
+			}
+
+			// If both have Months but one Year is missing, copy from the other.
+			// fmt.Printf("checking Months: %d, %d\n", start.Date.Month, end.Date.Month)
+			// fmt.Printf("before checking Months, Years: %d, %d\n", start.Date.Year, end.Date.Year)
+			if start.Date.Month != 0 && end.Date.Month != 0 {
+				if start.Date.Year == 0 && end.Date.Year != 0 {
+					start.Date.Year = end.Date.Year
+				}
+				if start.Date.Year != 0 && end.Date.Year == 0 {
+					end.Date.Year = start.Date.Year
+				}
+			}
+			// fmt.Printf("after checking Months, Years: %d, %d\n", start.Date.Year, end.Date.Year)
+		}
 	}
 
 	return &DateTimeRange{
 		Start: start,
 		End:   end,
-	}
-}
-
-func NewRangeWithStart(start *Date) *DateTimeRange {
-	return &DateTimeRange{Start: &DateTime{Date: start}}
-}
-
-func NewRangeWithStartEndDates(start *Date, end *Date) *DateTimeRange {
-	return &DateTimeRange{
-		Start: &DateTime{Date: start},
-		End:   &DateTime{Date: end},
 	}
 }
 
@@ -631,42 +671,38 @@ func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 	return &TimeZone{Name: name, Abbreviation: abbrev, Offset: offset}
 }
 
-func findInt(tUnit timeUnit, valAny any) int {
-	// fmt.Printf("findInt(tUnit: %#v, valAny (%T): %#v)\n", tUnit, valAny, valAny)
+func findInt(tUnit timeUnit, val any) int {
+	// fmt.Printf("findInt(tUnit: %#v, valAny (%T): %#v)\n", tUnit, val, val)
 	r := -1
 	var ok bool
-	if valAny != nil {
-		switch valAny.(type) {
+	if val != nil {
+		switch val := val.(type) {
 		case int:
-			rInt, ok := valAny.(int)
-			if ok {
-				r = rInt
-			}
+			r = val
+		case time.Month:
+			r = int(val)
 		case *int:
-			rPtr, ok := valAny.(*int)
-			if ok {
-				r = *rPtr
-			}
+			r = *val
 		case string:
-			if valAny.(string) == "" {
+			if val == "" {
 				ok = false
 				r = 0
 				break
 			}
-			rInt, err := strconv.Atoi(valAny.(string))
+			rInt, err := strconv.Atoi(val)
 			if err == nil {
 				r = rInt
 			} else {
 				if tUnit.stringToIntFn != nil {
-					r = tUnit.stringToIntFn(valAny.(string))
+					r = tUnit.stringToIntFn(val)
 				}
 			}
 		}
 	}
 
 	if tUnit.fixFn != nil {
-		r, ok = tUnit.fixFn(valAny, r)
-	} else if valAny == nil {
+		r, ok = tUnit.fixFn(val, r)
+	} else if val == nil {
 		return 0
 	}
 
@@ -674,9 +710,9 @@ func findInt(tUnit timeUnit, valAny any) int {
 	if !ok && (r < tUnit.min || r > tUnit.max) {
 		// fmt.Printf("ok: %#v\n", ok)
 		// fmt.Printf("r: %#v\n", r)
-		// fmt.Printf("r < tunit.min: %#v\n", r < tunit.min)
-		// fmt.Printf("r > tunit.max: %#v\n", r > tunit.max)
-		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tUnit, "valAny", valAny))
+		// fmt.Printf("r < tunit.min: %#v\n", r < tUnit.min)
+		// fmt.Printf("r > tunit.max: %#v\n", r > tUnit.max)
+		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tUnit, "val", val))
 	}
 	// debugf("in findInt(), returning: %d\n", r)
 
