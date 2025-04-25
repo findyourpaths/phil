@@ -176,6 +176,7 @@ func NewRangeWithStart(startDT *DateTime) *DateTimeRange {
 
 func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 	if start != nil && end != nil {
+		// fmt.Printf("checking TimeZones\n")
 		// Check that start and end TimeZones don't conflict, and if one is missing, copy from the other.
 		if start.TimeZone != nil && end.TimeZone != nil && *(start.TimeZone) != *(end.TimeZone) {
 			panic(fmt.Sprintf("semantic error: start TimeZone %#v is different from end TimeZone: %#v\n", start.TimeZone, end.TimeZone))
@@ -187,6 +188,15 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			end.TimeZone = start.TimeZone
 		}
 
+		// fmt.Printf("checking Times\n")
+		if start.Time != nil && end.Time != nil {
+			if start.Date == nil && end.Date != nil {
+				start.Date = end.Date
+			} else if start.Date != nil && end.Date == nil {
+				end.Date = start.Date
+			}
+		}
+
 		// fmt.Printf("checking Dates\n")
 		if start.Date != nil && end.Date != nil {
 			// fmt.Printf("checking Days\n")
@@ -194,8 +204,7 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			if start.Date.Day != 0 && end.Date.Day != 0 {
 				if start.Date.Month == 0 && end.Date.Month != 0 {
 					start.Date.Month = end.Date.Month
-				}
-				if start.Date.Month != 0 && end.Date.Month == 0 {
+				} else if start.Date.Month != 0 && end.Date.Month == 0 {
 					end.Date.Month = start.Date.Month
 				}
 			}
@@ -206,8 +215,7 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			if start.Date.Month != 0 && end.Date.Month != 0 {
 				if start.Date.Year == 0 && end.Date.Year != 0 {
 					start.Date.Year = end.Date.Year
-				}
-				if start.Date.Year != 0 && end.Date.Year == 0 {
+				} else if start.Date.Year != 0 && end.Date.Year == 0 {
 					end.Date.Year = start.Date.Year
 				}
 			}
@@ -294,7 +302,26 @@ func NewDateTimeWithDate(date *Date) *DateTime {
 }
 
 func NewDateTimeForNow() *DateTime {
-	t := time.Now()
+	return NewDateTimeForTime(time.Now())
+}
+
+func NewDateTimeForRFC1123Z(tStr string) *DateTime {
+	t, err := time.Parse(time.RFC1123Z, tStr)
+	if err != nil {
+		panic(fmt.Sprintf("error parsing time string (%q): %v", tStr, err))
+	}
+	return NewDateTimeForTime(t)
+}
+
+func NewDateTimeForRFC3339(tStr string) *DateTime {
+	t, err := time.Parse(time.RFC3339, tStr)
+	if err != nil {
+		panic(fmt.Sprintf("error parsing time string (%q): %v", tStr, err))
+	}
+	return NewDateTimeForTime(t)
+}
+
+func NewDateTimeForTime(t time.Time) *DateTime {
 	abbrev, off := t.Zone()
 	return NewDateTimeWithTimeAndTimeZone(t, abbrev, &off)
 }
@@ -856,18 +883,22 @@ func hourNameToHour(hourName string) int {
 }
 
 var PreferredLocationNamesByAbbrev = map[string]string{
-	"ET":  "America/New_York",
-	"EDT": "America/New_York",
-	"EST": "America/New_York",
-	"CT":  "America/Chicago",
-	"CDT": "America/Chicago",
-	"CST": "America/Chicago",
-	"MT":  "America/Denver",
-	"MDT": "America/Denver",
-	"MST": "America/Denver",
-	"PT":  "America/Los_Angeles",
-	"PDT": "America/Los_Angeles",
-	"PST": "America/Los_Angeles",
+	"BST":  "Europe/London",
+	"ET":   "America/New_York",
+	"EDT":  "America/New_York",
+	"EST":  "America/New_York",
+	"CET":  "Europe/Paris",
+	"CEST": "Europe/Paris",
+	"CT":   "America/Chicago",
+	"CDT":  "America/Chicago",
+	"CST":  "America/Chicago",
+	"GMT":  "Europe/London",
+	"MT":   "America/Denver",
+	"MDT":  "America/Denver",
+	"MST":  "America/Denver",
+	"PT":   "America/Los_Angeles",
+	"PDT":  "America/Los_Angeles",
+	"PST":  "America/Los_Angeles",
 }
 
 var timeZoneAbbreviationsByNames = map[string]string{
@@ -918,10 +949,10 @@ func NewRawDateFromRelative(relativeName string) *Date {
 		panic(fmt.Sprintf("semantic error: found unknown relativeName: %q\n", relativeName))
 	}
 
-	fmt.Printf("in NewRawDateFromRelative(), wd name: %q\n", weekdayNames[wd])
+	// fmt.Printf("in NewRawDateFromRelative(), wd name: %q\n", weekdayNames[wd])
 	daysUntilNext := ((int(wd) - int(minT.Weekday()) + 7) % 7) - 1
 	y, m, d := minT.AddDate(0, 0, daysUntilNext).Date()
-	fmt.Printf("in NewRawDateFromRelative(), y: %#v, m: %#v, d: %#v\n", y, m, d)
+	// fmt.Printf("in NewRawDateFromRelative(), y: %#v, m: %#v, d: %#v\n", y, m, d)
 	return &Date{Day: d, Month: m, Year: y}
 }
 

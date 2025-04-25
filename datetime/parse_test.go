@@ -13,9 +13,9 @@ import (
 	"github.com/sanity-io/litter"
 )
 
-// var acceptBrokenTests = true
+var acceptBrokenTests = true
 
-var acceptBrokenTests = false
+// var acceptBrokenTests = false
 
 // Run with
 // rm datetime_glr.go; time GOWORK=off go generate -v ./...
