@@ -131,6 +131,15 @@ func (rng DateTimeRange) String() string {
 	return r
 }
 
+// IANAName returns the IANA timezone name (e.g., "America/Los_Angeles") for this range.
+// Uses the Start datetime's timezone.
+func (rng *DateTimeRange) IANAName() string {
+	if rng == nil || rng.Start == nil {
+		return ""
+	}
+	return rng.Start.IANAName()
+}
+
 func (rng *DateTimeRange) AddDate(years int, months int, days int) *DateTimeRange {
 	// return &DateTimeRange {
 	// 	Start: rng.Start.Copy().AddDate(years, months, days)
@@ -238,9 +247,20 @@ type DateTime struct {
 	TimeZone *TimeZone
 }
 
+// IANAName returns the IANA timezone name (e.g., "America/Los_Angeles") for this DateTime.
+// Delegates to TimeZone.IANAName().
+func (dt *DateTime) IANAName() string {
+	if dt == nil || dt.TimeZone == nil {
+		return ""
+	}
+	return dt.TimeZone.IANAName()
+}
+
 func (dt *DateTime) Location() *time.Location {
 	if dt.TimeZone == nil {
-		fmt.Printf("warning: no TimeZone found in DateTime, returning nil Location")
+		if DoDebug {
+			fmt.Println("warning: no TimeZone found in DateTime, returning nil Location")
+		}
 		return nil
 	}
 
@@ -292,7 +312,12 @@ func (dt *DateTime) ToTime() *time.Time {
 		t = dt.Time
 	}
 
-	r := time.Date(dt.Date.Year, dt.Date.Month, dt.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, dt.Location())
+	loc := dt.Location()
+	if loc == nil {
+		loc = time.UTC
+	}
+
+	r := time.Date(dt.Date.Year, dt.Date.Month, dt.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, loc)
 	// fmt.Printf("in dt.ToTime(), r: %#v\n", r)
 	return &r
 }
@@ -684,6 +709,32 @@ func (tz *TimeZone) String() string {
 	return tz.Offset
 }
 
+// IANAName returns the IANA timezone name (e.g., "America/Los_Angeles") for this TimeZone.
+// It checks Name first (if it's already an IANA name), then falls back to looking up
+// the Abbreviation in PreferredLocationNamesByAbbrev.
+// Returns empty string if no IANA name can be determined.
+func (tz *TimeZone) IANAName() string {
+	if tz == nil {
+		return ""
+	}
+
+	// If Name is already set and is a valid IANA name, use it
+	if tz.Name != "" {
+		if _, err := time.LoadLocation(tz.Name); err == nil {
+			return tz.Name
+		}
+	}
+
+	// Look up from abbreviation
+	if tz.Abbreviation != "" {
+		if name := PreferredLocationNamesByAbbrev[tz.Abbreviation]; name != "" {
+			return name
+		}
+	}
+
+	return ""
+}
+
 func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 	name, nok := nameAny.(string)
 	abbrev, aok := abbrevAny.(string)
@@ -919,10 +970,7 @@ var northAmericanTimeZoneAbbreviations = map[string]bool{
 	"PT": true,
 }
 
-var ignorableTimeZoneAbbreviations = map[string]bool{
-	"M": true,
-	"V": true,
-}
+// Single-char timezone abbreviations are now ignored via length check in parse_lex.go
 
 func NewRawDateFromRelative(relativeName string) *Date {
 	// fmt.Printf("NewRawDateFromRelative(relativeName: %q), minimumDateTime: %s\n", relativeName, minimumDateTime.String())

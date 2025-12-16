@@ -216,7 +216,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				upLit := strings.ToUpper(lit)
 				// tz, err := tzTimezone.GetTzAbbreviationInfo(upLit)
 				// fmt.Println("upLit", upLit, "tz", tz, "err", err)
-				if !ignorableTimeZoneAbbreviations[upLit] {
+				// Ignore single-char timezone abbreviations - too many false positives (e.g., "S" from "Maggiano's")
+				if len(upLit) > 1 {
 					if tz, _ := timezoneTZ.GetTzAbbreviationInfo(upLit); tz != nil {
 						return TIME_ZONE_ABBREV
 					}

@@ -3,6 +3,7 @@ package datetime
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/findyourpaths/phil/glr"
@@ -40,8 +41,55 @@ var timezoneTZ = timezone.New()
 var cache = map[string]*DateTimeRanges{}
 var cacheMutex sync.RWMutex
 
+// looksLikeDate performs a quick pre-validation check to reject strings that clearly
+// aren't dates before invoking the GLR parser. This prevents panics from the parser
+// trying to interpret random text (like titles or venue names) as dates.
+//
+// Requirements for a date-like string:
+// 1. Must contain at least one digit OR a month name
+//
+// Examples that should pass:
+//   - "Saturday, August 2, 2025 from 11am to 2pm"
+//   - "2025-01-15"
+//   - "January 15, 2025"
+//   - "Feb - Mar"
+//
+// Examples that should fail:
+//   - "Point Four Themes in Four Films" (no digits, no month names)
+//   - "" (empty string)
+func looksLikeDate(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	// Check for digits - most dates have numbers
+	for _, c := range s {
+		if c >= '0' && c <= '9' {
+			return true
+		}
+	}
+
+	// Check for month names (handles cases like "Feb - Mar")
+	lower := strings.ToLower(s)
+	months := []string{"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"}
+	for _, m := range months {
+		if strings.Contains(lower, m) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, error) {
 	// fmt.Printf("datetime.Parse(year: %d, dateMode: %q, timeZone: %#v, in: %q)\n", year, dateMode, timeZone, in)
+
+	// Pre-validation: reject strings that clearly aren't dates before invoking the GLR parser.
+	// This prevents panics from the parser trying to interpret random text as timezones.
+	if !looksLikeDate(in) {
+		return nil, nil
+	}
+
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Warn("in Parse(), got a panic trying to extract", "in", in, "err", err)
