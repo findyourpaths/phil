@@ -5,27 +5,25 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/findyourpaths/phil/glr"
 	"github.com/kr/pretty"
 	"github.com/tkuchiki/go-timezone"
 )
 
-// Debug flags
-// var DoDebug = true
+// DoDebug controls debug logging. Use atomic access for goroutine safety.
+var DoDebug atomic.Bool
 
-var DoDebug = false
-
-// SetDebug toggles debug logging
+// SetDebug toggles debug logging.
 func SetDebug(enabled bool) {
-	DoDebug = enabled
+	DoDebug.Store(enabled)
 }
 
-// debugf prints debug messages if debug is enabled
+// debugf prints debug messages if debug is enabled.
 func debugf(format string, args ...any) {
-	if DoDebug {
+	if DoDebug.Load() {
 		fmt.Printf(format, args...)
-		// log.Printf(format, args...)
 	}
 }
 
@@ -40,6 +38,14 @@ var timezoneTZ = timezone.New()
 
 var cache = map[string]*DateTimeRanges{}
 var cacheMutex sync.RWMutex
+
+// parseMutex protects the global variables minimumDateTime and parseDateMode
+// during Parse(). The GLR action system uses reflection to call action functions
+// with only their parsed child values — there is no way to thread a context
+// parameter through the action function signatures. The mutex serializes parsing
+// to ensure these globals remain stable for the duration of each Parse() call.
+// This is acceptable because Parse() is CPU-only (microseconds per call).
+var parseMutex sync.Mutex
 
 // looksLikeDate performs a quick pre-validation check to reject strings that clearly
 // aren't dates before invoking the GLR parser. This prevents panics from the parser
@@ -114,14 +120,15 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	// 	parseYear = time.Now().Year()
 	// }
 
+	// Lock to protect global variables (minimumDateTime, parseDateMode) that are
+	// read by functions called during GLR parsing via reflection-based actions.
+	parseMutex.Lock()
+	defer parseMutex.Unlock()
+
 	minimumDateTime = minDateTime
 	debugf("minimumDateTime: %q\n", minimumDateTime.String())
-	// fmt.Printf("minimumDateTime: %q\n", minimumDateTime.String())
 	parseDateMode = dateMode
 	debugf("parseDateMode: %q\n", parseDateMode)
-
-	// parseTimeZone = timeZone
-	// debugf("parseTimeZone: %q\n", parseTimeZone)
 
 	g := &glr.Grammar{
 		Rules:   datetimeRules,

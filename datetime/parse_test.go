@@ -176,7 +176,7 @@ type parseTest struct {
 func TestParse(t *testing.T) {
 	if os.Getenv("DEBUG") == "true" {
 		glr.DoDebug = true
-		DoDebug = true
+		DoDebug.Store(true)
 	}
 
 	tests := []parseTest{

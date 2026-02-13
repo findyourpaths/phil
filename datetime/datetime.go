@@ -258,7 +258,7 @@ func (dt *DateTime) IANAName() string {
 
 func (dt *DateTime) Location() *time.Location {
 	if dt.TimeZone == nil {
-		if DoDebug {
+		if DoDebug.Load() {
 			fmt.Println("warning: no TimeZone found in DateTime, returning nil Location")
 		}
 		return nil
@@ -654,14 +654,14 @@ func setNewDateYear(d *Date) *Date {
 	d.Year = minimumDateTime.Date.Year
 	dateTime := d.ToTime()
 	// fmt.Printf("checking same year dateTime: %#v\n", dateTime)
-	if dateTime.After(*minTime) {
+	if !dateTime.Before(*minTime) {
 		return d
 	}
 
 	d.Year = minimumDateTime.Date.Year + 1
 	dateTime = d.ToTime()
 	// fmt.Printf("checking next year dateTime: %#v\n", dateTime)
-	if dateTime.After(*minTime) {
+	if !dateTime.Before(*minTime) {
 		return d
 	}
 
