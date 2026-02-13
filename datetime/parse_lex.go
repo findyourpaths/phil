@@ -3,6 +3,7 @@ package datetime
 import (
 	"errors"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"go/scanner"
@@ -28,10 +29,64 @@ var boundaryRE2 = regexp.MustCompile(`([[:^alpha:]])([[:alpha:]])`)
 // var spacifyRE = regexp.MustCompile(`\s*\b(.|-)\b\s*`)
 var spacifyRE = regexp.MustCompile(`(?:^|\s*\b)(.|-)(?:\b\s*|$)`)
 
+// ianaTimezoneRE matches IANA timezone paths like "US/Eastern", "America/New_York".
+var ianaTimezoneRE = regexp.MustCompile(`[A-Z][a-zA-Z_]+/[A-Z][a-zA-Z_]+`)
+
+// dayNumberRE matches "Day N" session numbering (e.g. "Day 1", "Day 2") that interferes
+// with date parsing when the number gets consumed as a Time (hour).
+var dayNumberRE = regexp.MustCompile(`(?i)\bday\s+\d\b`)
+
+// markdownBoldRE matches markdown bold formatting (**...**) which often contains
+// title text with tokens like "and", ":", "+" that interfere with date parsing.
+var markdownBoldRE = regexp.MustCompile(`\*\*[^*]+\*\*`)
+
+// circaRE matches "ca." (German abbreviation for "circa") followed by a digit.
+// Without stripping, "ca.12" becomes ".12" (FLOAT token) after boundary splitting,
+// which prevents the "12" from being parsed as INT for time.
+var circaRE = regexp.MustCompile(`(?i)\bca\.(\d)`)
+
+// twoDigitYearRE matches M/D/YY or D/M/YY patterns where the year is exactly 2 digits.
+// The negative lookahead (?!\d) prevents matching 4-digit years like "2/3/2023".
+var twoDigitYearRE = regexp.MustCompile(`(\d{1,2}/\d{1,2}/)(\d{2})(?:\D|$)`)
+
+// expandTwoDigitYears replaces 2-digit years in slash-separated date patterns
+// with 4-digit years (00-49 → 2000s, 50-99 → 1900s) before boundary splitting
+// would separate the components.
+func expandTwoDigitYears(input string) string {
+	return twoDigitYearRE.ReplaceAllStringFunc(input, func(match string) string {
+		sub := twoDigitYearRE.FindStringSubmatch(match)
+		yy, _ := strconv.Atoi(sub[2])
+		if yy < 50 {
+			yy += 2000
+		} else {
+			yy += 1900
+		}
+		// Preserve the trailing non-digit character
+		trail := match[len(sub[1])+len(sub[2]):]
+		return sub[1] + strconv.Itoa(yy) + trail
+	})
+}
+
+// replaceIANATimezones replaces IANA timezone paths with their standard abbreviation
+// before input preprocessing splits them at the "/".
+func replaceIANATimezones(input string) string {
+	return ianaTimezoneRE.ReplaceAllStringFunc(input, func(match string) string {
+		if tz, _ := timezoneTZ.GetTzInfo(match); tz != nil {
+			return tz.ShortGeneric()
+		}
+		return match
+	})
+}
+
 func NewDatetimeLexer(input string) *datetimeLexer {
 	// yyDebug = 3
 	debugf("in before processing: %q\n", input)
 	// input = daysRE.ReplaceAllString(input, ``)
+	input = replaceIANATimezones(input)
+	input = expandTwoDigitYears(input)
+	input = dayNumberRE.ReplaceAllString(input, "")
+	input = markdownBoldRE.ReplaceAllString(input, "")
+	input = circaRE.ReplaceAllString(input, "$1")
 	input = boundaryRE1.ReplaceAllString(input, `$1 $2`)
 	input = boundaryRE2.ReplaceAllString(input, `$1 $2`)
 	input = spacifyRE.ReplaceAllString(input, ` $1 `)
@@ -134,8 +189,11 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return BEGINNING
 			case "calendar":
 				return CALENDAR
-			case "date":
-				return DATE
+			// "date" treated as IDENT to avoid "Day 2" being consumed as DATE
+			// token (DatePrefix) which kills parser branches that could skip it
+			// as noise. "Date:" tests still work because COLON alone is DatePrefix.
+			// case "date":
+			// 	return DATE
 			case "dates":
 				return DATES
 			case "from":
@@ -148,8 +206,11 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return IN
 			case "midnight":
 				return TIME_NAME
-			case "next":
-				return NEXT
+			// "next" treated as IDENT to avoid consuming it as WeekdayPrefix
+		// when it appears as noise in sentences (e.g. "Our next cohort...").
+		// The WeekdayPrefix grammar rule discards the prefix anyway.
+		// case "next":
+		// 	return NEXT
 			case "noon":
 				return TIME_NAME
 			case "of":
@@ -242,6 +303,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 
 		case token.ADD:
 			return ADD
+		case token.AND:
+			return AND
 		case token.COLON:
 			return COLON
 		case token.COMMA:

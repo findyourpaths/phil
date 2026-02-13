@@ -186,7 +186,7 @@ DateTimeRanges:
 | Month Day Month Day Year {$$ = NewRanges(NewRangeWithStartDate(NewRawDateFromMDY($1, $2, $5)), NewRangeWithStartDate(NewRawDateFromMDY($3, $4, $5)))}
 
   // "Wednesdays February 1st & 8th 12:00p-3:00p"
-| WeekdayOpt Month Day DateSepOpt Day Time DateTimeSepOpt Time {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $8, nil)), NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $8, nil)))}
+| WeekdayOpt Month Day DateSepOpt Day Time RangeSepOpt Time {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $8, nil)), NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $8, nil)))}
 ;
 
 
@@ -238,6 +238,8 @@ DateTimeRange:
 
   // "Feb 3, 2023 - Feb 4, 2023"
 | DateTime RangeSepPlus DateTime {$$ = NewRange($1, $3)}
+  // "February 3rd - February 4th, 2023 ET"
+| DateTime RangeSepPlus DateTime TimeZone {$$ = NewRange(NewDateTime($1.Date, $1.Time, $4), NewDateTime($3.Date, $3.Time, $4))}
 
   // "Thu Feb 3 - Sat Mar 4, 2023"
 | Date RangeSepPlus Day {$$ = NewRangeWithStartEndDates($1, NewRawDateFromDMY($3, nil, nil))}
@@ -371,6 +373,8 @@ RFC3339Date:
 
 RFC3339Time:
   T INT COLON INT COLON INT {$$ = NewTime($2, $4, $6, nil)}
+  // "T12:00" (HH:MM without seconds)
+| T INT COLON INT {$$ = NewTime($2, $4, nil, nil)}
 ;
 
 RFC3339TimeZone:
@@ -448,7 +452,8 @@ DateSepPlus:
 | DateSepPlus DateSep
 ;
 DateSep:
-  AND
+  ADD
+| AND
 | COMMA
 | DEC
 | PERIOD

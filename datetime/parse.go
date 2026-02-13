@@ -3,14 +3,20 @@ package datetime
 import (
 	"fmt"
 	"log/slog"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/findyourpaths/phil/glr"
 	"github.com/kr/pretty"
 	"github.com/tkuchiki/go-timezone"
 )
+
+// yearMonthRE matches ISO 8601 YYYY-MM format (e.g. "2023-02").
+var yearMonthRE = regexp.MustCompile(`^\d{4}-\d{2}$`)
 
 // DoDebug controls debug logging. Use atomic access for goroutine safety.
 var DoDebug atomic.Bool
@@ -94,6 +100,14 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	// This prevents panics from the parser trying to interpret random text as timezones.
 	if !looksLikeDate(in) {
 		return nil, nil
+	}
+
+	// Handle ISO 8601 YYYY-MM format directly (e.g. "2023-02") since the GLR
+	// parser misinterprets the "-" as a range separator.
+	if yearMonthRE.MatchString(strings.TrimSpace(in)) {
+		year, _ := strconv.Atoi(in[:4])
+		month, _ := strconv.Atoi(in[5:7])
+		return NewRangesWithStartDates(&Date{Year: year, Month: time.Month(month)}), nil
 	}
 
 	defer func() {
