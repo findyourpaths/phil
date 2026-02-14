@@ -28,7 +28,8 @@ var DateModeNorthAmericanCountryCodes = map[string]bool{"CA": true, "US": true}
 //
 // This type DOES include location information.
 type DateTimeRanges struct {
-	Items []*DateTimeRange
+	Items      []*DateTimeRange
+	Recurrence *Recurrence // optional, set when parser detects recurrence pattern
 }
 
 func (rngs *DateTimeRanges) String() string {
@@ -39,7 +40,11 @@ func (rngs *DateTimeRanges) String() string {
 	for _, elt := range rngs.Items {
 		rs = append(rs, elt.String())
 	}
-	return strings.Join(rs, ", ")
+	s := strings.Join(rs, ", ")
+	if rngs.Recurrence != nil {
+		s += " [" + rngs.Recurrence.String() + "]"
+	}
+	return s
 }
 
 func AppendDateTimeRanges(rngs *DateTimeRanges, rng *DateTimeRange) *DateTimeRanges {
@@ -90,12 +95,149 @@ func NewRangesWithStartEndRanges(start *DateTimeRange, end *DateTimeRange) *Date
 	return r
 }
 
+// NewRangesFromDatesTimeRange creates one time range per date from a list of
+// dates, a shared start time, end time, and optional timezone. Used for
+// patterns like "February 1, 8, 15 9am-12pm ET" → three ranges.
+func NewRangesFromDatesTimeRange(dates []*Date, startTime *Time, endTime *Time, tz *TimeZone) *DateTimeRanges {
+	r := &DateTimeRanges{}
+	for _, date := range dates {
+		r.Items = append(r.Items, NewRange(
+			NewDateTime(date, startTime, tz),
+			NewDateTime(date, endTime, tz)))
+	}
+	return r
+}
+
 func NewRangesWithStartEndDates(start *Date, end *Date) *DateTimeRanges {
 	return &DateTimeRanges{Items: []*DateTimeRange{NewRangeWithStartEndDates(start, end)}}
 }
 
 func NewRangesWithStartEndDateTimes(start *DateTime, end *DateTime) *DateTimeRanges {
 	return &DateTimeRanges{Items: []*DateTimeRange{NewRange(start, end)}}
+}
+
+// Frequency represents how often a recurring event repeats.
+type Frequency int
+
+const (
+	FrequencyDaily   Frequency = iota + 1
+	FrequencyWeekly
+	FrequencyMonthly
+	FrequencyYearly
+)
+
+// String returns the iCal FREQ value.
+func (f Frequency) String() string {
+	return frequencyStrings[f]
+}
+
+var frequencyStrings = map[Frequency]string{
+	FrequencyDaily:   "DAILY",
+	FrequencyWeekly:  "WEEKLY",
+	FrequencyMonthly: "MONTHLY",
+	FrequencyYearly:  "YEARLY",
+}
+
+// frequencySteps maps frequency → (years, months, days) for Occurrences() expansion.
+var frequencySteps = map[Frequency][3]int{
+	FrequencyDaily:   {0, 0, 1},
+	FrequencyWeekly:  {0, 0, 7},
+	FrequencyMonthly: {0, 1, 0},
+	FrequencyYearly:  {1, 0, 0},
+}
+
+var weekdayICalStrings = map[time.Weekday]string{
+	time.Sunday: "SU", time.Monday: "MO", time.Tuesday: "TU",
+	time.Wednesday: "WE", time.Thursday: "TH", time.Friday: "FR",
+	time.Saturday: "SA",
+}
+
+// Recurrence captures recurrence metadata for patterns like
+// "5 Wednesdays 9:00am-12:00pm February 1st - March 1st".
+type Recurrence struct {
+	Frequency Frequency     // WEEKLY, DAILY, etc.
+	Count     int           // "5 Wednesdays" → 5 (0 means use Until)
+	Weekday   *time.Weekday // nil = no weekday constraint
+	Until     *Date         // end boundary date (alternative to Count)
+}
+
+func (r *Recurrence) String() string {
+	if r == nil {
+		return ""
+	}
+	s := "FREQ=" + r.Frequency.String()
+	if r.Count > 0 {
+		s += ";COUNT=" + strconv.Itoa(r.Count)
+	}
+	if r.Weekday != nil {
+		s += ";BYDAY=" + weekdayICalStrings[*r.Weekday]
+	}
+	if r.Until != nil {
+		s += ";UNTIL=" + r.Until.ICalString()
+	}
+	return s
+}
+
+// NewRecurringRanges creates a DateTimeRanges with recurrence metadata.
+func NewRecurringRanges(first *DateTimeRange, rec *Recurrence) *DateTimeRanges {
+	return &DateTimeRanges{
+		Items:      []*DateTimeRange{first},
+		Recurrence: rec,
+	}
+}
+
+// Occurrences returns the expanded list of ranges regardless of representation.
+// For recurring: expands by stepping through dates at the given frequency.
+// For flat: returns Items as-is.
+func (rngs *DateTimeRanges) Occurrences() []*DateTimeRange {
+	if rngs.Recurrence == nil {
+		return rngs.Items
+	}
+	rec := rngs.Recurrence
+	first := rngs.Items[0]
+	if first.Start == nil || first.Start.Date == nil || first.Start.Date.Year == 0 {
+		panic("Occurrences: recurring pattern requires year on first occurrence")
+	}
+
+	// Compute start-to-end day delta for multi-day ranges (0 for same-day).
+	var endDayDelta int
+	if first.End != nil && first.End.Date != nil {
+		endDayDelta = int(first.End.Date.ToTime().Sub(*first.Start.Date.ToTime()).Hours() / 24)
+	}
+
+	step := frequencySteps[rec.Frequency]
+	var result []*DateTimeRange
+	current := *first.Start.Date.ToTime()
+	for {
+		if rec.Count > 0 && len(result) >= rec.Count {
+			break
+		}
+		if rec.Until != nil && current.After(*rec.Until.ToTime()) {
+			break
+		}
+		if rec.Count == 0 && rec.Until == nil {
+			break
+		}
+
+		startDate := &Date{Year: current.Year(), Month: current.Month(), Day: current.Day()}
+		var endDT *DateTime
+		if first.End != nil {
+			endCurrent := current.AddDate(0, 0, endDayDelta)
+			endDate := &Date{Year: endCurrent.Year(), Month: endCurrent.Month(), Day: endCurrent.Day()}
+			endDT = &DateTime{Date: endDate, Time: first.End.Time, TimeZone: first.End.TimeZone}
+		}
+		result = append(result, &DateTimeRange{
+			Start: &DateTime{Date: startDate, Time: first.Start.Time, TimeZone: first.Start.TimeZone},
+			End:   endDT,
+		})
+		current = current.AddDate(step[0], step[1], step[2])
+	}
+	return result
+}
+
+// ICalString returns the date in YYYYMMDD format for RRULE UNTIL values.
+func (d *Date) ICalString() string {
+	return fmt.Sprintf("%04d%02d%02d", d.Year, d.Month, d.Day)
 }
 
 func HasStartMonthAndDay(rngs *DateTimeRanges) bool {
@@ -112,16 +254,7 @@ func HasStartMonthAndDay(rngs *DateTimeRanges) bool {
 type DateTimeRange struct {
 	Start *DateTime
 	End   *DateTime
-	// Frequency Frequency
 }
-
-// type Frequency int
-
-// const (
-// 	UNSPECIFIED_FREQUENCY Frequency = iota
-// 	DAILY
-// 	WEEKLY
-// )
 
 func (rng DateTimeRange) String() string {
 	r := rng.Start.String()
@@ -139,29 +272,6 @@ func (rng *DateTimeRange) IANAName() string {
 	}
 	return rng.Start.IANAName()
 }
-
-func (rng *DateTimeRange) AddDate(years int, months int, days int) *DateTimeRange {
-	// return &DateTimeRange {
-	// 	Start: rng.Start.Copy().AddDate(years, months, days)
-	// End   *DateTime
-
-	// r := rng.Copy()
-	// r.Start =
-
-	// r := rng.Start.String()
-	// if rng.End != nil {
-	// 	r += " - " + rng.End.String()
-	// }
-	return rng
-}
-
-// func NewDailyRange() *DateTimeRange {
-// 	return &DateTimeRange{Frequency: DAILY}
-// }
-
-// func NewWeeklyRange() *DateTimeRange {
-// 	return &DateTimeRange{Frequency: WEEKLY}
-// }
 
 func NewRangeWithStartDate(startD *Date) *DateTimeRange {
 	return NewRangeWithStartEndDates(startD, nil)
@@ -354,7 +464,8 @@ func NewDateTimeForTime(t time.Time) *DateTime {
 func NewDateTimeWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *int) *DateTime {
 	d := &Date{}
 	d.Year, d.Month, d.Day = tt.Date()
-	d.wd = int(tt.Weekday()) + 1
+	wd := tt.Weekday()
+	d.wd = &wd
 
 	t := &Time{}
 	t.Hour, t.Minute, t.Second = tt.Clock()
@@ -484,9 +595,8 @@ type Date struct {
 	Year  int        // Year (e.g., 2014), starting at 1.
 	Month time.Month // Month of the year, starting at 1 for January.
 	Day   int        // Day of the month, starting at 1.
-	// Weekday int        // Day of the week, starting at 1 for Sunday.
-	unknown []any // Unprocessed Day and Month, with order depending upon the DateMode.
-	wd      any   // Unprocessed Weekday, to be confirmed with computed Weekday.
+	unknown []any          // Unprocessed Day and Month, with order depending upon the DateMode.
+	wd      *time.Weekday // nil = unset, non-nil = specific weekday
 }
 
 // String returns the date in RFC3339 full-date format.
@@ -583,29 +693,13 @@ func maybeNewDateFromRaw(d *Date, tz *TimeZone) (*Date, error) {
 	}
 
 	// Check the extracted Weekday with the computed Weekday.
-	extWD := 0
-	switch dwd := d.wd.(type) {
-	case string:
-		if dwd != "" {
-			extWD = findInt(weekdayUnit, d.wd)
-		}
-	default:
-		// TODO: should we do a type-specific nil check here?
-		if dwd == nil {
-			extWD = findInt(weekdayUnit, d.wd)
+	if d.Year != 0 && d.wd != nil {
+		computed := time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC).Weekday()
+		if *d.wd != computed {
+			return nil, fmt.Errorf("semantic error: weekday %s doesn't match computed %s for %s",
+				d.wd, computed, d.String())
 		}
 	}
-
-	wd := extWD
-	if d.Year != 0 {
-		t := time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
-		wd = weekdaysByNames[strings.ToLower(t.Weekday().String())]
-		if extWD != 0 && extWD != wd {
-			return nil, fmt.Errorf("semantic error: extracted weekday of %q doesn't match computed weekday of %q for %s\n",
-				weekdayNames[extWD], weekdayNames[wd], d.String())
-		}
-	}
-	// d.Weekday = wd
 
 	return d, nil
 }
@@ -809,21 +903,10 @@ type timeUnit struct {
 var yearUnit = timeUnit{name: "year", min: 1, max: math.MaxInt, fixFn: fixYear}
 var monthUnit = timeUnit{name: "month", min: 1, max: 12, stringToIntFn: monthNameToMonth}
 var dayUnit = timeUnit{name: "day", min: 1, max: 31}
-var weekdayUnit = timeUnit{name: "weekday", min: 1, max: 7, stringToIntFn: weekdayNameToWeekday}
 var hourUnit = timeUnit{name: "hour", min: 0, max: 24, stringToIntFn: hourNameToHour}
 var minuteUnit = timeUnit{name: "minute", min: 0, max: 59}
 var secondUnit = timeUnit{name: "second", min: 0, max: 59}
 var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
-
-// var noTime = &Time{}
-// var noTimeZone = &TimeZone{}
-// var noYear = 0
-// var noMonth = 0
-// var noDay = 0
-// var noHour = 0
-// var noMinute = 0
-// var noSecond = 0
-// var noNS = 0
 
 func fixYear(yearAny any, year int) (int, bool) {
 	// fmt.Printf("fixYear(yearAny: %#v, year: %d)\n", yearAny, year)
@@ -876,50 +959,51 @@ var ordinals = map[string]bool{
 	// "th": true, recognize this separately because it also shortens Thursday
 }
 
-var weekdaysByNames = map[string]int{
-	"su":        1,
-	"sun":       1,
-	"sunday":    1,
-	"mo":        2,
-	"mon":       2,
-	"monday":    2,
-	"tu":        3,
-	"tue":       3,
-	"tues":      3,
-	"tuesday":   3,
-	"we":        4,
-	"wed":       4,
-	"weds":      4,
-	"wednesday": 4,
-	"th":        5,
-	"thu":       5,
-	"thus":      5,
-	"thursday":  5,
-	"fr":        6,
-	"fri":       6,
-	"friday":    6,
-	"sa":        7,
-	"sat":       7,
-	"saturday":  7,
+var weekdaysByNames = map[string]time.Weekday{
+	"su":          time.Sunday,
+	"sun":         time.Sunday,
+	"sunday":      time.Sunday,
+	"sundays":     time.Sunday,
+	"mo":          time.Monday,
+	"mon":         time.Monday,
+	"monday":      time.Monday,
+	"mondays":     time.Monday,
+	"tu":          time.Tuesday,
+	"tue":         time.Tuesday,
+	"tues":        time.Tuesday,
+	"tuesday":     time.Tuesday,
+	"tuesdays":    time.Tuesday,
+	"we":          time.Wednesday,
+	"wed":         time.Wednesday,
+	"weds":        time.Wednesday,
+	"wednesday":   time.Wednesday,
+	"wednesdays":  time.Wednesday,
+	"th":          time.Thursday,
+	"thu":         time.Thursday,
+	"thus":        time.Thursday,
+	"thursday":    time.Thursday,
+	"thursdays":   time.Thursday,
+	"fr":          time.Friday,
+	"fri":         time.Friday,
+	"friday":      time.Friday,
+	"fridays":     time.Friday,
+	"sa":          time.Saturday,
+	"sat":         time.Saturday,
+	"saturday":    time.Saturday,
+	"saturdays":   time.Saturday,
 }
 
-var weekdayNames = []string{
-	"",
-	"Sunday",
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
-}
-
-func weekdayNameToWeekday(weekdayName string) int {
-	weekday, found := weekdaysByNames[strings.ToLower(weekdayName)]
-	if !found {
-		return 0
+// weekdayFromName converts a weekday name string to *time.Weekday.
+// Returns nil for empty/unrecognized names.
+func weekdayFromName(name string) *time.Weekday {
+	if name == "" {
+		return nil
 	}
-	return weekday
+	wd, ok := weekdaysByNames[strings.ToLower(name)]
+	if !ok {
+		return nil
+	}
+	return &wd
 }
 
 func hourNameToHour(hourName string) int {
@@ -992,21 +1076,20 @@ func NewRawDateFromRelative(relativeName string) *Date {
 		return &Date{Day: d, Month: m, Year: y}
 	}
 
-	wd := weekdaysByNames[relName]
-	if wd == 0 {
+	wd, ok := weekdaysByNames[relName]
+	if !ok {
 		panic(fmt.Sprintf("semantic error: found unknown relativeName: %q\n", relativeName))
 	}
 
-	// fmt.Printf("in NewRawDateFromRelative(), wd name: %q\n", weekdayNames[wd])
-	daysUntilNext := ((int(wd) - int(minT.Weekday()) + 7) % 7) - 1
+	daysUntilNext := (int(wd) - int(minT.Weekday()) + 7) % 7
 	y, m, d := minT.AddDate(0, 0, daysUntilNext).Date()
 	// fmt.Printf("in NewRawDateFromRelative(), y: %#v, m: %#v, d: %#v\n", y, m, d)
 	return &Date{Day: d, Month: m, Year: y}
 }
 
-func NewRawDateFromAmbiguous(weekdayAny any, first string, last string, yearAny any) *Date {
+func NewRawDateFromAmbiguous(weekdayName string, first string, last string, yearAny any) *Date {
 	year := findInt(yearUnit, yearAny)
-	return &Date{unknown: []any{first, last}, Year: year, wd: weekdayAny}
+	return &Date{unknown: []any{first, last}, Year: year, wd: weekdayFromName(weekdayName)}
 }
 
 func NewRawDateFromDsMYs(daysAny []string, monthAny any, yearAny any) []*Date {
@@ -1025,12 +1108,12 @@ func NewRawDateFromDMY(dayAny any, monthAny any, yearAny any) *Date {
 	return &Date{Day: day, Month: time.Month(month), Year: year}
 }
 
-func NewRawDateFromWDMY(weekdayAny any, dayAny any, monthAny any, yearAny any) *Date {
-	// fmt.Printf("NewRawDateFromWDMY(weekdayAny: %#v, dayAny: %#v, monthAny %#v, yearAny %#v)\n", weekdayAny, dayAny, monthAny, yearAny)
+func NewRawDateFromWDMY(weekdayName string, dayAny any, monthAny any, yearAny any) *Date {
+	// fmt.Printf("NewRawDateFromWDMY(weekdayName: %q, dayAny: %#v, monthAny %#v, yearAny %#v)\n", weekdayName, dayAny, monthAny, yearAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
-	return &Date{Day: day, Month: time.Month(month), Year: year, wd: weekdayAny}
+	return &Date{Day: day, Month: time.Month(month), Year: year, wd: weekdayFromName(weekdayName)}
 }
 
 func NewRawDateFromMDsYs(monthAny any, daysAny []string, yearAny any) []*Date {
@@ -1045,8 +1128,8 @@ func NewRawDateFromMDY(monthAny any, dayAny any, yearAny any) *Date {
 	return NewRawDateFromDMY(dayAny, monthAny, yearAny)
 }
 
-func NewRawDateFromWMDY(weekdayAny any, monthAny any, dayAny any, yearAny any) *Date {
-	return NewRawDateFromWDMY(weekdayAny, dayAny, monthAny, yearAny)
+func NewRawDateFromWMDY(weekdayName string, monthAny any, dayAny any, yearAny any) *Date {
+	return NewRawDateFromWDMY(weekdayName, dayAny, monthAny, yearAny)
 }
 
 func NewRawDateFromYMD(yearAny any, monthAny any, dayAny any) *Date {

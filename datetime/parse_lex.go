@@ -40,6 +40,17 @@ var dayNumberRE = regexp.MustCompile(`(?i)\bday\s+\d\b`)
 // title text with tokens like "and", ":", "+" that interfere with date parsing.
 var markdownBoldRE = regexp.MustCompile(`\*\*[^*]+\*\*`)
 
+// weekdayCountRE matches a leading digit count before a weekday name (e.g. "2 Wednesdays",
+// "5 Tuesdays"). The count gets misinterpreted as a Time (hour) by the parser.
+// Stripping it preserves the weekday while removing the ambiguous number.
+var weekdayCountRE = regexp.MustCompile(`(?i)\b\d+\s+((?:mon|tue|wed|thu|fri|sat|sun)\w*)`)
+
+// weekdayPluralPrefixRE matches a leading PLURAL weekday name followed by a separator
+// (comma, dash, colon). In patterns like "Wednesdays, February 1, 8 ...", the plural weekday
+// is informational and the trailing comma causes the GLR parser to split the parse prematurely.
+// Only strips plural forms (ending in "s") to preserve singular weekdays needed for disambiguation.
+var weekdayPluralPrefixRE = regexp.MustCompile(`(?i)^(?:mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)\s*[-,:]`)
+
 // circaRE matches "ca." (German abbreviation for "circa") followed by a digit.
 // Without stripping, "ca.12" becomes ".12" (FLOAT token) after boundary splitting,
 // which prevents the "12" from being parsed as INT for time.
@@ -84,6 +95,8 @@ func NewDatetimeLexer(input string) *datetimeLexer {
 	// input = daysRE.ReplaceAllString(input, ``)
 	input = replaceIANATimezones(input)
 	input = expandTwoDigitYears(input)
+	input = weekdayCountRE.ReplaceAllString(input, "$1")
+	input = weekdayPluralPrefixRE.ReplaceAllString(input, "")
 	input = dayNumberRE.ReplaceAllString(input, "")
 	input = markdownBoldRE.ReplaceAllString(input, "")
 	input = circaRE.ReplaceAllString(input, "$1")

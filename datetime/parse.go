@@ -168,22 +168,11 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 		if err == nil {
 			break
 		}
-		// return nil, err
 	}
-
-	// for _, rng := range rngs.Items {
-	// 	if rng.Start.TimeZone == "" {
-	// 		rng.Start.TimeZone = timeZone
-	// 		// fmt.Printf("set time zone to: %q\n", tz)
-	// 	}
-	// 	if rng.End != nil && rng.End.TimeZone == "" {
-	// 		rng.End.TimeZone = timeZone
-	// 	}
-	// }
 
 	var rs *DateTimeRanges
 	if rsAny == nil {
-		return nil, nil //fmt.Errorf("no parse tree passed semantic checks")
+		return nil, nil
 	}
 
 	rs = rsAny.(*DateTimeRanges)

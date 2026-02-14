@@ -187,6 +187,18 @@ DateTimeRanges:
 
   // "Wednesdays February 1st & 8th 12:00p-3:00p"
 | WeekdayOpt Month Day DateSepOpt Day Time RangeSepOpt Time {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $8, nil)), NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $8, nil)))}
+  // "Wednesdays February 1, 8 9:00 AM - 12:00 PM ET"
+| WeekdayOpt Month Day DateSepOpt Day Time RangeSepOpt Time TimeZone {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $6, $9), NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $8, $9)), NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $6, $9), NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $8, $9)))}
+  // "February 3rd & 4th, 9:00 am - noon Eastern time"
+| Month Day AND Day DateTimeSepPlus Time RangeSepOpt Time TimeZone {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromMDY($1, $2, nil), $6, $9), NewDateTime(NewRawDateFromMDY($1, $2, nil), $8, $9)), NewRange(NewDateTime(NewRawDateFromMDY($1, $4, nil), $6, $9), NewDateTime(NewRawDateFromMDY($1, $4, nil), $8, $9)))}
+  // "February 1, 8, and 15 9:00am - 12:00pm (ET)" — multi-day with time range and timezone
+| Month DayPlus1 Time RangeSepOpt Time TimeZone {$$ = NewRangesFromDatesTimeRange(NewRawDateFromMDsYs($1, $2, nil), $3, $5, $6)}
+  // "Feb. 3, 2023 12:00pm, 3:00pm" — comma-separated times sharing a date
+  // Use COLON (not TimeSep which includes PERIOD) to avoid matching "Thu, 02.03.2023"
+| DateTime COMMA INT COLON INT Am {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewAMTime($3, $5, nil, nil), $1.TimeZone)))}
+| DateTime COMMA INT COLON INT Pm {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewPMTime($3, $5, nil, nil), $1.TimeZone)))}
+| DateTime COMMA INT Am {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewAMTime($3, nil, nil, nil), $1.TimeZone)))}
+| DateTime COMMA INT Pm {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewPMTime($3, nil, nil, nil), $1.TimeZone)))}
 ;
 
 
@@ -218,6 +230,7 @@ DayPlus:
 DayPlus1:
   Day Day {$$ = []string{$1, $2}}
 | DayPlus1 Day {$$ = append($1, $2)}
+| DayPlus1 AND Day {$$ = append($1, $3)}
 ;
 
 
