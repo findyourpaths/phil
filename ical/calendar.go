@@ -2,142 +2,268 @@ package ical
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/findyourpaths/phil/datetime"
 
 	ics "github.com/arran4/golang-ical"
-	// "github.com/segmentio/ksuid"
+	"github.com/segmentio/ksuid"
 )
 
-// func NewCalendar(events *entpb.Events) *entpb.Calendar {
-// 	log.Info().Msgf("Creating calendar with %d events.", len(events.Items))
-// 	return &entpb.Calendar{
-// 		Id:     ksuid.New().String(),
-// 		Events: events,
-// 	}
-// }
-
-// func CalendarToVCalendar(c *entpb.Calendar, useragent string) (*ics.Calendar, error) {
-// 	r := ics.NewCalendar()
-
-// 	r.SetXWRCalName("Paths")
-// 	r.SetRefreshInterval("P1D")
-// 	setCalendarProperty(r, ics.PropertyComment, "USER-AGENT: "+useragent)
-// 	// UserAgent(c.UserAgent)
-
-// 	htmlmode := HTMLInDescription
-// 	if useragent == "Google-Calendar-Importer" {
-// 		htmlmode = HTMLInDescription
-// 	} else if strings.HasPrefix(useragent, "iOS") || strings.HasPrefix(useragent, "macOS") {
-// 		htmlmode = OnlyURLsInDescription
-// 	}
-
-// 	// r.SetDescription(e.Description)
-// 	if c.Events == nil {
-// 		return r, nil
-// 	}
-
-// 	setCalendarProperty(r, ics.PropertyComment, fmt.Sprintf("EVENT-DATA: %d events", len(c.Events.Items)))
-// 	for _, event := range c.Events.Items {
-// 		vevent, err := EventToVEvent(event, htmlmode)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		r.AddVEvent(vevent)
-// 	}
-
-// 	return r, nil
-// }
-
-// CleanParsedVCalendar fixes fields to ensure than vcal == ics.ParseCalendar(vcal.Serialize()).
-func CleanParsedVCalendar(vcal *ics.Calendar) error {
-	if vcal.Components == nil {
-		vcal.Components = []ics.Component{}
-	}
-	calprop := getCalendarProperty(vcal, ics.Property("REFRESH-INTERVAL"))
-	if calprop == nil {
-		return fmt.Errorf("expected to find calendar property")
-	}
-	calprop.IANAToken = "REFRESH-INTERVAL;VALUE=DURATION"
-	calprop.ICalParameters = map[string][]string{} //"VALUE": {"DURATION"}}
-	return nil
+// EventInfo provides metadata for iCal VEVENT creation.
+type EventInfo struct {
+	Summary     string // SUMMARY — event title (required)
+	Description string // DESCRIPTION — event description
+	Location    string // LOCATION — venue/address
+	URL         string // URL — event page link
 }
 
-// copied from github.com/arran4/golang-ical/calendar.go
-func setCalendarProperty(calendar *ics.Calendar, property ics.Property, value string, props ...ics.PropertyParameter) {
-	for i := range calendar.CalendarProperties {
-		if calendar.CalendarProperties[i].IANAToken == string(property) {
-			calendar.CalendarProperties[i].Value = value
-			calendar.CalendarProperties[i].ICalParameters = map[string][]string{}
-			for _, p := range props {
-				k, v := p.KeyValue()
-				calendar.CalendarProperties[i].ICalParameters[k] = v
+// resolvedEvent is the fully-resolved intermediate representation.
+// All output formats (ics, Google URL, Outlook URL, Yahoo URL) derive from this.
+// Produced by Resolve(), which does all validation.
+type resolvedEvent struct {
+	Start       time.Time
+	End         time.Time
+	AllDay      bool
+	Summary     string
+	Description string
+	Location    string
+	URL         string
+	RRule       string // empty if non-recurring, e.g. "FREQ=WEEKLY;COUNT=5;BYDAY=WE"
+	TimeZone    string // IANA name, e.g. "America/New_York"
+}
+
+// ResolvedEvents holds the validated, fully-concrete intermediate result.
+// All output functions (NewCalendarFrom, GoogleURLFrom, etc.) derive from this.
+// Use Resolve() to create.
+type ResolvedEvents struct {
+	events []*resolvedEvent
+}
+
+// Resolve converts DateTimeRanges + EventInfo into a validated intermediate form.
+// This is the single point where:
+//   - DateTimeRanges are interpreted (recurring vs flat)
+//   - Semantic validation runs (weekday, count, ordering, validity)
+//   - Timezone is resolved to IANA name
+//   - All-day vs timed is determined
+//
+// Callers generating multiple outputs (ICS + URLs) should call Resolve() once
+// and pass the result to NewCalendarFrom(), GoogleURLFrom(), etc.
+func Resolve(ranges *datetime.DateTimeRanges, info *EventInfo) (*ResolvedEvents, error) {
+	events, err := resolve(ranges, info)
+	if err != nil {
+		return nil, err
+	}
+	return &ResolvedEvents{events: events}, nil
+}
+
+func resolve(ranges *datetime.DateTimeRanges, info *EventInfo) ([]*resolvedEvent, error) {
+	if ranges == nil || len(ranges.Items) == 0 {
+		return nil, fmt.Errorf("no date/time ranges provided")
+	}
+
+	if ranges.Recurrence != nil {
+		return resolveRecurring(ranges, info)
+	}
+	return resolveFlat(ranges, info)
+}
+
+func resolveFlat(ranges *datetime.DateTimeRanges, info *EventInfo) ([]*resolvedEvent, error) {
+	var events []*resolvedEvent
+	for _, item := range ranges.Items {
+		ev, err := resolveItem(item, "", info)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, ev)
+	}
+	return events, nil
+}
+
+func resolveRecurring(ranges *datetime.DateTimeRanges, info *EventInfo) ([]*resolvedEvent, error) {
+	rec := ranges.Recurrence
+	first := ranges.Items[0]
+
+	if rec.Frequency == 0 {
+		return nil, fmt.Errorf("recurrence missing frequency")
+	}
+	if rec.Count == 0 && rec.Until == nil {
+		return nil, fmt.Errorf("recurrence requires at least one of Count or Until")
+	}
+
+	// Validate weekday-date consistency.
+	if first.Start != nil && first.Start.Date != nil && first.Start.Date.Year != 0 && rec.Weekday != nil {
+		computed := time.Date(first.Start.Date.Year, first.Start.Date.Month, first.Start.Date.Day,
+			0, 0, 0, 0, time.UTC).Weekday()
+		if *rec.Weekday != computed {
+			return nil, fmt.Errorf("weekday mismatch: start date is %s, not %s", computed, *rec.Weekday)
+		}
+	}
+
+	// Validate count vs until consistency.
+	if rec.Count > 0 && rec.Until != nil {
+		occs := ranges.Occurrences()
+		if len(occs) != rec.Count {
+			return nil, fmt.Errorf("count %d but only %d occurrences fit within the date range", rec.Count, len(occs))
+		}
+	}
+
+	rrule := FormatRRule(rec)
+	ev, err := resolveItem(first, rrule, info)
+	if err != nil {
+		return nil, err
+	}
+	return []*resolvedEvent{ev}, nil
+}
+
+func resolveItem(item *datetime.DateTimeRange, rrule string, info *EventInfo) (*resolvedEvent, error) {
+	if item.Start == nil || item.Start.Date == nil {
+		return nil, fmt.Errorf("date/time range missing start date")
+	}
+
+	sd := item.Start.Date
+	allDay := item.Start.Time == nil
+
+	// Validate start date.
+	if sd.Month != 0 && sd.Day != 0 && sd.Year != 0 {
+		check := time.Date(sd.Year, sd.Month, sd.Day, 0, 0, 0, 0, time.UTC)
+		if check.Day() != sd.Day {
+			return nil, fmt.Errorf("invalid date: %04d-%02d-%02d", sd.Year, sd.Month, sd.Day)
+		}
+	}
+
+	// Resolve timezone.
+	tzName := item.IANAName()
+	loc := time.UTC
+	if tzName != "" {
+		var err error
+		loc, err = time.LoadLocation(tzName)
+		if err != nil {
+			return nil, fmt.Errorf("unknown timezone: %s", tzName)
+		}
+	}
+
+	// Build start time.
+	var start time.Time
+	if allDay {
+		start = time.Date(sd.Year, sd.Month, sd.Day, 0, 0, 0, 0, loc)
+	} else {
+		t := item.Start.Time
+		start = time.Date(sd.Year, sd.Month, sd.Day, t.Hour, t.Minute, t.Second, 0, loc)
+	}
+
+	// Build end time.
+	var end time.Time
+	if item.End != nil && item.End.Date != nil {
+		ed := item.End.Date
+		// Validate end date.
+		if ed.Month != 0 && ed.Day != 0 && ed.Year != 0 {
+			check := time.Date(ed.Year, ed.Month, ed.Day, 0, 0, 0, 0, time.UTC)
+			if check.Day() != ed.Day {
+				return nil, fmt.Errorf("invalid date: %04d-%02d-%02d", ed.Year, ed.Month, ed.Day)
 			}
-			return
 		}
+		if allDay {
+			// iCal: DTEND is exclusive for all-day events.
+			end = time.Date(ed.Year, ed.Month, ed.Day, 0, 0, 0, 0, loc).AddDate(0, 0, 1)
+		} else if item.End.Time != nil {
+			et := item.End.Time
+			end = time.Date(ed.Year, ed.Month, ed.Day, et.Hour, et.Minute, et.Second, 0, loc)
+		} else {
+			end = time.Date(ed.Year, ed.Month, ed.Day, 0, 0, 0, 0, loc).AddDate(0, 0, 1)
+		}
+	} else if allDay {
+		// Single all-day event: DTEND = DTSTART + 1 day.
+		end = start.AddDate(0, 0, 1)
 	}
-	r := ics.CalendarProperty{
-		ics.BaseProperty{
-			IANAToken:      string(property),
-			Value:          value,
-			ICalParameters: map[string][]string{},
-		},
+
+	// Validate ordering.
+	if !end.IsZero() && start.After(end) {
+		return nil, fmt.Errorf("start after end: %s > %s", start.Format(time.RFC3339), end.Format(time.RFC3339))
 	}
-	for _, p := range props {
-		k, v := p.KeyValue()
-		r.ICalParameters[k] = v
-	}
-	calendar.CalendarProperties = append(calendar.CalendarProperties, r)
+
+	return &resolvedEvent{
+		Start:       start,
+		End:         end,
+		AllDay:      allDay,
+		Summary:     info.Summary,
+		Description: info.Description,
+		Location:    info.Location,
+		URL:         info.URL,
+		RRule:       rrule,
+		TimeZone:    tzName,
+	}, nil
 }
 
-func getCalendarProperty(cal *ics.Calendar, prop ics.Property) *ics.CalendarProperty {
-	for i := range cal.CalendarProperties {
-		calprop := &(cal.CalendarProperties[i])
-		if calprop.IANAToken == string(prop) {
-			return calprop
+// newVEvent creates a single VEVENT from a resolvedEvent.
+func newVEvent(ev *resolvedEvent) *ics.VEvent {
+	event := ics.NewEvent(ksuid.New().String())
+	event.SetProperty(ics.ComponentPropertyDtstamp,
+		time.Now().UTC().Format("20060102T150405Z"))
+
+	if ev.AllDay {
+		event.SetAllDayStartAt(ev.Start)
+		if !ev.End.IsZero() {
+			event.SetAllDayEndAt(ev.End)
+		}
+	} else if ev.TimeZone != "" {
+		// DTSTART/DTEND with TZID parameter (local time, no Z suffix).
+		tzParam := &ics.KeyValues{Key: "TZID", Value: []string{ev.TimeZone}}
+		event.SetProperty(ics.ComponentPropertyDtStart,
+			ev.Start.Format("20060102T150405"), tzParam)
+		if !ev.End.IsZero() {
+			event.SetProperty(ics.ComponentPropertyDtEnd,
+				ev.End.Format("20060102T150405"), tzParam)
+		}
+	} else {
+		event.SetStartAt(ev.Start)
+		if !ev.End.IsZero() {
+			event.SetEndAt(ev.End)
 		}
 	}
-	return nil
+
+	if ev.Summary != "" {
+		event.SetSummary(ev.Summary)
+	}
+	if ev.Description != "" {
+		event.SetDescription(ev.Description)
+	}
+	if ev.Location != "" {
+		event.SetLocation(ev.Location)
+	}
+	if ev.URL != "" {
+		event.SetURL(ev.URL)
+	}
+	if ev.RRule != "" {
+		event.AddRrule(ev.RRule)
+	}
+
+	return event
 }
 
-/*
-      public static Calendar getCalendarWithEvents(String userAgent, List<Event> events) {
-       // Create calendar
-       Calendar calendar = new Calendar();
-       calendar.replace(new DtStamp(Instant.EPOCH));
-       calendar.add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
-       calendar.add(Version.VERSION_2_0);
-       String name = "Connection Central";
-       calendar.add(new XProperty("X-WR-CALNAME", name));
-       calendar.add(new Name(name));
-       calendar.add(CalScale.GREGORIAN);
-       // calendar.add(new XProperty("X-WR-CALNAME", "Connection Central"));
-       ParameterList refresh = new ParameterList();
-       refresh.add(new Value("DURATION"));
-       calendar.add(new RefreshInterval(refresh, java.time.Duration.ofMinutes(7 * 24 * 60)));
+// NewCalendar converts DateTimeRanges and event metadata into an iCal Calendar.
+// Convenience wrapper: calls Resolve() then NewCalendarFrom().
+func NewCalendar(ranges *datetime.DateTimeRanges, info *EventInfo) (*ics.Calendar, error) {
+	resolved, err := Resolve(ranges, info)
+	if err != nil {
+		return nil, err
+	}
+	return NewCalendarFrom(resolved), nil
+}
 
-       //calendar.add(new RefreshInterval(new ParameterList(List.of(new Value("DURATION"))), java.time.Duration.ofMinutes(7 * 24 * 60)));
+// NewCalendarFrom creates an iCal Calendar from pre-resolved events.
+// If the original ranges had Recurrence, the single VEVENT contains an RRULE.
+// If flat, produces one VEVENT per resolved event.
+func NewCalendarFrom(resolved *ResolvedEvents) *ics.Calendar {
+	cal := ics.NewCalendar()
+	cal.SetProductId("-//Phil//EN")
+	for _, ev := range resolved.events {
+		cal.AddVEvent(newVEvent(ev))
+	}
+	return cal
+}
 
-       // Add metadata in comments
-       //
-       calendar.add(new Comment("USER-AGENT: " + userAgent));
-
-       // Do a little browser sniffing to return calendar descriptions that can be rendered as best as possible.
-       Event.HTMLMode htmlMode = Event.HTMLMode.HTML_IN_DESCRIPTION;
-       if (userAgent.equals("Google-Calendar-Importer")) {
-           htmlMode = Event.HTMLMode.HTML_IN_DESCRIPTION;
-       } else if (userAgent.startsWith("iOS") ||
-           userAgent.startsWith("macOS")) {
-           // "macOS/13.2.1 (22D68) dataaccessd/1.0"
-           // iOS/16.2 (20C65) dataaccessd/1.0"
-           htmlMode = Event.HTMLMode.ONLY_URLS_IN_DESCRIPTION;
-       }
-
-       calendar.add(new Comment("EVENT-DATA: " + events.size() + " events and " + Person.personsBySlug.size() + " persons"));
-       calendar.add(new Comment("HTML-MODE: " + htmlMode));
-       for (Event event : events) {
-           if (event != null) {
-               calendar.add(event.toVEvent(htmlMode));
-           }
-       }
-       return calendar;
-   }
-*/
+// ICS returns the serialized .ics content for the calendar.
+func ICS(cal *ics.Calendar) string {
+	return cal.Serialize()
+}

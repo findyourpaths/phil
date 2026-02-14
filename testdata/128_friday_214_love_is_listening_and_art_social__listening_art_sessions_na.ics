@@ -1,0 +1,10 @@
+# Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions**
+# dateMode: na
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Phil//EN
+BEGIN:VEVENT
+DTSTART;TZID=America/New_York:20230106T020000
+SUMMARY:Test Event
+END:VEVENT
+END:VCALENDAR

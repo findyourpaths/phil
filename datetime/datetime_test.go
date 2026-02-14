@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"google.golang.org/protobuf/testing/protocmp"
 )
 
 type toStringTest struct {
@@ -43,12 +42,14 @@ func TestToString(t *testing.T) {
 func testToStringFn(t *testing.T, tc toStringTest) func(*testing.T) {
 	return func(t *testing.T) {
 		got := tc.in.String()
-		if diff := cmp.Diff(got, tc.want, protocmp.Transform()); diff != "" {
+		if diff := cmp.Diff(got, tc.want); diff != "" {
 			t.Errorf("unexpected difference:\n%v", diff)
 		}
 	}
 }
 
+// weekdayPtr returns a pointer to a time.Weekday value.
+// Also defined in ical/calendar_test.go (separate test package, can't share).
 func weekdayPtr(wd time.Weekday) *time.Weekday { return &wd }
 
 func TestOccurrences(t *testing.T) {

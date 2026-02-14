@@ -1,106 +1,266 @@
 package ical
 
 import (
-	// "bytes"
-	"flag"
-	"fmt"
-
-	// "io/ioutil"
-	"os"
-	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
-	// "github.com/bazelbuild/rules_go/go/tools/bazel"
-
-	"github.com/segmentio/ksuid"
-	// "google.golang.org/protobuf/encoding/prototext"
+	"github.com/findyourpaths/phil/datetime"
 )
 
-var writeTests = flag.Bool("write_tests", false, "write the tests outputs with the result of the current run")
-var writeDir = flag.String("write_dir", "/tmp/internal/ical/testdata/", "write test outputs to this directory")
+// weekdayPtr returns a pointer to a time.Weekday value.
+// Also defined in datetime/datetime_test.go (separate test package, can't share).
+func weekdayPtr(wd time.Weekday) *time.Weekday { return &wd }
 
-type rander struct {
-	i int
-}
+// ---------------------------------------------------------------------------
+// Conversion tests
+// ---------------------------------------------------------------------------
 
-func (r rander) Read(b []byte) (int, error) {
-	b[0] = byte(r.i % 10)
-	r.i += 1
-	return 1, nil
-}
-
-func TestMain(m *testing.M) {
-	// util.InTest = true
-	ksuid.SetRand(rander{})
-	os.Exit(m.Run())
-}
-
-func writeFile(path string, content string) error {
-	fmt.Printf("writing to: %s\n", path)
-	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
-		return err
+func TestNewCalendar_Conversion(t *testing.T) {
+	tests := []struct {
+		name       string
+		ranges     *datetime.DateTimeRanges
+		info       *EventInfo
+		wantEvents int
+		wantAllDay bool
+		wantRRule  bool
+	}{
+		{
+			name:       "all_day_single",
+			ranges:     datetime.NewRangesWithStartDates(&datetime.Date{Year: 2023, Month: 2, Day: 3}),
+			info:       &EventInfo{Summary: "Workshop"},
+			wantEvents: 1,
+			wantAllDay: true,
+		},
+		{
+			name: "timed_single",
+			ranges: datetime.NewRangesWithStartDateTimes(
+				&datetime.DateTime{
+					Date: &datetime.Date{Year: 2023, Month: 2, Day: 3},
+					Time: &datetime.Time{Hour: 9},
+				}),
+			info:       &EventInfo{Summary: "Morning Session"},
+			wantEvents: 1,
+		},
+		{
+			name: "timed_single_with_timezone",
+			ranges: datetime.NewRangesWithStartDateTimes(
+				&datetime.DateTime{
+					Date:     &datetime.Date{Year: 2023, Month: 2, Day: 3},
+					Time:     &datetime.Time{Hour: 9},
+					TimeZone: &datetime.TimeZone{Abbreviation: "ET"},
+				}),
+			info:       &EventInfo{Summary: "Morning Session ET"},
+			wantEvents: 1,
+		},
+		{
+			name: "date_range",
+			ranges: datetime.NewRangesWithStartEndDates(
+				&datetime.Date{Year: 2023, Month: 2, Day: 3},
+				&datetime.Date{Year: 2023, Month: 2, Day: 4}),
+			info:       &EventInfo{Summary: "Retreat"},
+			wantEvents: 1,
+			wantAllDay: true,
+		},
+		{
+			name: "time_range",
+			ranges: datetime.NewRangesWithStartEndDateTimes(
+				&datetime.DateTime{
+					Date:     &datetime.Date{Year: 2023, Month: 2, Day: 3},
+					Time:     &datetime.Time{Hour: 9},
+					TimeZone: &datetime.TimeZone{Abbreviation: "ET"},
+				},
+				&datetime.DateTime{
+					Date:     &datetime.Date{Year: 2023, Month: 2, Day: 3},
+					Time:     &datetime.Time{Hour: 12},
+					TimeZone: &datetime.TimeZone{Abbreviation: "ET"},
+				}),
+			info:       &EventInfo{Summary: "Morning Workshop"},
+			wantEvents: 1,
+		},
+		{
+			name: "multiple_dates",
+			ranges: datetime.NewRangesWithStartDates(
+				&datetime.Date{Year: 2023, Month: 2, Day: 1},
+				&datetime.Date{Year: 2023, Month: 2, Day: 8},
+				&datetime.Date{Year: 2023, Month: 2, Day: 15}),
+			info:       &EventInfo{Summary: "Class"},
+			wantEvents: 3,
+			wantAllDay: true,
+		},
+		{
+			name: "weekly_recurrence",
+			ranges: datetime.NewRecurringRanges(
+				datetime.NewRange(
+					&datetime.DateTime{
+						Date:     &datetime.Date{Year: 2023, Month: 2, Day: 1},
+						Time:     &datetime.Time{Hour: 9},
+						TimeZone: &datetime.TimeZone{Abbreviation: "ET"},
+					},
+					&datetime.DateTime{
+						Date:     &datetime.Date{Year: 2023, Month: 2, Day: 1},
+						Time:     &datetime.Time{Hour: 12},
+						TimeZone: &datetime.TimeZone{Abbreviation: "ET"},
+					}),
+				&datetime.Recurrence{
+					Frequency: datetime.FrequencyWeekly,
+					Count:     5,
+					Weekday:   weekdayPtr(time.Wednesday),
+				}),
+			info:       &EventInfo{Summary: "5 Week Series"},
+			wantEvents: 1,
+			wantRRule:  true,
+		},
+		{
+			name: "full_event_info",
+			ranges: datetime.NewRangesWithStartDateTimes(
+				&datetime.DateTime{
+					Date: &datetime.Date{Year: 2023, Month: 2, Day: 3},
+					Time: &datetime.Time{Hour: 9},
+				}),
+			info: &EventInfo{
+				Summary:     "Workshop",
+				Description: "A great workshop",
+				Location:    "123 Main St",
+				URL:         "https://example.com",
+			},
+			wantEvents: 1,
+		},
 	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 
-	_, err = f.WriteString(content)
-	return err
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cal, err := NewCalendar(tc.ranges, tc.info)
+			if err != nil {
+				t.Fatalf("NewCalendar error: %v", err)
+			}
+			events := cal.Events()
+			if len(events) != tc.wantEvents {
+				t.Fatalf("got %d events, want %d", len(events), tc.wantEvents)
+			}
+
+			icsStr := ICS(cal)
+			if icsStr == "" {
+				t.Fatal("ICS returned empty string")
+			}
+			if !strings.Contains(icsStr, "BEGIN:VCALENDAR") {
+				t.Error("ICS missing BEGIN:VCALENDAR")
+			}
+			if !strings.Contains(icsStr, "BEGIN:VEVENT") {
+				t.Error("ICS missing BEGIN:VEVENT")
+			}
+			if tc.info.Summary != "" && !strings.Contains(icsStr, tc.info.Summary) {
+				t.Errorf("ICS missing SUMMARY %q", tc.info.Summary)
+			}
+			if tc.wantAllDay && !strings.Contains(icsStr, "VALUE=DATE") {
+				t.Error("expected all-day event with VALUE=DATE")
+			}
+			if tc.wantRRule && !strings.Contains(icsStr, "RRULE:") {
+				t.Error("expected RRULE in output")
+			}
+			if tc.info.Location != "" && !strings.Contains(icsStr, tc.info.Location) {
+				t.Errorf("ICS missing LOCATION %q", tc.info.Location)
+			}
+			if tc.info.Description != "" && !strings.Contains(icsStr, tc.info.Description) {
+				t.Errorf("ICS missing DESCRIPTION %q", tc.info.Description)
+			}
+		})
+	}
 }
 
-// // See https://eli.thegreenplace.net/2022/file-driven-testing-in-go/
-// func TestCalendarToVCalendar(t *testing.T) {
-// 	type test struct {
-// 		name      string
-// 		useragent string
-// 		want      string
-// 	}
+// ---------------------------------------------------------------------------
+// Validation tests (via NewCalendar errors)
+// ---------------------------------------------------------------------------
 
-// 	tests := []test{
-// 		{name: "calendar_google.ics", useragent: "Google-Calendar-Importer"},
-// 		{name: "calendar_macos.ics", useragent: "macOS/13.2.1 (22D68) dataaccessd/1.0"},
-// 		{name: "calendar_ios.ics", useragent: "iOS/16.2 (20C65) dataaccessd/1.0"},
-// 	}
+func TestNewCalendar_Validation(t *testing.T) {
+	tests := []struct {
+		name    string
+		ranges  *datetime.DateTimeRanges
+		info    *EventInfo
+		wantErr string
+	}{
+		{
+			name: "weekday_mismatch",
+			ranges: datetime.NewRecurringRanges(
+				datetime.NewRange(
+					&datetime.DateTime{Date: &datetime.Date{Year: 2025, Month: 2, Day: 1}},
+					nil),
+				&datetime.Recurrence{
+					Frequency: datetime.FrequencyWeekly,
+					Count:     5,
+					Weekday:   weekdayPtr(time.Wednesday),
+				}),
+			info:    &EventInfo{Summary: "Test"},
+			wantErr: "Saturday, not Wednesday",
+		},
+		{
+			name: "count_mismatch",
+			ranges: datetime.NewRecurringRanges(
+				datetime.NewRange(
+					&datetime.DateTime{Date: &datetime.Date{Year: 2023, Month: 2, Day: 1}},
+					nil),
+				&datetime.Recurrence{
+					Frequency: datetime.FrequencyWeekly,
+					Count:     5,
+					Weekday:   weekdayPtr(time.Wednesday),
+					Until:     &datetime.Date{Year: 2023, Month: 2, Day: 28},
+				}),
+			info:    &EventInfo{Summary: "Test"},
+			wantErr: "count 5 but only 4",
+		},
+		{
+			name: "valid_recurrence",
+			ranges: datetime.NewRecurringRanges(
+				datetime.NewRange(
+					&datetime.DateTime{
+						Date: &datetime.Date{Year: 2023, Month: 2, Day: 1},
+						Time: &datetime.Time{Hour: 9},
+					},
+					&datetime.DateTime{
+						Date: &datetime.Date{Year: 2023, Month: 2, Day: 1},
+						Time: &datetime.Time{Hour: 12},
+					}),
+				&datetime.Recurrence{
+					Frequency: datetime.FrequencyWeekly,
+					Count:     5,
+					Weekday:   weekdayPtr(time.Wednesday),
+					Until:     &datetime.Date{Year: 2023, Month: 3, Day: 1},
+				}),
+			info:    &EventInfo{Summary: "Test"},
+			wantErr: "",
+		},
+		{
+			name: "invalid_date_feb30",
+			ranges: datetime.NewRangesWithStartDates(
+				&datetime.Date{Year: 2023, Month: 2, Day: 30}),
+			info:    &EventInfo{Summary: "Test"},
+			wantErr: "invalid date",
+		},
+		{
+			name: "start_after_end",
+			ranges: datetime.NewRangesWithStartEndDates(
+				&datetime.Date{Year: 2023, Month: 3, Day: 4},
+				&datetime.Date{Year: 2023, Month: 2, Day: 3}),
+			info:    &EventInfo{Summary: "Test"},
+			wantErr: "start after end",
+		},
+	}
 
-// 	return
-
-// prs := &entpb.Results{}
-// err := util.ReadProtoFile("internal/retrieve/testdata/iea_nine_points_com.textproto", prs)
-// if err != nil {
-// 	t.Fatalf("error: %v", err)
-// }
-// events := entity.SuccessfullyParsedEvents(prs)
-
-// for _, testcase := range tests {
-// 	cal := NewCalendar(events)
-// 	got, err := CalendarToVCalendar(cal, testcase.useragent)
-// 	if err != nil {
-// 		t.Fatalf("error: %v", err)
-// 	}
-
-// 	gots := got.Serialize()
-// 	if *writeTests {
-// 		if err := writeFile(*writeDir+"/"+testcase.name, gots); err != nil {
-// 			t.Fatalf("error: %v", err)
-// 		}
-// 	}
-
-// 	wantr, err := os.Open("testdata/" + testcase.name)
-// 	if err != nil {
-// 		t.Fatalf("error: %v", err)
-// 	}
-// 	want, err := ics.ParseCalendar(wantr)
-// 	if err != nil {
-// 		t.Fatalf("error: %v", err)
-// 	}
-// 	if err = CleanParsedVCalendar(want); err != nil {
-// 		t.Fatalf("error: %v", err)
-// 	}
-
-// 	if diff := cmp.Diff(want, got); diff != "" {
-// 		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
-// 	}
-// }
-// }
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewCalendar(tc.ranges, tc.info)
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("expected no error, got: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tc.wantErr)
+			}
+			if !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("expected error containing %q, got: %v", tc.wantErr, err)
+			}
+		})
+	}
+}

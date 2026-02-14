@@ -42,7 +42,7 @@ func (rngs *DateTimeRanges) String() string {
 	}
 	s := strings.Join(rs, ", ")
 	if rngs.Recurrence != nil {
-		s += " [" + rngs.Recurrence.String() + "]"
+		s += " (" + rngs.Recurrence.String() + ")"
 	}
 	return s
 }
@@ -126,16 +126,16 @@ const (
 	FrequencyYearly
 )
 
-// String returns the iCal FREQ value.
+// String returns a human-readable frequency name.
 func (f Frequency) String() string {
 	return frequencyStrings[f]
 }
 
 var frequencyStrings = map[Frequency]string{
-	FrequencyDaily:   "DAILY",
-	FrequencyWeekly:  "WEEKLY",
-	FrequencyMonthly: "MONTHLY",
-	FrequencyYearly:  "YEARLY",
+	FrequencyDaily:   "daily",
+	FrequencyWeekly:  "weekly",
+	FrequencyMonthly: "monthly",
+	FrequencyYearly:  "yearly",
 }
 
 // frequencySteps maps frequency → (years, months, days) for Occurrences() expansion.
@@ -146,34 +146,29 @@ var frequencySteps = map[Frequency][3]int{
 	FrequencyYearly:  {1, 0, 0},
 }
 
-var weekdayICalStrings = map[time.Weekday]string{
-	time.Sunday: "SU", time.Monday: "MO", time.Tuesday: "TU",
-	time.Wednesday: "WE", time.Thursday: "TH", time.Friday: "FR",
-	time.Saturday: "SA",
-}
-
 // Recurrence captures recurrence metadata for patterns like
 // "5 Wednesdays 9:00am-12:00pm February 1st - March 1st".
 type Recurrence struct {
-	Frequency Frequency     // WEEKLY, DAILY, etc.
+	Frequency Frequency     // how often the event repeats (daily, weekly, etc.)
 	Count     int           // "5 Wednesdays" → 5 (0 means use Until)
 	Weekday   *time.Weekday // nil = no weekday constraint
 	Until     *Date         // end boundary date (alternative to Count)
 }
 
+// String returns a human-readable representation of the recurrence.
 func (r *Recurrence) String() string {
 	if r == nil {
 		return ""
 	}
-	s := "FREQ=" + r.Frequency.String()
+	s := r.Frequency.String()
 	if r.Count > 0 {
-		s += ";COUNT=" + strconv.Itoa(r.Count)
+		s += " x" + strconv.Itoa(r.Count)
 	}
 	if r.Weekday != nil {
-		s += ";BYDAY=" + weekdayICalStrings[*r.Weekday]
+		s += " " + r.Weekday.String()
 	}
 	if r.Until != nil {
-		s += ";UNTIL=" + r.Until.ICalString()
+		s += " until " + r.Until.String()
 	}
 	return s
 }
@@ -235,11 +230,6 @@ func (rngs *DateTimeRanges) Occurrences() []*DateTimeRange {
 	return result
 }
 
-// ICalString returns the date in YYYYMMDD format for RRULE UNTIL values.
-func (d *Date) ICalString() string {
-	return fmt.Sprintf("%04d%02d%02d", d.Year, d.Month, d.Day)
-}
-
 func HasStartMonthAndDay(rngs *DateTimeRanges) bool {
 	return rngs != nil &&
 		len(rngs.Items) > 0 &&
@@ -295,7 +285,6 @@ func NewRangeWithStart(startDT *DateTime) *DateTimeRange {
 
 func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 	if start != nil && end != nil {
-		// fmt.Printf("checking TimeZones\n")
 		// Check that start and end TimeZones don't conflict, and if one is missing, copy from the other.
 		if start.TimeZone != nil && end.TimeZone != nil && *(start.TimeZone) != *(end.TimeZone) {
 			panic(fmt.Sprintf("semantic error: start TimeZone %#v is different from end TimeZone: %#v\n", start.TimeZone, end.TimeZone))
@@ -307,7 +296,6 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			end.TimeZone = start.TimeZone
 		}
 
-		// fmt.Printf("checking Times\n")
 		if start.Time != nil && end.Time != nil {
 			if start.Date == nil && end.Date != nil {
 				start.Date = end.Date
@@ -316,9 +304,7 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			}
 		}
 
-		// fmt.Printf("checking Dates\n")
 		if start.Date != nil && end.Date != nil {
-			// fmt.Printf("checking Days\n")
 			// If both have Days but one Month is missing, copy from the other.
 			if start.Date.Day != 0 && end.Date.Day != 0 {
 				if start.Date.Month == 0 && end.Date.Month != 0 {
@@ -329,8 +315,6 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			}
 
 			// If both have Months but one Year is missing, copy from the other.
-			// fmt.Printf("checking Months: %d, %d\n", start.Date.Month, end.Date.Month)
-			// fmt.Printf("before checking Months, Years: %d, %d\n", start.Date.Year, end.Date.Year)
 			if start.Date.Month != 0 && end.Date.Month != 0 {
 				if start.Date.Year == 0 && end.Date.Year != 0 {
 					start.Date.Year = end.Date.Year
@@ -338,7 +322,6 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 					end.Date.Year = start.Date.Year
 				}
 			}
-			// fmt.Printf("after checking Months, Years: %d, %d\n", start.Date.Year, end.Date.Year)
 		}
 	}
 
@@ -412,7 +395,6 @@ func (dt *DateTime) String() string {
 }
 
 func (dt *DateTime) ToTime() *time.Time {
-	// fmt.Printf("dt.ToTime(), dt: %#v\n", dt)
 	if dt == nil {
 		return nil
 	}
@@ -428,7 +410,6 @@ func (dt *DateTime) ToTime() *time.Time {
 	}
 
 	r := time.Date(dt.Date.Year, dt.Date.Month, dt.Date.Day, t.Hour, t.Minute, t.Second, t.Nanosecond, loc)
-	// fmt.Printf("in dt.ToTime(), r: %#v\n", r)
 	return &r
 }
 
@@ -488,7 +469,6 @@ func NewDateTimeWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *i
 }
 
 func NewDateTime(d *Date, t *Time, tz *TimeZone) *DateTime {
-	// fmt.Printf("NewDateTime(d: %#v, t: %#v, tz %#v)\n", d, t, tz)
 	r := &DateTime{Date: d, Time: t, TimeZone: tz}
 
 	// If we have Date and Time info but no TimeZone, get it from Min if it exists.
@@ -497,7 +477,6 @@ func NewDateTime(d *Date, t *Time, tz *TimeZone) *DateTime {
 		r.Time != nil &&
 		minimumDateTime != nil &&
 		minimumDateTime.TimeZone != nil {
-		// fmt.Printf("in NewDateTimeFromRaw(), setting time zone to %#v\n", minimumDT.TimeZone)
 		r.TimeZone = minimumDateTime.TimeZone
 	}
 
@@ -529,7 +508,6 @@ func NewDateTime(d *Date, t *Time, tz *TimeZone) *DateTime {
 	end := lo.LastIndexOf(bits, true)
 	for i := start; i < end; i++ {
 		if !bits[i] {
-			// fmt.Printf("found gap in DateTime at i: %d in bits: %#v\n", i, bits)
 			panic(fmt.Sprintf("semantic error: found gap in DateTime at i: %d in YMDH bits: %#v\n", i, bits))
 		}
 	}
@@ -542,7 +520,6 @@ func locationForName(name string) *time.Location {
 	if err != nil {
 		panic(fmt.Sprintf("error getting time zone location from name (%q): %v", name, err))
 	}
-	// fmt.Printf("in locationForName(dt, name: %q), returning %#v\n", name, r)
 	return r
 }
 
@@ -556,15 +533,11 @@ func locationForOffset(dt *DateTime, offset string) *time.Location {
 		panic(fmt.Sprintf("error parsing fake time string (%q) for offset %q: %v", fakeStr, offset, err))
 	}
 	r := t.Location()
-	// fmt.Printf("in locationForOffset(dt, offset: %q), returning %#v\n", offset, r)
 	return r
 }
 
 func locationForAbbreviation(dt *DateTime, abbrev string) *time.Location {
-	// slog.Debug("locationForAbbreviation(dt, abbrev)", "abbrev", abbrev)
-
 	name := PreferredLocationNamesByAbbrev[abbrev]
-	// slog.Debug("in locationForAbbreviation()", "name", name)
 	if name != "" {
 		if loc := locationForName(name); loc != nil {
 			return loc
@@ -572,13 +545,8 @@ func locationForAbbreviation(dt *DateTime, abbrev string) *time.Location {
 	}
 
 	tzs, _ := timezoneTZ.GetTzAbbreviationInfo(abbrev)
-	// for i, tz := range tzs {
-	// 	fmt.Printf("in locationForAbbreviation(dt, abbrev: %q), got tz[%d]: %#v\n", abbrev, i, tz)
-	// }
-
 	if len(tzs) == 1 {
 		r := locationForOffset(dt, tzs[0].OffsetHHMM())
-		// fmt.Printf("in locationForAbbreviation(dt, abbrev: %q), returning %#v\n", abbrev, r)
 		return r
 	}
 
@@ -613,10 +581,7 @@ func (d *Date) ToTime() *time.Time {
 }
 
 func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
-	// fmt.Printf("NewDateFromRaw(d: %#v, tz: %#v)\n", d, tz)
-
 	// If there's no ambiguity with the Month and Day, just process the raw Date.
-	// fmt.Printf("checking whether Month and Day are ambiguous")
 	if len(d.unknown) != 2 {
 		r, err := maybeNewDateFromRaw(d, tz)
 		if err != nil {
@@ -632,13 +597,11 @@ func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
 	if dm == DateModeUnknown && minimumDateTime != nil {
 		dm = DateMode(minimumDateTime.TimeZone)
 	}
-	// fmt.Printf("found DateMode: %q\n", dm)
 
 	// If we now know the DateMode for the Month and Day, process the raw Date.
 	u0 := d.unknown[0]
 	u1 := d.unknown[1]
 
-	// fmt.Printf("going with DateModeRest\n")
 	if dm == DateModeRest {
 		setNewDateMonthAndDay(d, findInt(monthUnit, u1), findInt(dayUnit, u0))
 		r, err := maybeNewDateFromRaw(d, tz)
@@ -647,7 +610,6 @@ func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
 		}
 		return r
 	}
-	// fmt.Printf("going with DateModeNorthAmerican\n")
 	if dm == DateModeNorthAmerican {
 		setNewDateMonthAndDay(d, findInt(monthUnit, u0), findInt(dayUnit, u1))
 		r, err := maybeNewDateFromRaw(d, tz)
@@ -658,13 +620,11 @@ func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
 	}
 
 	// At this point, we have the ambiguous Month and Day, and we don't know the DateMode. Try NA first.
-	// fmt.Printf("trying with DateModeNorthAmerican\n")
 	setNewDateMonthAndDay(d, findInt(monthUnit, u0), findInt(dayUnit, u1))
 	r, err := maybeNewDateFromRaw(d, tz)
 	if err == nil {
 		return r
 	}
-	// fmt.Printf("trying with DateModeRest\n")
 	setNewDateMonthAndDay(d, findInt(monthUnit, u1), findInt(dayUnit, u0))
 	r, err = maybeNewDateFromRaw(d, tz)
 	if err == nil {
@@ -680,8 +640,6 @@ func setNewDateMonthAndDay(d *Date, month int, day int) *Date {
 }
 
 func maybeNewDateFromRaw(d *Date, tz *TimeZone) (*Date, error) {
-	// fmt.Printf("maybeNewDateFromRaw(d: %#v, tz: %#v)\n", d, tz)
-
 	// if Month and Day are both set, check consistency and set Year and Weekday.
 	if d.Month == 0 || d.Day == 0 {
 		return d, nil
@@ -705,7 +663,6 @@ func maybeNewDateFromRaw(d *Date, tz *TimeZone) (*Date, error) {
 }
 
 func DateMode(tz *TimeZone) string {
-	// fmt.Printf("DateMode(tz: %#v)\n", tz)
 	if tz == nil {
 		return DateModeUnknown
 	}
@@ -713,7 +670,6 @@ func DateMode(tz *TimeZone) string {
 	abbrev := tz.Abbreviation
 	name := tz.Name
 
-	// fmt.Printf("in DateMode(), name: %q, abbrev: %q\n", name, abbrev)
 	if abbrev == "" {
 		abbrev = timeZoneAbbreviationsByNames[name]
 	}
@@ -732,14 +688,12 @@ func DateMode(tz *TimeZone) string {
 }
 
 func setNewDateYear(d *Date) *Date {
-	// fmt.Printf("checking minimumDT: %#v\n", minimumDateTime)
 	if minimumDateTime == nil {
 		d.Year = 0
 		return d
 	}
 
 	minTime := minimumDateTime.ToTime()
-	// fmt.Printf("checking minTime: %#v\n", minTime)
 	if minTime == nil {
 		d.Year = 0
 		return d
@@ -747,14 +701,12 @@ func setNewDateYear(d *Date) *Date {
 
 	d.Year = minimumDateTime.Date.Year
 	dateTime := d.ToTime()
-	// fmt.Printf("checking same year dateTime: %#v\n", dateTime)
 	if !dateTime.Before(*minTime) {
 		return d
 	}
 
 	d.Year = minimumDateTime.Date.Year + 1
 	dateTime = d.ToTime()
-	// fmt.Printf("checking next year dateTime: %#v\n", dateTime)
 	if !dateTime.Before(*minTime) {
 		return d
 	}
@@ -844,7 +796,6 @@ func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
 }
 
 func findInt(tUnit timeUnit, val any) int {
-	// fmt.Printf("findInt(tUnit: %#v, valAny (%T): %#v)\n", tUnit, val, val)
 	r := -1
 	var ok bool
 	if val != nil {
@@ -878,15 +829,9 @@ func findInt(tUnit timeUnit, val any) int {
 		return 0
 	}
 
-	// debugf("in findInt(), r: %d, ok: %t\n", r, ok)
 	if !ok && (r < tUnit.min || r > tUnit.max) {
-		// fmt.Printf("ok: %#v\n", ok)
-		// fmt.Printf("r: %#v\n", r)
-		// fmt.Printf("r < tunit.min: %#v\n", r < tUnit.min)
-		// fmt.Printf("r > tunit.max: %#v\n", r > tUnit.max)
 		panic(fmt.Sprintln("found int but failed bounds check", "tunit", tUnit, "val", val))
 	}
-	// debugf("in findInt(), returning: %d\n", r)
 
 	return r
 }
@@ -909,7 +854,6 @@ var secondUnit = timeUnit{name: "second", min: 0, max: 59}
 var nsUnit = timeUnit{name: "ns", min: 0, max: 999}
 
 func fixYear(yearAny any, year int) (int, bool) {
-	// fmt.Printf("fixYear(yearAny: %#v, year: %d)\n", yearAny, year)
 	if yearAny == nil {
 		return 0, true
 	}
@@ -1057,7 +1001,6 @@ var northAmericanTimeZoneAbbreviations = map[string]bool{
 // Single-char timezone abbreviations are now ignored via length check in parse_lex.go
 
 func NewRawDateFromRelative(relativeName string) *Date {
-	// fmt.Printf("NewRawDateFromRelative(relativeName: %q), minimumDateTime: %s\n", relativeName, minimumDateTime.String())
 	if minimumDateTime == nil {
 		panic(fmt.Sprintf("semantic error: found relativeName %q but minimumDateTimeName is nil\n", relativeName))
 	}
@@ -1083,7 +1026,6 @@ func NewRawDateFromRelative(relativeName string) *Date {
 
 	daysUntilNext := (int(wd) - int(minT.Weekday()) + 7) % 7
 	y, m, d := minT.AddDate(0, 0, daysUntilNext).Date()
-	// fmt.Printf("in NewRawDateFromRelative(), y: %#v, m: %#v, d: %#v\n", y, m, d)
 	return &Date{Day: d, Month: m, Year: y}
 }
 
@@ -1101,7 +1043,6 @@ func NewRawDateFromDsMYs(daysAny []string, monthAny any, yearAny any) []*Date {
 }
 
 func NewRawDateFromDMY(dayAny any, monthAny any, yearAny any) *Date {
-	// fmt.Printf("NewRawDateFromDMY(dayAny: %#v, monthAny %#v, yearAny %#v)\n", dayAny, monthAny, yearAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)
@@ -1109,7 +1050,6 @@ func NewRawDateFromDMY(dayAny any, monthAny any, yearAny any) *Date {
 }
 
 func NewRawDateFromWDMY(weekdayName string, dayAny any, monthAny any, yearAny any) *Date {
-	// fmt.Printf("NewRawDateFromWDMY(weekdayName: %q, dayAny: %#v, monthAny %#v, yearAny %#v)\n", weekdayName, dayAny, monthAny, yearAny)
 	day := findInt(dayUnit, dayAny)
 	month := findInt(monthUnit, monthAny)
 	year := findInt(yearUnit, yearAny)

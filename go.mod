@@ -12,7 +12,6 @@ require (
 	github.com/sanity-io/litter v1.5.8
 	github.com/segmentio/ksuid v1.0.4
 	github.com/tkuchiki/go-timezone v0.2.3
-	google.golang.org/protobuf v1.36.2
 )
 
 require (
