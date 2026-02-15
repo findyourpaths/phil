@@ -180,19 +180,31 @@ DateTimeRanges:
   // "1-2 Feb, 3-4 Mar 2023"
 | Day RangeSep Day Month Day RangeSep Day Month Year {$$ = NewRanges(NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, $9), NewRawDateFromDMY($3, $4, $9)), NewRangeWithStartEndDates(NewRawDateFromDMY($5, $8, $9), NewRawDateFromDMY($7, $8, $9)))}
 
-  // "Feb 3, Mar 4"
+  // "Feb 3, Mar 4" (MD)
 | Month Day Month Day {$$ = NewRanges(NewRangeWithStartDate(NewRawDateFromMDY($1, $2, nil)), NewRangeWithStartDate(NewRawDateFromMDY($3, $4, nil)))}
-  // "Feb 3, Mar 4 2023"
+  // "3 Feb, 4 Mar" (DM)
+| Day Month Day Month {$$ = NewRanges(NewRangeWithStartDate(NewRawDateFromDMY($1, $2, nil)), NewRangeWithStartDate(NewRawDateFromDMY($3, $4, nil)))}
+  // "Feb 3, Mar 4 2023" (MD)
 | Month Day Month Day Year {$$ = NewRanges(NewRangeWithStartDate(NewRawDateFromMDY($1, $2, $5)), NewRangeWithStartDate(NewRawDateFromMDY($3, $4, $5)))}
+  // "3 Feb, 4 Mar 2023" (DM)
+| Day Month Day Month Year {$$ = NewRanges(NewRangeWithStartDate(NewRawDateFromDMY($1, $2, nil)), NewRangeWithStartDate(NewRawDateFromDMY($3, $4, $5)))}
 
-  // "Wednesdays February 1st & 8th 12:00p-3:00p"
+  // "Wednesdays February 1st & 8th 12:00p-3:00p" (MD)
 | WeekdayOpt Month Day DateSepOpt Day Time RangeSepOpt Time {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $8, nil)), NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $6, nil), NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $8, nil)))}
-  // "Wednesdays February 1, 8 9:00 AM - 12:00 PM ET"
+  // "Wednesdays 1st & 8th February 12:00p-3:00p" (DM)
+| WeekdayOpt Day DateSepOpt Day Month Time RangeSepOpt Time {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWDMY($1, $2, $5, nil), $6, nil), NewDateTime(NewRawDateFromWDMY($1, $2, $5, nil), $8, nil)), NewRange(NewDateTime(NewRawDateFromWDMY($1, $4, $5, nil), $6, nil), NewDateTime(NewRawDateFromWDMY($1, $4, $5, nil), $8, nil)))}
+  // "Wednesdays February 1, 8 9:00 AM - 12:00 PM ET" (MD)
 | WeekdayOpt Month Day DateSepOpt Day Time RangeSepOpt Time TimeZone {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $6, $9), NewDateTime(NewRawDateFromWMDY($1, $2, $3, nil), $8, $9)), NewRange(NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $6, $9), NewDateTime(NewRawDateFromWMDY($1, $2, $5, nil), $8, $9)))}
-  // "February 3rd & 4th, 9:00 am - noon Eastern time"
+  // "Wednesdays 1, 8 February 9:00 AM - 12:00 PM ET" (DM)
+| WeekdayOpt Day DateSepOpt Day Month Time RangeSepOpt Time TimeZone {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromWDMY($1, $2, $5, nil), $6, $9), NewDateTime(NewRawDateFromWDMY($1, $2, $5, nil), $8, $9)), NewRange(NewDateTime(NewRawDateFromWDMY($1, $4, $5, nil), $6, $9), NewDateTime(NewRawDateFromWDMY($1, $4, $5, nil), $8, $9)))}
+  // "February 3rd & 4th, 9:00 am - noon Eastern time" (MD)
 | Month Day AND Day DateTimeSepPlus Time RangeSepOpt Time TimeZone {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromMDY($1, $2, nil), $6, $9), NewDateTime(NewRawDateFromMDY($1, $2, nil), $8, $9)), NewRange(NewDateTime(NewRawDateFromMDY($1, $4, nil), $6, $9), NewDateTime(NewRawDateFromMDY($1, $4, nil), $8, $9)))}
-  // "February 1, 8, and 15 9:00am - 12:00pm (ET)" — multi-day with time range and timezone
+  // "3rd & 4th February, 9:00 am - noon Eastern time" (DM)
+| Day AND Day Month DateTimeSepPlus Time RangeSepOpt Time TimeZone {$$ = NewRanges(NewRange(NewDateTime(NewRawDateFromDMY($1, $4, nil), $6, $9), NewDateTime(NewRawDateFromDMY($1, $4, nil), $8, $9)), NewRange(NewDateTime(NewRawDateFromDMY($3, $4, nil), $6, $9), NewDateTime(NewRawDateFromDMY($3, $4, nil), $8, $9)))}
+  // "February 1, 8, and 15 9:00am - 12:00pm (ET)" — multi-day with time range and timezone (MD)
 | Month DayPlus1 Time RangeSepOpt Time TimeZone {$$ = NewRangesFromDatesTimeRange(NewRawDateFromMDsYs($1, $2, nil), $3, $5, $6)}
+  // "1, 8, and 15 February 9:00am - 12:00pm (ET)" (DM)
+| DayPlus1 Month Time RangeSepOpt Time TimeZone {$$ = NewRangesFromDatesTimeRange(NewRawDateFromDsMYs($1, $2, nil), $3, $5, $6)}
   // "Feb. 3, 2023 12:00pm, 3:00pm" — comma-separated times sharing a date
   // Use COLON (not TimeSep which includes PERIOD) to avoid matching "Thu, 02.03.2023"
 | DateTime COMMA INT COLON INT Am {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewAMTime($3, $5, nil, nil), $1.TimeZone)))}
@@ -245,6 +257,25 @@ DateTimeRange:
 | DateTimeRange DateTimeSepOpt ON Weekday {$$ = $1}
 
 | RangePrefixPlus DateTimeRange {$$ = $2}
+
+  // Time-only DateTimeRange: for inputs reduced to bare times after preprocessing
+  // (e.g. "8PM" after stripping "Doors:", or "6:30pm ET" after stripping "Wednesdays at").
+  // These rules live at DateTimeRange level (not DateTime) to avoid GLR ambiguity
+  // with Time→DateTime paths that need a following Date.
+| INT Am TimeZoneOpt {$$ = NewRangeWithStart(NewDateTime(nil, NewAMTime($1, nil, nil, nil), $3))}
+| INT Pm TimeZoneOpt {$$ = NewRangeWithStart(NewDateTime(nil, NewPMTime($1, nil, nil, nil), $3))}
+| INT TimeSep INT Am TimeZoneOpt {$$ = NewRangeWithStart(NewDateTime(nil, NewAMTime($1, $3, nil, nil), $5))}
+| INT TimeSep INT Pm TimeZoneOpt {$$ = NewRangeWithStart(NewDateTime(nil, NewPMTime($1, $3, nil, nil), $5))}
+| TIME_NAME TimeZoneOpt {$$ = NewRangeWithStart(NewDateTime(nil, NewTime($1, nil, nil, nil), $2))}
+
+  // Time-only ranges: "5pm to 2am", "6:30pm - 9:30pm ET"
+  // Note: INT TimeSep INT Am/Pm variants are omitted — they create GLR conflicts
+  // with Time→DateTime reductions. Inputs like "6:30pm - 9:30pm" need preprocessing
+  // to reach these rules (e.g. by stripping weekday prefix that leaves only the time).
+| INT Am TimeZoneOpt RangeSepPlus Time TimeZoneOpt {$$ = NewRange(NewDateTime(nil, NewAMTime($1, nil, nil, nil), $3), NewDateTime(nil, $5, $6))}
+| INT Pm TimeZoneOpt RangeSepPlus Time TimeZoneOpt {$$ = NewRange(NewDateTime(nil, NewPMTime($1, nil, nil, nil), $3), NewDateTime(nil, $5, $6))}
+| TIME_NAME TimeZoneOpt RangeSepPlus Time TimeZoneOpt {$$ = NewRange(NewDateTime(nil, NewTime($1, nil, nil, nil), $2), NewDateTime(nil, $4, $5))}
+
 | DateTime RangeSepPlus Time {$$ = NewRange($1, NewDateTime($1.Date, $3, $1.TimeZone))}
 | DateTime RangeSepPlus Time TimeZone {$$ = NewRange(NewDateTime($1.Date, $1.Time, $4), NewDateTime($1.Date, $3, $4))}
 | Time RangeSepPlus DateTime {$$ = NewRange(NewDateTime($3.Date, $1, $3.TimeZone), $3)}
@@ -260,21 +291,8 @@ DateTimeRange:
   // "Thu Feb 3 - Sat Mar 4, 2023"
 | Day RangeSepPlus Date {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, nil, nil), $3)}
 
-/*   // "Feb 3-4" */
-/* | Month Day RangeSepPlus Day {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, nil), NewRawDateFromMDY($1, $4, nil))} */
-/*   // "3-4 Feb" */
-/* | Day RangeSepPlus Day Month {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, nil), NewRawDateFromDMY($3, $4, nil))} */
-
   // "Feb 3-4, 2023"
 | Date RangeSepPlus Day Year {$$ = NewRangeWithStartEndDates($1, NewRawDateFromMDY(nil, $3, $4))}
-/*   // "3-4 Feb 2023" */
-/* | Day RangeSepPlus Day Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, $5), NewRawDateFromDMY($3, $4, $5))} */
-
-/*   // "Feb 3 - Mar 4, 2023" */
-/* | Month Day RangeSepPlus Month Day Year {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, $6), NewRawDateFromMDY($4, $5, $6))} */
-
-  // "9:00am 3rd Feb - 4th Feb 3:00pm 2023"
-/* | Time TimeZoneOpt DateTimeSepOpt Day DateSepOpt Month RangeSepPlus Day DateSepOpt Month DateTimeSepOpt Time TimeZoneOpt Year {$$ = NewRange(NewDateTime(NewRawDateFromDMY($4, $6, $14), $1, $2), NewDateTime(NewRawDateFromDMY($8, $10, $14), $12, $13))} */
 
   // "Feb 3 2023 9:00 AM 09:00"
   // "Feb 3 2023 3:00 PM 15:00"
@@ -321,8 +339,17 @@ DateTime:
 | Date DateTimeSepPlus TimeZoneOpt {$$ = NewDateTime($1, nil, $3)}
 | Date Time TimeZoneOpt {$$ = NewDateTime($1, $2, $3)}
 | Date DateTimeSepPlus Time TimeZoneOpt {$$ = NewDateTime($1, $3, $4)}
+  // Explicit Date + INT Am/Pm: needed because after Date, yacc reduces INT to Day
+  // (state 76), blocking Time: INT Am/Pm paths. These inline the Time production
+  // to create the right state machine transitions.
+| Date INT Am TimeZoneOpt {$$ = NewDateTime($1, NewAMTime($2, nil, nil, nil), $4)}
+| Date INT Pm TimeZoneOpt {$$ = NewDateTime($1, NewPMTime($2, nil, nil, nil), $4)}
+| Date INT TimeSep INT Am TimeZoneOpt {$$ = NewDateTime($1, NewAMTime($2, $4, nil, nil), $6)}
+| Date INT TimeSep INT Pm TimeZoneOpt {$$ = NewDateTime($1, NewPMTime($2, $4, nil, nil), $6)}
 | Time TimeZoneOpt Date {$$ = NewDateTime($3, $1, $2)}
 | Time TimeZoneOpt DateTimeSepPlus Date {$$ = NewDateTime($4, $1, $2)}
+  // Time-only DateTime rules are at DateTimeRange level (not here) to avoid GLR
+  // ambiguity with Time→DateTime paths. See DateTimeRange section below.
 // 9:00am 3rd Feb - 4th Feb 3:00pm 2023
 | Date Time Year TimeZoneOpt {$$ = NewDateTime(NewRawDateFromDMY($1.Day, $1.Month, $3), $2, $4)}
 | RFC3339DateTime
@@ -573,10 +600,6 @@ Time:
 | INT TimeSep INT Pm {$$ = NewPMTime($1, $3, nil, nil)}
 
 | TIME_NAME {$$ = NewTime($1, nil, nil, nil)}
-
-/* // "Feb 3 2023 11am PST" */
-/* |   time TimeZoneOpt { */
-/*        $$ = $1} //civil.Time{Hour: $1}} //, ampm: $5, timezone: $6}} */
 ;
 
 

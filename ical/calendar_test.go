@@ -8,9 +8,6 @@ import (
 	"github.com/findyourpaths/phil/datetime"
 )
 
-// weekdayPtr returns a pointer to a time.Weekday value.
-// Also defined in datetime/datetime_test.go (separate test package, can't share).
-func weekdayPtr(wd time.Weekday) *time.Weekday { return &wd }
 
 // ---------------------------------------------------------------------------
 // Conversion tests
@@ -105,7 +102,7 @@ func TestNewCalendar_Conversion(t *testing.T) {
 				&datetime.Recurrence{
 					Frequency: datetime.FrequencyWeekly,
 					Count:     5,
-					Weekday:   weekdayPtr(time.Wednesday),
+					Weekdays:  []time.Weekday{time.Wednesday},
 				}),
 			info:       &EventInfo{Summary: "5 Week Series"},
 			wantEvents: 1,
@@ -188,10 +185,10 @@ func TestNewCalendar_Validation(t *testing.T) {
 				&datetime.Recurrence{
 					Frequency: datetime.FrequencyWeekly,
 					Count:     5,
-					Weekday:   weekdayPtr(time.Wednesday),
+					Weekdays:  []time.Weekday{time.Wednesday},
 				}),
 			info:    &EventInfo{Summary: "Test"},
-			wantErr: "Saturday, not Wednesday",
+			wantErr: "Saturday, not in [Wednesday]",
 		},
 		{
 			name: "count_mismatch",
@@ -202,7 +199,7 @@ func TestNewCalendar_Validation(t *testing.T) {
 				&datetime.Recurrence{
 					Frequency: datetime.FrequencyWeekly,
 					Count:     5,
-					Weekday:   weekdayPtr(time.Wednesday),
+					Weekdays:  []time.Weekday{time.Wednesday},
 					Until:     &datetime.Date{Year: 2023, Month: 2, Day: 28},
 				}),
 			info:    &EventInfo{Summary: "Test"},
@@ -223,7 +220,7 @@ func TestNewCalendar_Validation(t *testing.T) {
 				&datetime.Recurrence{
 					Frequency: datetime.FrequencyWeekly,
 					Count:     5,
-					Weekday:   weekdayPtr(time.Wednesday),
+					Weekdays:  []time.Weekday{time.Wednesday},
 					Until:     &datetime.Date{Year: 2023, Month: 3, Day: 1},
 				}),
 			info:    &EventInfo{Summary: "Test"},

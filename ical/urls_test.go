@@ -60,7 +60,7 @@ func TestGoogleURL(t *testing.T) {
 				&datetime.Recurrence{
 					Frequency: datetime.FrequencyWeekly,
 					Count:     5,
-					Weekday:   weekdayPtr(time.Wednesday),
+					Weekdays:  []time.Weekday{time.Wednesday},
 				}),
 			info: &EventInfo{Summary: "Series"},
 			wantContains: []string{

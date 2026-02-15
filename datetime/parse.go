@@ -149,7 +149,8 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 		Actions: datetimeActions,
 		States:  datetimeStates,
 	}
-	roots, err := glr.Parse(g, NewDatetimeLexer(in))
+	lexer := NewDatetimeLexer(in)
+	roots, err := glr.Parse(g, lexer)
 	if yyDebug == 3 {
 		fmt.Printf("tree:\n%# v\n", pretty.Formatter(roots))
 		fmt.Printf("err: %v\n", err)
@@ -162,9 +163,10 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	}
 
 	var rsAny any
-	for _, root := range roots {
+	for i, root := range roots {
 		var err error
 		rsAny, err = glr.GetParseNodeValue(g, root, "")
+		debugf("root[%d]: score=%s err=%v rsAny=%v\n", i, root, err, rsAny)
 		if err == nil {
 			break
 		}
@@ -176,7 +178,14 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	}
 
 	rs = rsAny.(*DateTimeRanges)
-	// fmt.Printf("in datetime.Parse(), rs: %#v\n", rs)
+
+	// Attach recurrence captured from preprocessing (e.g., stripped plural weekday).
+	// Only attach to single-range results — multi-range results are already expanded
+	// and the recurrence is just informational (would cause ICS expansion errors).
+	if lexer.recurrence != nil && rs.Recurrence == nil && len(rs.Items) <= 1 {
+		rs.Recurrence = lexer.recurrence
+	}
+
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
 	cache[key] = rs

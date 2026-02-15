@@ -16,11 +16,11 @@ type toStringTest struct {
 
 func TestToString(t *testing.T) {
 	tests := []toStringTest{
-		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM), want: "2023-02-03T12:00:00Z"},
-		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), want: "2023-02-03T12:00:00-05:00"},
-		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ADD0), want: "2023-02-03T12:00:00Z"},
-		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB0), want: "2023-02-03T12:00:00Z"},
-		{in: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB5), want: "2023-02-03T12:00:00-05:00"},
+		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil)), want: "2023-02-03T12:00:00Z"},
+		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)), want: "2023-02-03T12:00:00-05:00"},
+		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "+00:00"})), want: "2023-02-03T12:00:00Z"},
+		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "-00:00"})), want: "2023-02-03T12:00:00Z"},
+		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "-05:00"})), want: "2023-02-03T12:00:00-05:00"},
 	}
 
 	failed := 0
@@ -48,9 +48,6 @@ func testToStringFn(t *testing.T, tc toStringTest) func(*testing.T) {
 	}
 }
 
-// weekdayPtr returns a pointer to a time.Weekday value.
-// Also defined in ical/calendar_test.go (separate test package, can't share).
-func weekdayPtr(wd time.Weekday) *time.Weekday { return &wd }
 
 func TestOccurrences(t *testing.T) {
 	tests := []struct {
@@ -70,7 +67,7 @@ func TestOccurrences(t *testing.T) {
 				NewRange(
 					&DateTime{Date: DateFor2023Feb01, Time: TimeFor09AM},
 					&DateTime{Date: DateFor2023Feb01, Time: TimeFor12PM}),
-				&Recurrence{Frequency: FrequencyWeekly, Count: 5, Weekday: weekdayPtr(time.Wednesday)}),
+				&Recurrence{Frequency: FrequencyWeekly, Count: 5, Weekdays: []time.Weekday{time.Wednesday}}),
 			wantCount: 5,
 			wantDates: []Date{
 				{Year: 2023, Month: 2, Day: 1},
@@ -88,7 +85,7 @@ func TestOccurrences(t *testing.T) {
 					&DateTime{Date: DateFor2023Feb01, Time: TimeFor12PM}),
 				&Recurrence{
 					Frequency: FrequencyWeekly,
-					Weekday:   weekdayPtr(time.Wednesday),
+					Weekdays:  []time.Weekday{time.Wednesday},
 					Until:     &Date{Year: 2023, Month: 3, Day: 1},
 				}),
 			wantCount: 5,

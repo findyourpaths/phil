@@ -3,6 +3,7 @@ package ical
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/findyourpaths/phil/datetime"
@@ -33,8 +34,12 @@ func FormatRRule(rec *datetime.Recurrence) string {
 	if rec.Count > 0 {
 		s += ";COUNT=" + strconv.Itoa(rec.Count)
 	}
-	if rec.Weekday != nil {
-		s += ";BYDAY=" + weekdayICalStrings[*rec.Weekday]
+	if len(rec.Weekdays) > 0 {
+		var days []string
+		for _, wd := range rec.Weekdays {
+			days = append(days, weekdayICalStrings[wd])
+		}
+		s += ";BYDAY=" + strings.Join(days, ",")
 	}
 	if rec.Until != nil {
 		s += ";UNTIL=" + FormatICalDate(rec.Until)

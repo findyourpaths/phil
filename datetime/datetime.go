@@ -149,10 +149,11 @@ var frequencySteps = map[Frequency][3]int{
 // Recurrence captures recurrence metadata for patterns like
 // "5 Wednesdays 9:00am-12:00pm February 1st - March 1st".
 type Recurrence struct {
-	Frequency Frequency     // how often the event repeats (daily, weekly, etc.)
-	Count     int           // "5 Wednesdays" → 5 (0 means use Until)
-	Weekday   *time.Weekday // nil = no weekday constraint
-	Until     *Date         // end boundary date (alternative to Count)
+	Frequency  Frequency       // how often the event repeats (daily, weekly, etc.)
+	Weekdays   []time.Weekday  // e.g. [Tue, Thu] for "Tuesdays and Thursdays"
+	NthWeekday []int           // e.g. [2, 4] for "2nd and 4th"
+	Count      int             // "5 Wednesdays" → 5 (0 means use Until)
+	Until      *Date           // end boundary date (alternative to Count)
 }
 
 // String returns a human-readable representation of the recurrence.
@@ -164,8 +165,8 @@ func (r *Recurrence) String() string {
 	if r.Count > 0 {
 		s += " x" + strconv.Itoa(r.Count)
 	}
-	if r.Weekday != nil {
-		s += " " + r.Weekday.String()
+	for _, wd := range r.Weekdays {
+		s += " " + wd.String()
 	}
 	if r.Until != nil {
 		s += " until " + r.Until.String()
@@ -315,9 +316,15 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			}
 
 			// If both have Months but one Year is missing, copy from the other.
+			// Year straddling: if start month > end month (e.g. "25 Dec - 2 Jan 2016"),
+			// the range crosses a year boundary, so start year = end year - 1.
 			if start.Date.Month != 0 && end.Date.Month != 0 {
 				if start.Date.Year == 0 && end.Date.Year != 0 {
-					start.Date.Year = end.Date.Year
+					if start.Date.Month > end.Date.Month {
+						start.Date.Year = end.Date.Year - 1
+					} else {
+						start.Date.Year = end.Date.Year
+					}
 				} else if start.Date.Year != 0 && end.Date.Year == 0 {
 					end.Date.Year = start.Date.Year
 				}
@@ -495,20 +502,24 @@ func NewDateTime(d *Date, t *Time, tz *TimeZone) *DateTime {
 	}
 
 	// Finalize Date based on TimeZone if ambiguous.
-	r.Date = NewDateFromRaw(r.Date, r.TimeZone)
+	if r.Date != nil {
+		r.Date = NewDateFromRaw(r.Date, r.TimeZone)
+	}
 
 	// Do semantic check that we don't have gaps in the time scales (e.g. Month and Hour, but not Day).
-	bits := []bool{
-		r.Date.Year != 0,
-		int(r.Date.Month) != 0,
-		r.Date.Day != 0,
-		r.Time != nil && r.Time.Hour != 0,
-	}
-	start := lo.IndexOf(bits, true)
-	end := lo.LastIndexOf(bits, true)
-	for i := start; i < end; i++ {
-		if !bits[i] {
-			panic(fmt.Sprintf("semantic error: found gap in DateTime at i: %d in YMDH bits: %#v\n", i, bits))
+	if r.Date != nil && r.Date.Day != 0 {
+		bits := []bool{
+			r.Date.Year != 0,
+			int(r.Date.Month) != 0,
+			r.Date.Day != 0,
+			r.Time != nil && r.Time.Hour != 0,
+		}
+		start := lo.IndexOf(bits, true)
+		end := lo.LastIndexOf(bits, true)
+		for i := start; i < end; i++ {
+			if !bits[i] {
+				panic(fmt.Sprintf("semantic error: found gap in DateTime at i: %d in YMDH bits: %#v\n", i, bits))
+			}
 		}
 	}
 

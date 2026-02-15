@@ -13,17 +13,17 @@ import (
 	"github.com/sanity-io/litter"
 )
 
-var acceptBrokenTests = true
-
-// var acceptBrokenTests = false
-
 // Run with
 // rm datetime_glr.go; time GOWORK=off go generate -v ./...
 // time go test -v ./...
 // DEBUG=true time go test -v -run '^TestExtractDatetimesRanges/102'
 
+// --- Date fixtures (month-only) ---
+
 var DateForFeb = &Date{Month: 2}
 var DateForMar = &Date{Month: 3}
+
+// --- Date fixtures (month-day, sorted) ---
 
 var DateForFeb01 = &Date{Month: 2, Day: 1}
 var DateForFeb02 = &Date{Month: 2, Day: 2}
@@ -39,27 +39,16 @@ var DateForMar01 = &Date{Month: 3, Day: 1}
 var DateForMar02 = &Date{Month: 3, Day: 2}
 var DateForMar03 = &Date{Month: 3, Day: 3}
 var DateForMar04 = &Date{Month: 3, Day: 4}
-var DateForApr03 = &Date{Month: time.April, Day: 3}
 
-// var DateForFriday = &Date{Weekday: 6}
-
-var DateRangesForFeb03 = NewRangesWithStartDates(DateForFeb03)
-var DateRangesFromFeb02ToFeb05 = NewRangesWithStartEndDates(DateForFeb02, DateForFeb05)
-var DateRangesFromFeb03ToFeb04 = NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)
-var DateRangesForMar02 = NewRangesWithStartDates(DateForMar02)
+// --- Date fixtures (year-only and year-month) ---
 
 var DateFor2023 = &Date{Year: 2023}
 var DateFor2024 = &Date{Year: 2024}
-
 var DateFor2023Feb = &Date{Year: 2023, Month: 2}
 var DateFor2023Mar = &Date{Year: 2023, Month: 3}
 
-var DateRangesFor2023Feb = NewRangesWithStartDates(DateFor2023Feb)
+// --- Date fixtures (year-month-day, sorted) ---
 
-var DateRangesFor2023Feb03 = NewRangesWithStartDates(DateFor2023Feb03)
-var DateRangesFor2023Mar02 = NewRangesWithStartDates(DateFor2023Mar02)
-
-var DateFor2023Jan1 = NewRawDateFromYMD(2023, 1, 1)
 var DateFor2023Feb01 = NewRawDateFromYMD(2023, 2, 1)
 var DateFor2023Feb02 = NewRawDateFromYMD(2023, 2, 2)
 var DateFor2023Feb03 = NewRawDateFromYMD(2023, 2, 3)
@@ -72,119 +61,74 @@ var DateFor2023Mar01 = NewRawDateFromYMD(2023, 3, 1)
 var DateFor2023Mar02 = NewRawDateFromYMD(2023, 3, 2)
 var DateFor2023Mar03 = NewRawDateFromYMD(2023, 3, 3)
 
-var DateFor2024Jan1 = NewRawDateFromYMD(2024, 1, 1)
+// --- Date range shortcuts (heavily reused) ---
 
+var DateRangesForFeb03 = NewRangesWithStartDates(DateForFeb03)
+var DateRangesFromFeb02ToFeb05 = NewRangesWithStartEndDates(DateForFeb02, DateForFeb05)
+var DateRangesFromFeb03ToFeb04 = NewRangesWithStartEndDates(DateForFeb03, DateForFeb04)
+var DateRangesForMar02 = NewRangesWithStartDates(DateForMar02)
+var DateRangesFor2023Feb = NewRangesWithStartDates(DateFor2023Feb)
+var DateRangesFor2023Feb03 = NewRangesWithStartDates(DateFor2023Feb03)
+var DateRangesFor2023Mar02 = NewRangesWithStartDates(DateFor2023Mar02)
 var DateRangesFrom2023Feb03To2023Feb04 = NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)
 
-var DateTimeForFeb01_09AM = NewDateTime(DateForFeb01, TimeFor09AM, nil)
-var DateTimeForFeb01_12PM = NewDateTime(DateForFeb01, TimeFor12PM, nil)
-var DateTimeForFeb01_03PM = NewDateTime(DateForFeb01, TimeFor03PM, nil)
+// --- Time fixtures (sorted by hour) ---
 
-var DateTimeForFeb02_09AM = NewDateTime(DateForFeb02, TimeFor09AM, nil)
-var DateTimeForFeb02_12PM = NewDateTime(DateForFeb02, TimeFor12PM, nil)
-var DateTimeForFeb02_03PM = NewDateTime(DateForFeb02, TimeFor03PM, nil)
-
-var DateTimeForFeb03_09AM = NewDateTime(DateForFeb03, TimeFor09AM, nil)
-var DateTimeForFeb03_12PM = NewDateTime(DateForFeb03, TimeFor12PM, nil)
-var DateTimeForFeb03_03PM = NewDateTime(DateForFeb03, TimeFor03PM, nil)
-
-var DateTimeForFeb04_09AM = NewDateTime(DateForFeb04, TimeFor09AM, nil)
-var DateTimeForFeb04_12PM = NewDateTime(DateForFeb04, TimeFor12PM, nil)
-
-var DateTimeForFeb05_09AM = NewDateTime(DateForFeb05, TimeFor09AM, nil)
-var DateTimeForFeb05_12PM = NewDateTime(DateForFeb05, TimeFor12PM, nil)
-
-var DateTimeForFeb08_09AM = NewDateTime(DateForFeb08, TimeFor09AM, nil)
-var DateTimeForFeb08_12PM = NewDateTime(DateForFeb08, TimeFor12PM, nil)
-var DateTimeForFeb08_03PM = NewDateTime(DateForFeb08, TimeFor03PM, nil)
-
-var DateTimeForFeb14_06PM = NewDateTime(DateForFeb14, TimeFor06PM, nil)
-
-var DateTimeForFeb15_09AM = NewDateTime(DateForFeb15, TimeFor09AM, nil)
-var DateTimeForFeb15_12PM = NewDateTime(DateForFeb15, TimeFor12PM, nil)
-
-var DateTimeForFeb22_09AM = NewDateTime(DateForFeb22, TimeFor09AM, nil)
-var DateTimeForFeb22_12PM = NewDateTime(DateForFeb22, TimeFor12PM, nil)
-
-var DateTimeForMar01_09AM = NewDateTime(DateForMar01, TimeFor09AM, nil)
-var DateTimeForMar01_12PM = NewDateTime(DateForMar01, TimeFor12PM, nil)
-
-var DateTimeFor2023Feb03_09AM = NewDateTime(DateFor2023Feb03, TimeFor09AM, nil)
-var DateTimeFor2023Feb03_12PM = NewDateTime(DateFor2023Feb03, TimeFor12PM, nil)
-var DateTimeFor2023Feb03_03PM = NewDateTime(DateFor2023Feb03, TimeFor03PM, nil)
-var DateTimeFor2023Feb04_03PM = NewDateTime(DateFor2023Feb04, TimeFor03PM, nil)
-
-var DateTimeFor2023Mar02_03PM = NewDateTime(DateFor2023Mar02, TimeFor03PM, nil)
-
-var DateTimeForFeb03_09AM_ET = NewDateTime(DateForFeb03, TimeFor09AM, TimeZoneForET)
-var DateTimeForFeb03_12PM_ET = NewDateTime(DateForFeb03, TimeFor12PM, TimeZoneForET)
-var DateTimeForFeb03_03PM_ET = NewDateTime(DateForFeb03, TimeFor03PM, TimeZoneForET)
-
-var DateTimeForFeb04_09AM_ET = NewDateTime(DateForFeb04, TimeFor09AM, TimeZoneForET)
-var DateTimeForFeb04_12PM_ET = NewDateTime(DateForFeb04, TimeFor12PM, TimeZoneForET)
-
-var DateTimeForFeb01_09AM_ET = NewDateTime(DateForFeb01, TimeFor09AM, TimeZoneForET)
-var DateTimeForFeb01_12PM_ET = NewDateTime(DateForFeb01, TimeFor12PM, TimeZoneForET)
-var DateTimeForFeb08_09AM_ET = NewDateTime(DateForFeb08, TimeFor09AM, TimeZoneForET)
-var DateTimeForFeb08_12PM_ET = NewDateTime(DateForFeb08, TimeFor12PM, TimeZoneForET)
-
-var DateTimeForFeb03_12PM_Eastern = NewDateTime(DateForFeb03, TimeFor12PM, TimeZoneForEastern)
-
-// var DateTimeForFriday_12PM_ET = NewDateTime(DateForFriday, TimeFor12PM, TimeZoneForET)
-// var DateTimeForFriday_03PM_ET = NewDateTime(DateForFriday, TimeFor03PM, TimeZoneForET)
-
-var DateTimeFor2023Jan01_12AM_ET = NewDateTime(DateFor2023Jan1, TimeFor12AM, TimeZoneForET)
-
-var DateTimeFor2023Feb01_09AM_ET = NewDateTime(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb01_12PM_ET = NewDateTime(DateFor2023Feb01, TimeFor12PM, TimeZoneForET)
-var DateTimeFor2023Feb01_03PM_ET = NewDateTime(DateFor2023Feb01, TimeFor03PM, TimeZoneForET)
-
-var DateTimeFor2023Feb03_ET = NewDateTime(DateFor2023Feb03, nil, TimeZoneForET)
-var DateTimeFor2023Feb03_09AM_ET = NewDateTime(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb03_12PM_ET = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)
-var DateTimeFor2023Feb03_12PM_ADD0 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForADD0)
-var DateTimeFor2023Feb03_12PM_SUB0 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForSUB0)
-var DateTimeFor2023Feb03_12PM_SUB5 = NewDateTime(DateFor2023Feb03, TimeFor12PM, TimeZoneForSUB5)
-var DateTimeFor2023Feb03_03PM_ET = NewDateTime(DateFor2023Feb03, TimeFor03PM, TimeZoneForET)
-
-var DateTimeFor2023Feb04_ET = NewDateTime(DateFor2023Feb04, nil, TimeZoneForET)
-var DateTimeFor2023Feb04_09AM_ET = NewDateTime(DateFor2023Feb04, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb04_12PM_ET = NewDateTime(DateFor2023Feb04, TimeFor12PM, TimeZoneForET)
-
-var DateTimeFor2023Feb05_09AM_ET = NewDateTime(DateFor2023Feb05, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb05_12PM_ET = NewDateTime(DateFor2023Feb05, TimeFor12PM, TimeZoneForET)
-
-var DateTimeFor2023Feb08_09AM_ET = NewDateTime(DateFor2023Feb08, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb08_12PM_ET = NewDateTime(DateFor2023Feb08, TimeFor12PM, TimeZoneForET)
-
-var DateTimeFor2023Feb15_09AM_ET = NewDateTime(DateFor2023Feb15, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb15_12PM_ET = NewDateTime(DateFor2023Feb15, TimeFor12PM, TimeZoneForET)
-
-var DateTimeFor2023Feb22_09AM_ET = NewDateTime(DateFor2023Feb22, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Feb22_12PM_ET = NewDateTime(DateFor2023Feb22, TimeFor12PM, TimeZoneForET)
-
-var DateTimeFor2023Mar01_09AM_ET = NewDateTime(DateFor2023Mar01, TimeFor09AM, TimeZoneForET)
-var DateTimeFor2023Mar01_12PM_ET = NewDateTime(DateFor2023Mar01, TimeFor12PM, TimeZoneForET)
-
-var TimeFor12AM = &Time{}
 var TimeFor09AM = &Time{Hour: 9}
+var TimeFor10AM = &Time{Hour: 10}
+var TimeFor11AM = &Time{Hour: 11}
 var TimeFor12PM = &Time{Hour: 12}
+var TimeFor12_30PM = &Time{Hour: 12, Minute: 30}
+var TimeFor02PM = &Time{Hour: 14}
 var TimeFor03PM = &Time{Hour: 15}
+var TimeFor05PM = &Time{Hour: 17}
 var TimeFor06PM = &Time{Hour: 18}
+var TimeFor06_30PM = &Time{Hour: 18, Minute: 30}
+var TimeFor07PM = &Time{Hour: 19}
+var TimeFor07_45PM = &Time{Hour: 19, Minute: 45}
+var TimeFor08PM = &Time{Hour: 20}
+var TimeFor08_30PM = &Time{Hour: 20, Minute: 30}
+var TimeFor09PM = &Time{Hour: 21}
 
-var TimeZoneForEastern = &TimeZone{Name: "Eastern"}
+// --- TimeZone fixtures (sorted) ---
+
+var TimeZoneForCET = &TimeZone{Abbreviation: "CET"}
+var TimeZoneForCT = &TimeZone{Abbreviation: "CT"}
 var TimeZoneForET = &TimeZone{Abbreviation: "ET"}
-var TimeZoneForADD0 = &TimeZone{Offset: "+00:00"}
-var TimeZoneForSUB0 = &TimeZone{Offset: "-00:00"}
-var TimeZoneForSUB5 = &TimeZone{Offset: "-05:00"}
+var TimeZoneForEST = &TimeZone{Abbreviation: "EST"}
+var TimeZoneForEastern = &TimeZone{Name: "Eastern"}
+var TimeZoneForMST = &TimeZone{Abbreviation: "MST"}
+var TimeZoneForMT = &TimeZone{Abbreviation: "MT"}
+var TimeZoneForPST = &TimeZone{Abbreviation: "PST"}
+var TimeZoneForPT = &TimeZone{Abbreviation: "PT"}
+var TimeZoneForPacific = &TimeZone{Name: "Pacific"}
+var TimeZoneForUTC = &TimeZone{Abbreviation: "UTC"}
+
+// --- Recurrence fixtures ---
+
+var RecurrenceWeeklyFri = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{time.Friday}}
+var RecurrenceWeeklySun = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{time.Sunday}}
+var RecurrenceWeeklyTue = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{time.Tuesday}}
+var RecurrenceWeeklyWed = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{time.Wednesday}}
+
+// --- Test helpers ---
+
+// dt creates a DateTime from leaf Date, Time, and TimeZone fixtures.
+func dt(d *Date, t *Time, tz *TimeZone) *DateTime { return NewDateTime(d, t, tz) }
+
+// withRec sets the Recurrence on a DateTimeRanges and returns it (for inline use in test table).
+func withRec(rs *DateTimeRanges, rec *Recurrence) *DateTimeRanges {
+	rs.Recurrence = rec
+	return rs
+}
 
 type parseTest struct {
 	dateMode string
 	minDT    *DateTime
 
-	in       string
-	want     *DateTimeRanges
-	isBroken bool
+	in   string
+	want *DateTimeRanges
+	skip string // non-empty: run parse, if passes t.Fatalf("REMOVE SKIP"), else t.Skip(reason)
 }
 
 func TestParse(t *testing.T) {
@@ -207,13 +151,13 @@ func TestParse(t *testing.T) {
 		{in: "2023-02", want: NewRangesWithStartDates(DateFor2023Feb)},
 		{in: "2023-02-03", want: DateRangesFor2023Feb03},
 		{in: "2023-02-03T", want: DateRangesFor2023Feb03},
-		// {in: "2023-02-03T12", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "2023-02-03T12:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "2023-02-03T12:00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "2023-02-03T12:00:00Z", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "2023-02-03T12:00:00+00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ADD0)},
-		{in: "2023-02-03T12:00:00-00:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB0)},
-		{in: "2023-02-03T12:00:00-05:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_SUB5)},
+		// {in: "2023-02-03T12", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "2023-02-03T12:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "2023-02-03T12:00:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "2023-02-03T12:00:00Z", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "2023-02-03T12:00:00+00:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "+00:00"}))},
+		{in: "2023-02-03T12:00:00-00:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "-00:00"}))},
+		{in: "2023-02-03T12:00:00-05:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "-05:00"}))},
 
 		//
 		// Date
@@ -251,12 +195,12 @@ func TestParse(t *testing.T) {
 		// Both
 		{in: "02.03", want: DateRangesForFeb03, dateMode: DateModeNorthAmerican},
 		{in: "02.03", want: DateRangesForMar02, dateMode: DateModeRest},
-		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican, minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: DateModeRest, minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican, minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
+		{in: "02.03", want: DateRangesFor2023Mar02, dateMode: DateModeRest, minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
 		{in: "02.03.", want: DateRangesForFeb03, dateMode: DateModeNorthAmerican},
 		{in: "02.03.", want: DateRangesForMar02, dateMode: DateModeRest},
-		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican, minDT: DateTimeFor2023Jan01_12AM_ET},
-		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: DateModeRest, minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "02.03.", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican, minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
+		{in: "02.03.", want: DateRangesFor2023Mar02, dateMode: DateModeRest, minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
 		{in: "2/3/2023", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican},
 		{in: "2/3/2023", want: DateRangesFor2023Mar02, dateMode: DateModeRest},
 
@@ -288,9 +232,9 @@ func TestParse(t *testing.T) {
 		{in: "1, 2, 3, 4 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04)},
 		{in: "1, 2, 3, 4, 5 Feb", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb05)},
 		{in: "1, 2, 3 Feb and 2 Mar", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForMar02)},
-		{in: "1-3 Feb and 2 Mar", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForMar02), isBroken: true},
-		{in: "1-3 & 5 February", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb05), isBroken: true},
-		{in: "1-4 & 6 February", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb06), isBroken: true},
+		{in: "1-3 Feb and 2 Mar", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForMar02)},
+		{in: "1-3 & 5 February", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb05)},
+		{in: "1-4 & 6 February", want: NewRangesWithStartDates(DateForFeb01, DateForFeb02, DateForFeb03, DateForFeb04, DateForFeb06)},
 
 		// MDY
 		{in: "Feb 1, 2 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02)},
@@ -391,75 +335,75 @@ func TestParse(t *testing.T) {
 		//
 
 		// Relative
-		{in: "Join today at 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Feb03_09AM_ET},
+		{in: "Join today at 12pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)), minDT: dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)},
 		// Join today for Day 2 at 10am PST
-		{in: "Join today for Day 2 at 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Feb03_09AM_ET},
-		{in: "Tomorrow at 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb04_12PM_ET), minDT: DateTimeFor2023Feb03_09AM_ET},
+		{in: "Join today for Day 2 at 12pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)), minDT: dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)},
+		{in: "Tomorrow at 12pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb04, TimeFor12PM, TimeZoneForET)), minDT: dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)},
 
 		// Relative Z
-		{in: "Today Friday, 12pm ET", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Feb03_09AM_ET},
+		{in: "Today Friday, 12pm ET", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)), minDT: dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)},
 
 		// MDT
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		{in: "February 3 @ 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		{in: "February 3  12 p.m.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		{in: "Date:Fri 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		{in: "Starting February 3rd at 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "Feb 3 12:00 PM", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "February 3 @ 12:00 PM", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "February 3  12 p.m.", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "Date:Fri 03 Feb, Time:12pm", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "Starting February 3rd at 12pm", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, nil))},
 
-		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET), minDT: DateTimeFor2023Jan01_12AM_ET},
+		{in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)), minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
 
 		// WMDT
 		//    Friday, 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V
 		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions**", want: NewRangesWithStartDates(DateForFeb14), dateMode: DateModeNorthAmerican},
-		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V", want: NewRangesWithStartDateTimes(DateTimeForFeb14_06PM), dateMode: DateModeNorthAmerican},
+		{in: "Friday 2/14: **Love is Listening and Art: Social + Listening Art Sessions** at 6pm facilitated by Lauren V", want: NewRangesWithStartDateTimes(dt(DateForFeb14, TimeFor06PM, nil)), dateMode: DateModeNorthAmerican},
 
 		// WMDTZ
 		// SAT | 5/17 @ 11:00am CST
-		{in: "FRI 2/3 @ 12:00pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
+		{in: "FRI 2/3 @ 12:00pm ET", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
 
 		// MDTZ
-		{in: "Feb 3 12pm ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 12pm (ET)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 12pm - ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 12pm in ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 12pm Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_Eastern)},
-		{in: "Feb 3 12pm US/Eastern", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "FEBRUARY 3RD 12 PM ET, ON FRIDAY", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		// {in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_East), minDT: DateTimeForEast, wantDiff: true},
-		{in: "Starting February 3rd at 12pm (ET) - Virtually.", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
-		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(DateTimeForFeb03_09AM_ET), dateMode: DateModeNorthAmerican},
+		{in: "Feb 3 12pm ET", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3 12pm (ET)", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3 12pm - ET", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3 12pm in ET", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3 12pm Eastern", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForEastern))},
+		{in: "Feb 3 12pm US/Eastern", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "FEBRUARY 3RD 12 PM ET, ON FRIDAY", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		// {in: "Feb 3 12pm", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForEast)), minDT: DateTimeForEast, wantDiff: true},
+		{in: "Starting February 3rd at 12pm (ET) - Virtually.", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Starts Friday 2/3 at 9:00 am ET", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor09AM, TimeZoneForET)), dateMode: DateModeNorthAmerican},
 
 		// DMT
-		{in: "Date:Fri 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
-		{in: "Friday 3 Feb 3:00pm (doors) | 11pm (curfew)", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
+		{in: "Date:Fri 03 Feb, Time:3.00pm", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor03PM, nil))},
+		{in: "Friday 3 Feb 3:00pm (doors) | 11pm (curfew)", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor03PM, nil))},
 		// Need to update sorting algorithm for this.
-		{in: "Fri, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
-		{in: "Thu, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM)},
-		{in: "Fri, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
-		{in: "Thu, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM)},
+		{in: "Fri, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil))},
+		{in: "Thu, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil))},
+		{in: "Fri, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil))},
+		{in: "Thu, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil))},
 
 		// MDYT
-		{in: "Feb. 3, 2023 12:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "Feb 3, 2023 @ 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
-		{in: "Friday, February 3rd 2023 from 12:00 PM", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "Feb. 3, 2023 12:00pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "Feb 3, 2023 @ 12:00 PM", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "Friday, February 3rd 2023 from 12:00 PM", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
 
 		// MDYTT
 		// Not sure if this is a range or multiple.
-		{in: "Feb. 3, 2023 12:00pm, 3:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM, DateTimeFor2023Feb03_03PM)},
+		{in: "Feb. 3, 2023 12:00pm, 3:00pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil), dt(DateFor2023Feb03, TimeFor03PM, nil))},
 
 		// MDYTZ
-		{in: "Feb 3 2023 12pm ET", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET)},
+		{in: "Feb 3 2023 12pm ET", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
 		//    Sep 18, 2024 11:30 AM Eastern Time (US and Canada)
-		{in: "Feb 3, 2023 12:00 PM Eastern Time (US and Canada)", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM_ET)},
+		{in: "Feb 3, 2023 12:00 PM Eastern Time (US and Canada)", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
 
 		// DMY
-		{in: "3rd Feb 2023 9:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_09AM)},
-		{in: "3rd Feb 2023 9:00am", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_09AM)},
-		{in: "3rd Feb 2023 3:00pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
+		{in: "3rd Feb 2023 9:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil))},
+		{in: "3rd Feb 2023 9:00am", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil))},
+		{in: "3rd Feb 2023 3:00pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil))},
 
 		// TZMD
-		{in: "12:00 pm ET February 3rd", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM_ET)},
+		{in: "12:00 pm ET February 3rd", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
 
 		//
 		// Date Time Ranges
@@ -467,109 +411,109 @@ func TestParse(t *testing.T) {
 		// MD-MDY
 		// Date: Thursday, September 7th - September 11th, 2025 EST
 		{in: "Date: Friday, February 3rd - February 4th, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Feb04)},
-		{in: "Date: Friday, February 3rd - February 4th, 2023 ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_ET, DateTimeFor2023Feb04_ET)},
+		{in: "Date: Friday, February 3rd - February 4th, 2023 ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, nil, TimeZoneForET), dt(DateFor2023Feb04, nil, TimeZoneForET))},
 
 		// MDTT
 		// Need to fix parser for this.
-		{in: "February 3: 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
-		{in: "Feb 3 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
-		{in: "Feb 3 @ 9:00 AM - Feb 3 @ 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
-		{in: "February, 3 9:00 - 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
-		{in: "Friday, February 3rd from 12 - 3pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM, DateTimeForFeb03_03PM)},
-		{in: "Feb, 3rd from 9 am-3.00 pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
+		{in: "February 3: 9am - 12pm", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "Feb 3 9am - 12pm", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "Feb 3 @ 9:00 AM - Feb 3 @ 12:00 PM", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor12PM, nil))},
+		{in: "February, 3 9:00 - 15:00", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor03PM, nil))},
+		{in: "Friday, February 3rd from 12 - 3pm", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor12PM, nil), dt(DateForFeb03, TimeFor03PM, nil))},
+		{in: "Feb, 3rd from 9 am-3.00 pm", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor03PM, nil))},
 		{in: "February 3 + 4, 9 am - 12 pm each day", want: NewRanges(
-			NewRange(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM),
-			NewRange(DateTimeForFeb04_09AM, DateTimeForFeb04_12PM))},
+			NewRange(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor12PM, nil)),
+			NewRange(dt(DateForFeb04, TimeFor09AM, nil), dt(DateForFeb04, TimeFor12PM, nil)))},
 		//    November 9 + 10: In-person at SeekHealing Asheville,10 am - 7 pm each day
 		{in: "February 1 + 2: In-person at SeekHealing Asheville,12 pm - 3 pm each day", want: NewRanges(
-			NewRange(DateTimeForFeb01_12PM, DateTimeForFeb01_03PM),
-			NewRange(DateTimeForFeb02_12PM, DateTimeForFeb02_03PM))},
-		{in: "THIS Friday: February 3 \n 12-3:00pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM, DateTimeForFeb03_03PM)},
+			NewRange(dt(DateForFeb01, TimeFor12PM, nil), dt(DateForFeb01, TimeFor03PM, nil)),
+			NewRange(dt(DateForFeb02, TimeFor12PM, nil), dt(DateForFeb02, TimeFor03PM, nil)))},
+		{in: "THIS Friday: February 3 \n 12-3:00pm", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor12PM, nil), dt(DateForFeb03, TimeFor03PM, nil))},
 		//    2 Tuesdays Jan 7th & 21st 6:30p-8:30p
 		{in: "2 Wednesdays Feb 1st & 8th 12:00p-3:00p", want: NewRanges(
-			NewRange(DateTimeForFeb01_12PM, DateTimeForFeb01_03PM),
-			NewRange(DateTimeForFeb08_12PM, DateTimeForFeb08_03PM))},
+			NewRange(dt(DateForFeb01, TimeFor12PM, nil), dt(DateForFeb01, TimeFor03PM, nil)),
+			NewRange(dt(DateForFeb08, TimeFor12PM, nil), dt(DateForFeb08, TimeFor03PM, nil)))},
 		//    10 Mondays 6:30pm-8:30pm March 3rd - May 5th
 		{in: "5 Wednesdays 9:00am-12:00pm February 1st - March 1st", want: NewRanges(
-			NewRange(DateTimeForFeb01_09AM, DateTimeForFeb01_12PM),
-			NewRange(DateTimeForFeb08_09AM, DateTimeForFeb08_12PM),
-			NewRange(DateTimeForFeb15_09AM, DateTimeForFeb15_12PM),
-			NewRange(DateTimeForFeb22_09AM, DateTimeForFeb22_12PM),
-			NewRange(DateTimeForMar01_09AM, DateTimeForMar01_12PM)), isBroken: true},
+			NewRange(dt(DateForFeb01, TimeFor09AM, nil), dt(DateForFeb01, TimeFor12PM, nil)),
+			NewRange(dt(DateForFeb08, TimeFor09AM, nil), dt(DateForFeb08, TimeFor12PM, nil)),
+			NewRange(dt(DateForFeb15, TimeFor09AM, nil), dt(DateForFeb15, TimeFor12PM, nil)),
+			NewRange(dt(DateForFeb22, TimeFor09AM, nil), dt(DateForFeb22, TimeFor12PM, nil)),
+			NewRange(dt(DateForMar01, TimeFor09AM, nil), dt(DateForMar01, TimeFor12PM, nil))), skip: "parser: recurrence"},
 
 		// MDTTZ
-		{in: "Feb 3rd - 9.00 AM- 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
-		{in: "February 3rd, 9-12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3 2023 9am - 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
-		{in: "Feb 3 2023 9am ET to 12pm ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
-		{in: "Feb 3 @ 9:00 AM ET - Feb 3 @ 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
-		{in: "Feb 3, 2023, 9:00 AM ET - Feb 3, 2023, 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
-		{in: "Friday, 2/3 12-3pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET), dateMode: DateModeNorthAmerican},
+		{in: "Feb 3rd - 9.00 AM- 12pm ET", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, TimeZoneForET), dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "February 3rd, 9-12pm ET", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, TimeZoneForET), dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3 2023 9am - 12pm ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3 2023 9am ET to 12pm ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3 @ 9:00 AM ET - Feb 3 @ 12:00 PM ET", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, TimeZoneForET), dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Feb 3, 2023, 9:00 AM ET - Feb 3, 2023, 12:00 PM ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Friday, 2/3 12-3pm ET", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET), dt(DateForFeb03, TimeFor03PM, TimeZoneForET)), dateMode: DateModeNorthAmerican},
 		// Tuesday 8/13 from 6:30 - 8:30 pm EST
-		{in: "Friday 2/3 from 12:00 - 3 pm ET", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET)}, //, isBroken: true},
+		{in: "Friday 2/3 from 12:00 - 3 pm ET", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET), dt(DateForFeb03, TimeFor03PM, TimeZoneForET))},
 		//    Sunday, October 6, 9am - 4pm Pacific Time
-		{in: "Friday, February 3, 9am - 12pm Eastern Time", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET)},
-		{in: "February 3, 2023 from 9:00 am to noon ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
-		// {in: "February 3, 2023 / 9:00 AM", want: NewRangesWithStartDateTimes(DateTimeForFeb03_09AM), wantDiff: true},
-		{in: "February 3, 2023 / 9:00 AM - 12:00 PM ET", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET)},
-		{in: "February 3rd, 12:00-3:00pm Eastern (New York) time", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_12PM_ET, DateTimeForFeb03_03PM_ET)},
+		{in: "Friday, February 3, 9am - 12pm Eastern Time", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, TimeZoneForET), dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "February 3, 2023 from 9:00 am to noon ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
+		// {in: "February 3, 2023 / 9:00 AM", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor09AM, nil)), wantDiff: true},
+		{in: "February 3, 2023 / 9:00 AM - 12:00 PM ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
+		{in: "February 3rd, 12:00-3:00pm Eastern (New York) time", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET), dt(DateForFeb03, TimeFor03PM, TimeZoneForET))},
 		{in: "February 3rd & 4th, 9:00 am - noon Eastern time", want: NewRanges(
-			NewRange(DateTimeForFeb03_09AM_ET, DateTimeForFeb03_12PM_ET),
-			NewRange(DateTimeForFeb04_09AM_ET, DateTimeForFeb04_12PM_ET))},
+			NewRange(dt(DateForFeb03, TimeFor09AM, TimeZoneForET), dt(DateForFeb03, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateForFeb04, TimeFor09AM, TimeZoneForET), dt(DateForFeb04, TimeFor12PM, TimeZoneForET)))},
 		{in: "February 3rd - 5th, 9:00 am - noon ET each day", want: NewRanges(
-			NewRange(DateTimeFor2023Feb03_09AM_ET, DateTimeFor2023Feb03_12PM_ET),
-			NewRange(DateTimeFor2023Feb04_09AM_ET, DateTimeFor2023Feb04_12PM_ET),
-			NewRange(DateTimeFor2023Feb05_09AM_ET, DateTimeFor2023Feb05_12PM_ET)), isBroken: true},
+			NewRange(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Feb04, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb04, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Feb05, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb05, TimeFor12PM, TimeZoneForET))), skip: "grammar: day range + time"},
 		{in: "Wednesdays February 1st & 8th 12:00p-3:00p", want: NewRanges(
-			NewRange(DateTimeForFeb01_12PM, DateTimeForFeb01_03PM),
-			NewRange(DateTimeForFeb08_12PM, DateTimeForFeb08_03PM))},
+			NewRange(dt(DateForFeb01, TimeFor12PM, nil), dt(DateForFeb01, TimeFor03PM, nil)),
+			NewRange(dt(DateForFeb08, TimeFor12PM, nil), dt(DateForFeb08, TimeFor03PM, nil)))},
 		{in: "Wednesdays, February 1st, 8th, and 15th 9:00am - 12:00pm (ET)", want: NewRanges(
-			NewRange(DateTimeFor2023Feb01_09AM_ET, DateTimeFor2023Feb01_12PM_ET),
-			NewRange(DateTimeFor2023Feb08_09AM_ET, DateTimeFor2023Feb08_12PM_ET),
-			NewRange(DateTimeFor2023Feb15_09AM_ET, DateTimeFor2023Feb15_12PM_ET)), isBroken: true},
+			NewRange(dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb01, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Feb08, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb08, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Feb15, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb15, TimeFor12PM, TimeZoneForET))), skip: "grammar: complex pattern"},
 		{in: "Wednesdays - February 1, 8 9:00 AM - 12:00 PM ET", want: NewRanges(
-			NewRange(DateTimeForFeb01_09AM_ET, DateTimeForFeb01_12PM_ET),
-			NewRange(DateTimeForFeb08_09AM_ET, DateTimeForFeb08_12PM_ET))},
-		//    Tuesdays – March 18, 25, and April 1, 8, 15, 22 10:00 AM – 12:30 PM PST
+			NewRange(dt(DateForFeb01, TimeFor09AM, TimeZoneForET), dt(DateForFeb01, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateForFeb08, TimeFor09AM, TimeZoneForET), dt(DateForFeb08, TimeFor12PM, TimeZoneForET)))},
+		//    Tuesdays - March 18, 25, and April 1, 8, 15, 22 10:00 AM - 12:30 PM PST
 		{in: "Wednesdays - February 1, 8, 15, 22, and March 1 9:00 AM - 12:00 PM ET", want: NewRanges(
-			NewRange(DateTimeFor2023Feb01_09AM_ET, DateTimeFor2023Feb01_12PM_ET),
-			NewRange(DateTimeFor2023Feb08_09AM_ET, DateTimeFor2023Feb08_12PM_ET),
-			NewRange(DateTimeFor2023Feb15_09AM_ET, DateTimeFor2023Feb15_12PM_ET),
-			NewRange(DateTimeFor2023Feb22_09AM_ET, DateTimeFor2023Feb22_12PM_ET),
-			NewRange(DateTimeFor2023Mar01_09AM_ET, DateTimeFor2023Mar01_12PM_ET)), isBroken: true},
+			NewRange(dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb01, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Feb08, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb08, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Feb15, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb15, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Feb22, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb22, TimeFor12PM, TimeZoneForET)),
+			NewRange(dt(DateFor2023Mar01, TimeFor09AM, TimeZoneForET), dt(DateFor2023Mar01, TimeFor12PM, TimeZoneForET))), skip: "grammar: complex pattern"},
 
 		// DTT
-		{in: "Friday 12 to 3 PM Eastern", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_12PM_ET, DateTimeFor2023Feb03_03PM_ET), minDT: DateTimeFor2023Feb01_09AM_ET}, //, isBroken: true},
+		{in: "Friday 12 to 3 PM Eastern", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor03PM, TimeZoneForET)), minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
 
 		// DMTT
-		{in: "3 Feb 9am - 12pm", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_12PM)},
+		{in: "3 Feb 9am - 12pm", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor12PM, nil))},
 
 		// MDYT
-		{in: "Feb 3 2023 12pm", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_12PM)},
+		{in: "Feb 3 2023 12pm", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil))},
 		// MDYTT
-		{in: "Friday, February 3, 2023 9:00 AM 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
-		{in: "Friday, February 3rd 2023 from 9:00 AM to 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+		{in: "Friday, February 3, 2023 9:00 AM 12:00 PM", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "Friday, February 3rd 2023 from 9:00 AM to 12:00 PM", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb03, TimeFor12PM, nil))},
 		// DMYTT
-		{in: "When 3 Feb 2023 9:00 AM - 12:00 PM", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
-		{in: "Fr. 3. Feb. 2023, 9:00-ca.12:00", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_12PM)},
+		{in: "When 3 Feb 2023 9:00 AM - 12:00 PM", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb03, TimeFor12PM, nil))},
+		{in: "Fr. 3. Feb. 2023, 9:00-ca.12:00", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb03, TimeFor12PM, nil))},
 
 		// TDMY
-		{in: "9:00am 3rd Feb - 4th Feb 3:00pm 2023", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb04_03PM)},
-		{in: "9:00am on 3rd Feb - 4th Feb at 3:00pm 2023", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb04_03PM)},
+		{in: "9:00am 3rd Feb - 4th Feb 3:00pm 2023", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb04, TimeFor03PM, nil))},
+		{in: "9:00am on 3rd Feb - 4th Feb at 3:00pm 2023", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb04, TimeFor03PM, nil))},
 		// Not sure how to parse this one.
-		// {in: "(2 Feb 2023 - 3 Feb 2023) 09:00 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeFor2023Feb04_03PM)},
+		// {in: "(2 Feb 2023 - 3 Feb 2023) 09:00 15:00", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateFor2023Feb04, TimeFor03PM, nil))},
 
 		// Both
 		{in: "02.03.2023", want: DateRangesFor2023Feb03, dateMode: DateModeNorthAmerican},
 		{in: "02.03.2023", want: DateRangesFor2023Mar02, dateMode: DateModeRest},
-		{in: "02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: DateModeNorthAmerican},
-		{in: "02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM), dateMode: DateModeRest},
-		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM), dateMode: DateModeNorthAmerican},
-		{in: "Fr , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: DateModeNorthAmerican},
-		{in: "Th , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM), dateMode: DateModeRest},
-		{in: "Fr , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM), dateMode: DateModeRest},
-		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Mar02_03PM)},
-		{in: "Fr , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(DateTimeFor2023Feb03_03PM)},
+		{in: "02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil)), dateMode: DateModeNorthAmerican},
+		{in: "02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil)), dateMode: DateModeRest},
+		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil)), dateMode: DateModeNorthAmerican},
+		{in: "Fr , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil)), dateMode: DateModeNorthAmerican},
+		{in: "Th , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil)), dateMode: DateModeRest},
+		{in: "Fr , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil)), dateMode: DateModeRest},
+		{in: "Th , 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil))},
+		{in: "Fr , 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil))},
 
 		//
 		// Failures
@@ -583,88 +527,274 @@ func TestParse(t *testing.T) {
 		{in: "For 6th-12th grade students @ SpringHill Camp", want: nil},
 
 		//
-		// TODO
+		// Category A: Simple Weekday + Time (needs minDT)
 		//
 
-		// Thursday night 24 April, 7-8:30pm Australian Eastern Standard Time, 11am-12:30pm CET
+		// A1: AM applies to both sides of range
+		{in: "Sunday 9 to 10:00 AM Eastern", want: NewRangesWithStartEndDateTimes(
+			dt(DateFor2023Feb05, TimeFor09AM, TimeZoneForEastern),
+			dt(DateFor2023Feb05, TimeFor10AM, TimeZoneForEastern)),
+			minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
+		// A2: TimeZone inherited from minDT when Date+Time present but no explicit TZ
+		{in: "Sunday 3:00 PM", want: NewRangesWithStartDateTimes(
+			dt(DateFor2023Feb05, TimeFor03PM, TimeZoneForET)),
+			minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
+		// A3
+		{in: "Thursday 9AM", want: NewRangesWithStartDateTimes(
+			dt(DateFor2023Feb02, TimeFor09AM, TimeZoneForET)),
+			minDT: dt(DateFor2023Feb01, TimeFor09AM, TimeZoneForET)},
 
-		// 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
-		// Tues/Thurs 6:30p-9:00p March/April
-		// 5 Mondays March thru May
+		//
+		// Category C: Date + Time Range + Timezone
+		//
 
-		// Tuesdays and Thursdays March or April 6:30pm - 9:00pm
-		// September 19 - October 24: Via Zoom with SeekHealing Online, every Thursday from 12 - 2 pm EST
-		// October 12 + 13: In-person at SeekHealing Waynesville, 10 am - 7 pm each day
-		// November 9 + 10: In-person at SeekHealing Asheville,10 am - 7 pm each day
-		// every Thursday from 12 - 1:30 pm EST through August 29th
+		// C1: "1st -" looks like date range but is date + time range separator
+		{in: "February 1st - 10.00am- 3pm\u00a0MST", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb01, TimeFor10AM, TimeZoneForMST),
+			dt(DateForFeb01, TimeFor03PM, TimeZoneForMST))},
+		// C2: Recurrence with start date (simplified to start date + time range)
+		{in: "Beginning February 3, 2023, Fridays 3:00 - 5:00 pm EASTERN", want: NewRangesWithStartEndDateTimes(
+			dt(DateFor2023Feb03, TimeFor03PM, TimeZoneForEastern),
+			dt(DateFor2023Feb03, TimeFor05PM, TimeZoneForEastern)),
+			skip: "grammar: complex pattern"},
+		// C3: Date range with weekday filter (simplified to date range)
+		{in: "February 1 - 15 (M-W-F; M-W-F)", want: NewRangesWithStartEndDates(DateForFeb01, DateForFeb15)},
+		// C4
+		{in: "February 3 - 14 (M-W-F; M-W-F)", want: NewRangesWithStartEndDates(DateForFeb03, DateForFeb14)},
 
-		// Wait until we are outputing ICAL before deciding how to parse repeating dates like the ones below.
+		//
+		// Category D: Multi-Timezone
+		//
 
-		// September 22 - November 3, 2024\nSundays 11:00–12:30 CT / 18.00-19.30 CET
-		// * August 8 - September 12th: Via Zoom with SeekHealing Online, every Thursday from 6:30 - 8:30 pm EST
-		// * August 10 + 11: In-person at SeekHealing Waynesville, 10 am - 7 pm each day
-		// * November 9 + 10: In-person at SeekHealing Asheville,10 am - 7 pm each day
-		// every Thursday from 5 - 6:15 pm at SeekHealing Asheville beginning August 8th
-		// 24-26 October (in person) & Weds 31st Integration eve (online)
-		// Tuesdays January 7th & 21st 6:30p-8:30p
-		// Every Tuesday beginning September 10th from 12:30 - 2 pm
-		// September 19 - October 24, every Thursday from 12 - 2 pm EST
-		// September 4 - 12 \n Courses Begin September 17
-		// NEW Sundays at 9 am ET - Starts October 20
-		// Monday, September 2 \n PT (AZ): 10:30 am, MT: 11:30 am, CT: 12:30 pm, ET: 1:30 pm, London: 5:30 pm, Sweden and France: 6:30 pm, Israel: 7:30 pm
-		// Sunday 10 to 11:10 AM Eastern
-		// Sunday 1:30 PM
-		// Thursday 8AM
-		// Program Begins Thursday, January 16, 2025 | 36 Classes PT: 5:00 pm, MT: 6:00 pm, CT: 7:00, ET: 8:00 pm 90 Minute Sessions.
-		// Part 1: 15th–20th March 2025, Part 2: 19th-24th October 2025
-		// CRN 66932, SLFO NC025, Dates: 8 Tues, Jan 28 - Mar 18, Time, 6:15 pm – 8:30pm, Pacific
-		// Starts: Tuesday, April 1, 2025 Ends: Tuesday, May 27, 2025 Meets: Online, for 9 consecutive Tuesday evenings, from 7:00 PM to 8:30 PM PST
-		// Tuesdays 7 to 9 pm ET
-		// April 14 - 25 (M-W-F; M-W-F)
-		// "October 8th - 10.00am- 3pm\u00a0MST"
-		// Weekly on Mondays
-		// Wednesdays at 6:30pm ET
-		// 2nd and 4th Tuesdays 7 to 9 pm ET
-		// Tuesdays 11:45am-12:00pm ET, Mindful Pause
-		// Tuesdays 7 to 9 pm ET
-		// Join today for Day 2 at 10am PST
-		// Fridays 3:00 - 5:00 pm EASTERN
-		// Fridays, February 7 - December 5, 2025 (45 sessions)
-		// 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
-		// Online 5 Mondays 3/17 & 3/31, 4/14 & 4/28, 5/12
-		// 1/16/2025
-		// 3/14/2025
-		// Sunday, February 16th, 2025\n17:00 - 19:00 CET / 16:00 - 18:00 UTC (Find your local start time here)
-		// Beginning February 7, 2025, Fridays 3:00 - 5:00 pm EASTERN"
-		// October 20 - 31 (M-W-F; M-W-F)"
-		// Starting 2nd and 4th Tuesdays 7 to 9 pm ET"
+		// D1: Two TZ variants of same event
+		{in: "Thursday night 2 February, 7-8:30pm Australian Eastern Standard Time, 11am-12:30pm CET", want: NewRanges(
+			NewRange(dt(DateForFeb02, TimeFor07PM, &TimeZone{Abbreviation: "AEST"}), dt(DateForFeb02, TimeFor08_30PM, &TimeZone{Abbreviation: "AEST"})),
+			NewRange(dt(DateForFeb02, TimeFor11AM, TimeZoneForCET), dt(DateForFeb02, TimeFor12_30PM, TimeZoneForCET))),
+			skip: "grammar: complex pattern"},
+		// D2: Slash-separated TZ alternatives
+		{in: "Sunday, February 5th\n09:00 - 11:00 CET / 10:00 - 12:00 UTC", want: NewRanges(
+			NewRange(dt(DateForFeb05, TimeFor10AM, TimeZoneForCET), dt(DateForFeb05, TimeFor12PM, TimeZoneForCET)),
+			NewRange(dt(DateForFeb05, TimeFor09AM, TimeZoneForUTC), dt(DateForFeb05, TimeFor11AM, TimeZoneForUTC))),
+			skip: "grammar: complex pattern"},
+		// D3: 7 TZ variants (simplified to 4 US TZs)
+		{in: "Friday, February 3\nPT (AZ): 9:00 am, MT: 10:00 am, CT: 11:00 pm, ET: 12:00 pm, London: 4:00 pm, Sweden and France: 5:00 pm, Israel: 6:00 pm", want: NewRangesWithStartDateTimes(
+			dt(DateForFeb03, TimeFor09AM, TimeZoneForPT),
+			dt(DateForFeb03, TimeFor10AM, TimeZoneForMT),
+			dt(DateForFeb03, TimeFor11AM, TimeZoneForCT),
+			dt(DateForFeb03, TimeFor12PM, TimeZoneForET)),
+			skip: "grammar: complex pattern"},
+		// D4: Two TZ variants + recurrence in date range (simplified)
+		{in: "February 5 - March 5\nSundays 11:00\u201312:30 CT / 18.00-19.00 CET", want: NewRanges(
+			NewRange(dt(DateForFeb05, TimeFor11AM, TimeZoneForCT), dt(DateForFeb05, TimeFor12_30PM, TimeZoneForCT)),
+			NewRange(dt(DateForFeb05, TimeFor06PM, TimeZoneForCET), dt(DateForFeb05, TimeFor07PM, TimeZoneForCET))),
+			skip: "grammar: complex pattern"},
 
-		// # Straddling end of year
-		// ("25 Dec - 2 Jan 2016", "25/12/2015", "02/01/2016"),
-		// ("18 Nov 2015 to 14th Feb 2016", "18/11/2015", "14/02/2016"),
-		// ("18 Nov 2010 to 14th Feb 2016", "18/11/2010", "14/02/2016"),
+		//
+		// Category E: Recurrence Patterns
+		//
 
-		// {in: "Feb 3 12:00 PM 12:00", want: NewRangesWithStartDateTimes(DateTimeForFeb03_12PM)},
-		// {in: "Feb 3 3:00 PM 15:00", want: NewRangesWithStartDateTimes(DateTimeForFeb03_03PM)},
-		// {in: "Feb 3 9:00 AM 09:00 Feb 3 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(DateTimeForFeb03_09AM, DateTimeForFeb03_03PM)},
-		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(DateTimeFor2023Feb03_09AM, DateTimeFor2023Feb03_03PM)},
-		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00"
-		// {in: "Feb 3 2023 9:00 AM 3:00 PM 09:00 15:00 Google Calendar ICS"
-		// {in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00"
-		// {in: "Fri, Apr 14, 2023 9:00 AM 09:00 Sat, Apr 15, 2023 5:00 PM 17:00"
+		// E1: Multiple weekdays + month range
+		{in: "Tues/Thurs 6:30p-9:00p February/March", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb, TimeFor06_30PM, nil),
+			dt(DateForMar, TimeFor09PM, nil)),
+			skip: "parser: recurrence"},
+		// E2: Count + month range
+		{in: "5 Wednesdays February thru March", want: NewRangesWithStartEndDates(DateForFeb, DateForMar),
+			skip: "parser: recurrence"},
+		// E3: Similar to E1
+		{in: "Tuesdays and Thursdays February or March 6:30pm - 9:00pm", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb, TimeFor06_30PM, nil),
+			dt(DateForMar, TimeFor09PM, nil)),
+			skip: "parser: recurrence"},
+		// E4: Date range + every + weekday
+		{in: "February 2 - March 2: Via Zoom with SeekHealing Online, every Thursday from 12 - 2 pm EST", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb02, TimeFor12PM, TimeZoneForEST),
+			dt(DateForMar02, TimeFor02PM, TimeZoneForEST)),
+			skip: "parser: recurrence"},
+		// E4b: Variant with different dates
+		{in: "February 1 - March 1: Via Zoom with SeekHealing Online, every Wednesday from 9 - 12 pm ET", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb01, TimeFor09AM, TimeZoneForET),
+			dt(DateForMar01, TimeFor12PM, TimeZoneForET)),
+			skip: "parser: recurrence"},
+		// E7: "every" + "through" bound
+		{in: "every Wednesday from 12 - 3pm ET through March 1st", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor12PM, TimeZoneForET),
+			dt(DateForMar01, TimeFor03PM, TimeZoneForET)),
+			skip: "parser: recurrence"},
+		// E8: "beginning" as start date
+		{in: "every Wednesday from 9 - 12 pm beginning February 1st", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb01, TimeFor09AM, nil),
+			dt(DateForFeb01, TimeFor12PM, nil)),
+			skip: "parser: recurrence"},
+		// E9: Range + single date, same month
+		{in: "1-3 February (in person) & Weds 8th Integration eve (online)", want: NewRanges(
+			NewRangeWithStartEndDates(DateForFeb01, DateForFeb03),
+			NewRangeWithStart(dt(DateForFeb08, nil, nil))),
+			skip: "grammar: complex pattern"},
+		// E11: "Every" + "beginning"
+		{in: "Every Wednesday beginning February 1st from 12:30 - 2 pm", want: withRec(NewRangesWithStartEndDateTimes(
+			dt(DateForFeb01, TimeFor12_30PM, nil),
+			dt(DateForFeb01, TimeFor02PM, nil)), RecurrenceWeeklyWed)},
+		// E12: Same as E4 with comma separator
+		{in: "February 2 - March 2, every Thursday from 12 - 2 pm EST", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb02, TimeFor12PM, TimeZoneForEST),
+			dt(DateForMar02, TimeFor02PM, TimeZoneForEST)),
+			skip: "parser: recurrence"},
+		// E13: "Courses Begin" is noise; two separate date items
+		{in: "February 1 - 8\nCourses Begin February 15", want: NewRanges(
+			NewRangeWithStartEndDates(DateForFeb01, DateForFeb08),
+			NewRangeWithStart(dt(DateForFeb15, nil, nil))),
+			skip: "grammar: complex pattern"},
+		// E14: "NEW" prefix, "Starts" keyword — noise stripping + plural weekday prefix
+		{in: "NEW Sundays at 9 am ET - Starts February 5", want: withRec(NewRangesWithStartDateTimes(
+			dt(DateForFeb05, TimeFor09AM, TimeZoneForET)), RecurrenceWeeklySun)},
+		// E15: Too complex (multi-TZ + 36 class recurrence)
+		{in: "Program Begins Thursday, February 2, 2023 | 36 Classes PT: 5:00 pm, MT: 6:00 pm, CT: 7:00, ET: 8:00 pm 90 Minute Sessions.", want: NewRangesWithStartDateTimes(
+			dt(DateFor2023Feb02, TimeFor05PM, TimeZoneForPT)),
+			skip: "parser: recurrence"},
+		// E16: "Part N:" prefix
+		{in: "Part 1: 1st\u20138th February 2023, Part 2: 15th-22nd February 2023", want: NewRanges(
+			NewRangeWithStartEndDates(DateFor2023Feb01, DateFor2023Feb08),
+			NewRangeWithStartEndDates(DateFor2023Feb15, DateFor2023Feb22)),
+			skip: "grammar: complex pattern"},
+		// E17: Structured fields with noise
+		{in: "CRN 66932, SLFO NC025, Dates: 8 Fri, Feb 3 - Mar 3, Time, 6:00 pm \u2013 8:30pm, Pacific", want: NewRangesWithStartEndDateTimes(
+			dt(DateForFeb03, TimeFor06PM, TimeZoneForPacific),
+			dt(DateForMar03, TimeFor08_30PM, TimeZoneForPacific)),
+			skip: "parser: recurrence"},
+		// E18: Structured Starts/Ends/Meets fields
+		{in: "Starts: Wednesday, February 1, 2023 Ends: Wednesday, March 1, 2023 Meets: Online, for 5 consecutive Wednesday evenings, from 7:00 PM to 8:30 PM PST", want: NewRangesWithStartEndDateTimes(
+			dt(DateFor2023Feb01, TimeFor07PM, TimeZoneForPST),
+			dt(DateFor2023Mar01, TimeFor08_30PM, TimeZoneForPST)),
+			skip: "parser: recurrence"},
+		// E19: Bare weekday + time range
+		{in: "Tuesdays 7 to 9 pm ET", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor07PM, TimeZoneForET),
+			dt(nil, TimeFor09PM, TimeZoneForET)),
+			skip: "parser: recurrence"},
+		// E20: Bare recurrence, no time (needs Recurrence type)
+		{in: "Weekly on Mondays", want: nil},
+		// E21: Bare weekday + time
+		{in: "Wednesdays at 6:30pm ET", want: withRec(NewRangesWithStartDateTimes(
+			dt(nil, TimeFor06_30PM, TimeZoneForET)), RecurrenceWeeklyWed)},
+		// E22: Ordinal recurrence (needs NthWeekday extension)
+		{in: "2nd and 4th Tuesdays 7 to 9 pm ET", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor07PM, TimeZoneForET),
+			dt(nil, TimeFor09PM, TimeZoneForET)),
+			skip: "parser: recurrence"},
+		// E23: Suffix noise
+		{in: "Tuesdays 10:00am-12:00pm ET, Mindful Pause", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor10AM, TimeZoneForET),
+			dt(nil, TimeFor12PM, TimeZoneForET)),
+			skip: "parser: recurrence"},
+		// E25: "Day N" stripped by dayNumberRE
+		{in: "Join today for Day 2 at 10am PST", want: NewRangesWithStartDateTimes(
+			dt(DateFor2023Feb03, TimeFor10AM, TimeZoneForPST)),
+			minDT: dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET)},
+		// E26: Bare weekday + time range
+		{in: "Fridays 3:00 - 5:00 pm EASTERN", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor03PM, TimeZoneForEastern),
+			dt(nil, TimeFor05PM, TimeZoneForEastern)),
+			skip: "parser: recurrence"},
+		// E27: Date range + session count
+		{in: "Wednesdays, February 1 - March 1 (4 sessions)", want: NewRangesWithStartEndDates(
+			DateForFeb01, DateForMar01)},
+		// E30: "Starting" prefix + ordinal recurrence
+		{in: "Starting 2nd and 4th Tuesdays 7 to 9 pm ET", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor07PM, TimeZoneForET),
+			dt(nil, TimeFor09PM, TimeZoneForET)),
+			skip: "parser: recurrence"},
 
-		// "(1 Jan 2017 - 3 Jan 2017) Tuesday 11:00 13:00" in expected(
-		// "(1 Jan 2016 - 4 Jan 2016) Monday 11:00 13:00 Tuesday 14:00 15:00 Friday 16:05 17:20 Sunday 19:30 20:45" in expected(
-		// "(3 Feb 2017) Friday 19:30 21:30" in expected(
-		// "Select date Tue 19 September 12:00pm Tue 19 September 2:00pm Tue 19 Sep 4:00pm (last few)" in expected(
-		// "Select date Thu 15 September 7:45pm 8:50pm Fri 16 September 7:45pm - 20:45 Sat 17 October 7:45pm to 21:10" in expected(
+		//
+		// Category F: Redundant 12h + 24h Times (Google Calendar ICS)
+		//
 
-		// Sat 5pm to 2am
-		// Sun/Thu 5pm–1am"
-		// Fri 5pm to 2am
-		// "Doors: 8PM / Show: 9PM / 21+"
-		// "12PM / 21+ / Free"
-		// "Doors: 8PM / Show: 9PM / 21+RSVP DOES NOT GUARANTEE ENTRY"
+		// F1
+		{in: "Feb 3 12:00 PM 12:00", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor12PM, nil))},
+		// F2
+		{in: "Feb 3 3:00 PM 15:00", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor03PM, nil))},
+		// F3
+		{in: "Feb 3 9:00 AM 09:00 Feb 3 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, nil), dt(DateForFeb03, TimeFor03PM, nil))},
+		// F4
+		{in: "Feb 3 2023 9:00 AM 09:00 Feb 3 2023 3:00 PM 15:00", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb03, TimeFor03PM, nil))},
+		// F5
+		{in: "Feb 3 2023 9:00 AM 3:00 PM 09:00 15:00 Google Calendar ICS", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, nil), dt(DateFor2023Feb03, TimeFor03PM, nil))},
+		// F6: Multi-day with redundant times — also needs grammar: multi-day without separator
+		{in: "Fri, Feb 3, 2023 9:00 AM 09:00 Sat, Feb 4, 2023 5:00 PM 17:00", want: NewRangesWithStartEndDateTimes(
+			dt(DateFor2023Feb03, TimeFor09AM, nil),
+			dt(DateFor2023Feb04, TimeFor05PM, nil)),
+			skip: "grammar: multi-day without separator"},
+
+		//
+		// Category G: Complex Multi-Day/Multi-Time
+		//
+
+		// G1
+		{in: "(1 Feb 2023 - 3 Feb 2023) Wednesday 9:00 15:00", want: NewRangesWithStartEndDateTimes(
+			dt(DateFor2023Feb01, TimeFor09AM, nil),
+			dt(DateFor2023Feb03, TimeFor03PM, nil)),
+			skip: "grammar: complex pattern"},
+		// G2: Very complex multi-weekday schedule (deferred)
+		{in: "(1 Feb 2023 - 4 Feb 2023) Wednesday 11:00 13:00 Thursday 14:00 15:00 Friday 16:05 17:20 Saturday 19:30 20:45", want: nil,
+			skip: "grammar: complex pattern"},
+		// G3
+		{in: "(3 Feb 2023) Friday 19:45 21:00", want: NewRangesWithStartEndDateTimes(
+			dt(DateFor2023Feb03, TimeFor07_45PM, nil),
+			dt(DateFor2023Feb03, TimeFor09PM, nil))},
+		// G4: Multiple time slots same day
+		{in: "Select date Wed 1 February 12:00pm Wed 1 February 3:00pm Wed 1 Feb 6:00pm (last few)", want: NewRangesWithStartDateTimes(
+			dt(DateForFeb01, TimeFor12PM, nil),
+			dt(DateForFeb01, TimeFor03PM, nil),
+			dt(DateForFeb01, TimeFor06PM, nil)),
+			skip: "grammar: complex pattern"},
+		// G5: Multi-day multi-time
+		{in: "Select date Thu 2 February 7:45pm 8:30pm Fri 3 February 7:45pm - 20:30 Sat 4 February 7:45pm to 21:00", want: NewRanges(
+			NewRange(dt(DateForFeb02, TimeFor07_45PM, nil), dt(DateForFeb02, TimeFor08_30PM, nil)),
+			NewRange(dt(DateForFeb03, TimeFor07_45PM, nil), dt(DateForFeb03, TimeFor08_30PM, nil)),
+			NewRange(dt(DateForFeb04, TimeFor07_45PM, nil), dt(DateForFeb04, TimeFor09PM, nil))),
+			skip: "grammar: complex pattern"},
+
+		//
+		// Category H: Venue/Door Format + Midnight Crossing
+		//
+
+		// H1: Crosses midnight
+		{in: "Sat 5pm to 9am", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor05PM, nil),
+			dt(nil, TimeFor09AM, nil))},
+		// H2: Multiple weekdays crossing midnight
+		{in: "Sun/Thu 5pm\u20139am", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor05PM, nil),
+			dt(nil, TimeFor09AM, nil))},
+		// H3: Crosses midnight
+		{in: "Fri 5pm to 9am", want: NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor05PM, nil),
+			dt(nil, TimeFor09AM, nil))},
+		// H4: Two labeled ranges, "21+" is noise
+		{in: "Doors: 8PM / Show: 9PM / 21+", want: NewRangesWithStartDateTimes(
+			dt(nil, TimeFor08PM, nil),
+			dt(nil, TimeFor09PM, nil))},
+		// H5: "21+" and "Free" are noise
+		{in: "12PM / 21+ / Free", want: NewRangesWithStartDateTimes(
+			dt(nil, TimeFor12PM, nil))},
+		// H6: More suffix noise
+		{in: "Doors: 8PM / Show: 9PM / 21+RSVP DOES NOT GUARANTEE ENTRY", want: NewRangesWithStartDateTimes(
+			dt(nil, TimeFor08PM, nil),
+			dt(nil, TimeFor09PM, nil))},
+
+		//
+		// Category I: Year Straddling
+		//
+
+		// I1: Month decrease = year crossed — year straddling inference in NewRange()
+		{in: "25 Dec - 2 Jan 2016", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2015, 12, 25), NewRawDateFromYMD(2016, 1, 2))},
+		// I2: Both years explicit
+		{in: "18 Nov 2015 to 14th Feb 2016", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2015, 11, 18), NewRawDateFromYMD(2016, 2, 14))},
+		// I3: Both years explicit, large gap
+		{in: "18 Nov 2010 to 14th Feb 2016", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2010, 11, 18), NewRawDateFromYMD(2016, 2, 14))},
 	}
 
 	failed := 0
@@ -679,7 +809,6 @@ func TestParse(t *testing.T) {
 		return
 	}
 
-	fmt.Printf("acceptBrokenTests: %t\n", acceptBrokenTests)
 	percent := float64(failed) / float64(len(tests)) * 100
 	fmt.Printf("TestParse: %.2f%% of tests failed (%d/%d)\n", percent, failed, len(tests))
 }
@@ -688,40 +817,29 @@ func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 	return func(t *testing.T) {
 		got, err := Parse(tc.minDT, tc.dateMode, tc.in)
 		if err != nil {
+			if tc.skip != "" {
+				t.Skip(tc.skip)
+			}
 			t.Fatalf("error: %v", err)
 		}
-		if !tc.isBroken && (got == nil && tc.want == nil) {
-			return
-		}
-
-		// Clear Weekdays which would just be annoying to test. Trust that we would find with semantic checks.
-		// if got != nil {
-		// 	for _, dtr := range got.Items {
-		// 		if dtr.Start != nil && dtr.Start.Date != nil {
-		// 			dtr.Start.Date.Weekday = 0
-		// 		}
-		// 		if dtr.End != nil && dtr.End.Date != nil {
-		// 			dtr.End.Date.Weekday = 0
-		// 		}
-		// 	}
-		// }
-
-		diff := cmp.Diff(got, tc.want, cmpopts.IgnoreUnexported(Date{})) //, protocmp.Transform())
-		// fmt.Printf("diff == \"\": %t\n", diff == "")
-		// fmt.Printf("tc.isBroken: %t\n", tc.isBroken)
-
-		if acceptBrokenTests && tc.isBroken {
-			if diff == "" {
-				t.Logf("FIXED: test %q passes now — remove isBroken flag", tc.in)
+		if got == nil && tc.want == nil {
+			if tc.skip != "" {
+				t.Fatalf("REMOVE SKIP: %q — test passes now", tc.skip)
 			}
 			return
 		}
-		if diff != "" &&
-			(!acceptBrokenTests ||
-				(acceptBrokenTests && !tc.isBroken)) {
+
+		diff := cmp.Diff(got, tc.want, cmpopts.IgnoreUnexported(Date{}))
+
+		if tc.skip != "" {
+			if diff == "" {
+				t.Fatalf("REMOVE SKIP: %q — test passes now", tc.skip)
+			}
+			t.Skip(tc.skip)
+			return
+		}
+		if diff != "" {
 			pp.Default.SetColoringEnabled(false)
-			// fmt.Printf("got:\n%s\n", litter.Sdump(got))
-			// fmt.Printf("want:\n%s\n", litter.Sdump(tc.want))
 			fmt.Printf("got vs. want:\n%s\n", litter.Sdump([]*DateTimeRanges{got, tc.want}))
 			t.Fatalf("unexpected difference:\n%v", diff)
 		}

@@ -2,6 +2,7 @@ package ical
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/findyourpaths/phil/datetime"
@@ -92,11 +93,11 @@ func resolveRecurring(ranges *datetime.DateTimeRanges, info *EventInfo) ([]*reso
 	}
 
 	// Validate weekday-date consistency.
-	if first.Start != nil && first.Start.Date != nil && first.Start.Date.Year != 0 && rec.Weekday != nil {
+	if first.Start != nil && first.Start.Date != nil && first.Start.Date.Year != 0 && len(rec.Weekdays) > 0 {
 		computed := time.Date(first.Start.Date.Year, first.Start.Date.Month, first.Start.Date.Day,
 			0, 0, 0, 0, time.UTC).Weekday()
-		if *rec.Weekday != computed {
-			return nil, fmt.Errorf("weekday mismatch: start date is %s, not %s", computed, *rec.Weekday)
+		if !slices.Contains(rec.Weekdays, computed) {
+			return nil, fmt.Errorf("weekday mismatch: start date is %s, not in %v", computed, rec.Weekdays)
 		}
 	}
 
