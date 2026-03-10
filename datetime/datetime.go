@@ -561,7 +561,7 @@ func locationForAbbreviation(dt *DateTime, abbrev string) *time.Location {
 		return r
 	}
 
-	panic(fmt.Sprintf("error: no preferred time Location found for time zone abbreviation %q\n", abbrev))
+	panic(fmt.Sprintf("no preferred time Location found for time zone abbreviation %q — add it to PreferredLocationNamesByAbbrev", abbrev))
 }
 
 // A Date represents a date (year, month, day, weekday).
@@ -973,6 +973,9 @@ func hourNameToHour(hourName string) int {
 }
 
 var PreferredLocationNamesByAbbrev = map[string]string{
+	"AEST": "Australia/Sydney",
+	"AEDT": "Australia/Sydney",
+	"AWST": "Australia/Perth",
 	"BST":  "Europe/London",
 	"ET":   "America/New_York",
 	"EDT":  "America/New_York",
@@ -986,9 +989,12 @@ var PreferredLocationNamesByAbbrev = map[string]string{
 	"MT":   "America/Denver",
 	"MDT":  "America/Denver",
 	"MST":  "America/Denver",
+	"NZST": "Pacific/Auckland",
+	"NZDT": "Pacific/Auckland",
 	"PT":   "America/Los_Angeles",
 	"PDT":  "America/Los_Angeles",
 	"PST":  "America/Los_Angeles",
+	"SAST": "Africa/Johannesburg",
 }
 
 var timeZoneAbbreviationsByNames = map[string]string{
@@ -1090,6 +1096,9 @@ func NewRawDateFromYMD(yearAny any, monthAny any, dayAny any) *Date {
 func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
 	if r.Hour > 12 {
+		// 24-hour time with redundant AM suffix (e.g., "07:00 AM" parsed as
+		// hour=7 is fine, but "00:00 AM" where hour=0 is also valid).
+		// Hours >12 with AM are invalid — reject this parse alternative.
 		panic(fmt.Sprintf("semantic error: found hour %#v but failed AM bounds check\n", r.Hour))
 	}
 	r.Hour = r.Hour % 12
@@ -1099,7 +1108,9 @@ func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 func NewPMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
 	if r.Hour > 12 {
-		panic(fmt.Sprintf("semantic error: found hour %#v but failed PM bounds check\n", r.Hour))
+		// 24-hour time with redundant PM suffix (e.g., "17:00 PM").
+		// Treat as 24-hour time — ignore the PM indicator.
+		return r
 	}
 	r.Hour = (r.Hour % 12) + 12
 	return r

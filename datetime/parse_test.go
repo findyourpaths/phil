@@ -55,7 +55,12 @@ var DateFor2023Feb03 = NewRawDateFromYMD(2023, 2, 3)
 var DateFor2023Feb04 = NewRawDateFromYMD(2023, 2, 4)
 var DateFor2023Feb05 = NewRawDateFromYMD(2023, 2, 5)
 var DateFor2023Feb08 = NewRawDateFromYMD(2023, 2, 8)
+var DateFor2023Feb10 = NewRawDateFromYMD(2023, 2, 10)
 var DateFor2023Feb15 = NewRawDateFromYMD(2023, 2, 15)
+var DateFor2023Feb18 = NewRawDateFromYMD(2023, 2, 18)
+var DateFor2023Feb19 = NewRawDateFromYMD(2023, 2, 19)
+var DateFor2023Feb24 = NewRawDateFromYMD(2023, 2, 24)
+var DateFor2023Feb26 = NewRawDateFromYMD(2023, 2, 26)
 var DateFor2023Feb22 = NewRawDateFromYMD(2023, 2, 22)
 var DateFor2023Mar01 = NewRawDateFromYMD(2023, 3, 1)
 var DateFor2023Mar02 = NewRawDateFromYMD(2023, 3, 2)
@@ -74,6 +79,7 @@ var DateRangesFrom2023Feb03To2023Feb04 = NewRangesWithStartEndDates(DateFor2023F
 
 // --- Time fixtures (sorted by hour) ---
 
+var TimeFor07AM = &Time{Hour: 7}
 var TimeFor09AM = &Time{Hour: 9}
 var TimeFor10AM = &Time{Hour: 10}
 var TimeFor11AM = &Time{Hour: 11}
@@ -91,6 +97,8 @@ var TimeFor08_30PM = &Time{Hour: 20, Minute: 30}
 var TimeFor09PM = &Time{Hour: 21}
 
 // --- TimeZone fixtures (sorted) ---
+
+var TimeZoneForSAST = &TimeZone{Abbreviation: "SAST"}
 
 var TimeZoneForCET = &TimeZone{Abbreviation: "CET"}
 var TimeZoneForCT = &TimeZone{Abbreviation: "CT"}
@@ -249,6 +257,31 @@ func TestParse(t *testing.T) {
 		{in: "1, 2, 3, 4 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04)},
 		{in: "1, 2, 3, 4, 5 Feb 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Feb04, DateFor2023Feb05)},
 		{in: "1, 2, 3 Feb and 2 Mar 2023", want: NewRangesWithStartDates(DateFor2023Feb01, DateFor2023Feb02, DateFor2023Feb03, DateFor2023Mar02)},
+
+		// Day list with time range and timezone (single month)
+		{in: "Course Schedule: 1, 3, 8, 10 February 2023 07:00 AM \u2013 11:00 AM (SAST)", want: NewRangesFromDatesTimeRange(
+			[]*Date{DateFor2023Feb01, DateFor2023Feb03, DateFor2023Feb08, DateFor2023Feb10},
+			TimeFor07AM, TimeFor11AM, TimeZoneForSAST)},
+		// Broken time colon from HTML strip ("07: 00" instead of "07:00")
+		{in: "Course Schedule: 1, 3, 8, 10 February 2023 07: 00 AM \u2013 11: 00 AM (SAST)", want: NewRangesFromDatesTimeRange(
+			[]*Date{DateFor2023Feb01, DateFor2023Feb03, DateFor2023Feb08, DateFor2023Feb10},
+			TimeFor07AM, TimeFor11AM, TimeZoneForSAST)},
+		// Multi-timezone lines — only first timezone (SAST) should be captured
+		{in: "Course Schedule: 18, 19, 24, 26 February 2023 17:00 PM \u2013 21:00 PM (SAST) 07: 00 AM \u2013 11:00 PM (PST) 11:00 AM \u2013 15:00 PM (EDT)", want: NewRangesFromDatesTimeRange(
+			[]*Date{DateFor2023Feb18, DateFor2023Feb19, DateFor2023Feb24, DateFor2023Feb26},
+			TimeFor05PM, TimeFor09PM, TimeZoneForSAST)},
+		// Multi-month day list with time range and timezone (DM order)
+		{in: "23, 25, 30 March, and 1 April 2023 17:00 PM \u2013 21:00 PM (SAST)", want: NewRangesFromDatesTimeRange(
+			[]*Date{NewRawDateFromYMD(2023, 3, 23), NewRawDateFromYMD(2023, 3, 25), NewRawDateFromYMD(2023, 3, 30), NewRawDateFromYMD(2023, 4, 1)},
+			TimeFor05PM, TimeFor09PM, TimeZoneForSAST)},
+		// Multi-month with full noisy description text (aephoriagroup real-world input)
+		{in: "Accredit in Aephoria Colleagues advanced accreditations. Course schedule: 23, 25, 30 March, and 1 April 2023 17:00 PM \u2013 21:00 PM (SAST) 08:00 AM \u2013 12:00 PM (PDT) 11:00 AM \u2013 15:00 PM (EDT)", want: NewRangesFromDatesTimeRange(
+			[]*Date{NewRawDateFromYMD(2023, 3, 23), NewRawDateFromYMD(2023, 3, 25), NewRawDateFromYMD(2023, 3, 30), NewRawDateFromYMD(2023, 4, 1)},
+			TimeFor05PM, TimeFor09PM, TimeZoneForSAST)},
+		// Multi-month without "and" — comma between months: "30 June, 2 July 2023"
+		{in: "Course schedule: 23, 25, 30 June, 2 July 2023 17:00 PM \u2013 21:00 PM (SAST)", want: NewRangesFromDatesTimeRange(
+			[]*Date{NewRawDateFromYMD(2023, 6, 23), NewRawDateFromYMD(2023, 6, 25), NewRawDateFromYMD(2023, 6, 30), NewRawDateFromYMD(2023, 7, 2)},
+			TimeFor05PM, TimeFor09PM, TimeZoneForSAST)},
 
 		//
 		// Date Range

@@ -92,9 +92,11 @@ var circaRE = regexp.MustCompile(`(?i)\bca\.(\d)`)
 // Example: "3:00 PM 15:00" → collapseRedundantTimes strips the "15:00".
 var redundantTimeRE = regexp.MustCompile(`(?i)(\d{1,2}:\d{2}\s+[AP]M)\s+(\d{1,2}:\d{2})`)
 
-// noiseLabelRE matches venue format labels "Doors:" and "Show:" that precede times
-// in event listings. The colon would be consumed as a DatePrefix by the parser.
-var noiseLabelRE = regexp.MustCompile(`(?i)\b(?:doors|show)\s*:`)
+// noiseLabelRE matches labels that precede dates/times in event listings.
+// The colon would be consumed as a DatePrefix by the parser, and the label
+// words become IDENT tokens that confuse the GLR parser's scoring.
+// Examples: "Doors: 8PM", "Show: 9PM", "Course Schedule: 1, 3 Feb 2023"
+var noiseLabelRE = regexp.MustCompile(`(?i)\b(?:doors|show|course\s+schedule|schedule)\s*:`)
 
 // noiseAgePlusRE matches age restrictions like "21+" with optional suffix text
 // (e.g. "21+RSVP DOES NOT GUARANTEE ENTRY") up to the next "/" or end of string.
@@ -109,6 +111,31 @@ var noiseSessionsRE = regexp.MustCompile(`(?i)\(\s*\d+\s+sessions?\s*\)`)
 // noiseNewRE matches "NEW" at the start of an input (event title marker).
 // Case-sensitive uppercase only to avoid stripping "New" in "New York" etc.
 var noiseNewRE = regexp.MustCompile(`^\s*NEW\b`)
+
+// commaBeforeAndRE strips commas before "and" in day lists like "30 March, and 1 April".
+// The comma is consumed as RangesSep by the grammar, breaking the DayPlus Month AND
+// DayPlus Month pattern. Without this, "30 March, and" splits at the comma.
+var commaBeforeAndRE = regexp.MustCompile(`(?i),\s+and\b`)
+
+// multiMonthCommaRE normalizes "30 June, 2 July" to "30 June and 2 July" by replacing
+// the comma between Month and Day-Month with " and". Without "and", the grammar has no
+// rule to bind both months to a shared trailing Year, so the first month's items get year=0.
+// Matches DM order only: "Day(s) Month, Day(s) Month" where Month is a full or abbreviated name.
+var multiMonthCommaRE = regexp.MustCompile(`(?i)(` + monthNamesRE + `)\s*,\s*(\d{1,2}\s+` + monthNamesRE + `)`)
+
+// monthNamesRE matches English month names (full and 3-letter abbreviations).
+const monthNamesRE = `(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)`
+
+// extraTimezoneBlockRE strips additional timezone blocks after the first parenthesized
+// timezone. Common in aephoriagroup listings: "17:00 – 21:00 (SAST) 08:00 – 12:00 (PDT)".
+// Only the first timezone is relevant; subsequent ones are alternate displays.
+var extraTimezoneBlockRE = regexp.MustCompile(`(?i)(\([A-Z]{2,5}\))\s+\d{1,2}:\s*\d{2}\s*[AP]M\s*[–\-]\s*\d{1,2}:\s*\d{2}\s*[AP]M\s*\([A-Z]{2,5}\)`)
+
+// brokenTimeColonRE collapses stray spaces in time patterns like "07: 00" → "07:00".
+// Common artifact from HTML strip_tags + collapse_spaces where "07:<br>00" or
+// "07:</span> <span>00" becomes "07: 00". Only matches when exactly 2 digits
+// follow the colon (minutes), avoiding date-time separators like "3: 9am".
+var brokenTimeColonRE = regexp.MustCompile(`\b(\d{1,2}):\s+(\d{2})\b`)
 
 // colonDateTimeSepRE converts a colon between a day number and a time into a comma.
 // In "February 3: 9am", the colon is a presentational separator, not a time separator.
@@ -273,7 +300,22 @@ func preprocess(input string) preprocessResult {
 	// Collapse redundant 24h times after their 12h equivalents (Google Calendar ICS).
 	input = collapseRedundantTimes(input)
 
-	// Separator conversion.
+	// Strip extra timezone blocks (keep only first). Apply repeatedly for 3+ TZ blocks.
+	for extraTimezoneBlockRE.MatchString(input) {
+		input = extraTimezoneBlockRE.ReplaceAllString(input, "$1")
+	}
+
+	// Normalize comma-before-and to just "and" for day list grammar.
+	input = commaBeforeAndRE.ReplaceAllString(input, " and")
+
+	// Normalize multi-month comma to "and": "30 June, 2 July" → "30 June and 2 July".
+	// Must run after commaBeforeAndRE (which handles ", and" → " and").
+	input = multiMonthCommaRE.ReplaceAllString(input, "$1 and $2")
+
+	// Separator conversion: broken time colons.
+	input = brokenTimeColonRE.ReplaceAllString(input, "$1:$2")
+
+	// Separator conversions.
 	input = colonDateTimeSepRE.ReplaceAllString(input, "$1, $2")
 	input = slashTimesSepRE.ReplaceAllString(input, "$1, $2")
 

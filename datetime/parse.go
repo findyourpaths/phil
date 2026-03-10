@@ -186,6 +186,24 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 		rs.Recurrence = lexer.recurrence
 	}
 
+	// Resolve missing years using minimumDateTime. Grammar actions like
+	// NewRangesWithStartDates create Dates that bypass NewDateTime (and thus
+	// setNewDateYear). NewRange propagates year across start/end within a
+	// range, but day-list items (DayPlus1 Month without Year) have no range
+	// partner to inherit from. Fix them here after all parsing is complete.
+	if minimumDateTime != nil {
+		for _, item := range rs.Items {
+			if item.Start != nil && item.Start.Date != nil && item.Start.Date.Year == 0 &&
+				item.Start.Date.Month != 0 && item.Start.Date.Day != 0 {
+				setNewDateYear(item.Start.Date)
+			}
+			if item.End != nil && item.End.Date != nil && item.End.Date.Year == 0 &&
+				item.End.Date.Month != 0 && item.End.Date.Day != 0 {
+				setNewDateYear(item.End.Date)
+			}
+		}
+	}
+
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
 	cache[key] = rs

@@ -205,6 +205,14 @@ DateTimeRanges:
 | Month DayPlus1 Time RangeSepOpt Time TimeZone {$$ = NewRangesFromDatesTimeRange(NewRawDateFromMDsYs($1, $2, nil), $3, $5, $6)}
   // "1, 8, and 15 February 9:00am - 12:00pm (ET)" (DM)
 | DayPlus1 Month Time RangeSepOpt Time TimeZone {$$ = NewRangesFromDatesTimeRange(NewRawDateFromDsMYs($1, $2, nil), $3, $5, $6)}
+  // "February 1, 8, 10 2023 7:00am - 11:00am (SAST)" — multi-day with year and time range (MD)
+| Month DayPlus1 Year Time RangeSepOpt Time TimeZoneOpt {$$ = NewRangesFromDatesTimeRange(NewRawDateFromMDsYs($1, $2, $3), $4, $6, $7)}
+  // "1, 8, 10 February 2023 7:00am - 11:00am (SAST)" (DM)
+| DayPlus1 Month Year Time RangeSepOpt Time TimeZoneOpt {$$ = NewRangesFromDatesTimeRange(NewRawDateFromDsMYs($1, $2, $3), $4, $6, $7)}
+  // "1, 3 Feb and 2 Mar 2023 5pm - 9pm (SAST)" — multi-month day list with year and time range (DM)
+| DayPlus Month AND DayPlus Month Year Time RangeSepOpt Time TimeZoneOpt {$$ = NewRangesFromDatesTimeRange(append(NewRawDateFromDsMYs($1, $2, $6), NewRawDateFromDsMYs($4, $5, $6)...), $7, $9, $10)}
+  // "Feb 1, 3 and Mar 2 2023 5pm - 9pm (SAST)" (MD)
+| Month DayPlus AND Month DayPlus Year Time RangeSepOpt Time TimeZoneOpt {$$ = NewRangesFromDatesTimeRange(append(NewRawDateFromMDsYs($1, $2, $6), NewRawDateFromMDsYs($4, $5, $6)...), $7, $9, $10)}
   // "Feb. 3, 2023 12:00pm, 3:00pm" — comma-separated times sharing a date
   // Use COLON (not TimeSep which includes PERIOD) to avoid matching "Thu, 02.03.2023"
 | DateTime COMMA INT COLON INT Am {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewAMTime($3, $5, nil, nil), $1.TimeZone)))}
