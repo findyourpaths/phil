@@ -126,10 +126,15 @@ var multiMonthCommaRE = regexp.MustCompile(`(?i)(` + monthNamesRE + `)\s*,\s*(\d
 // monthNamesRE matches English month names (full and 3-letter abbreviations).
 const monthNamesRE = `(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)`
 
-// extraTimezoneBlockRE strips additional timezone blocks after the first parenthesized
-// timezone. Common in aephoriagroup listings: "17:00 – 21:00 (SAST) 08:00 – 12:00 (PDT)".
-// Only the first timezone is relevant; subsequent ones are alternate displays.
-var extraTimezoneBlockRE = regexp.MustCompile(`(?i)(\([A-Z]{2,5}\))\s+\d{1,2}:\s*\d{2}\s*[AP]M\s*[–\-]\s*\d{1,2}:\s*\d{2}\s*[AP]M\s*\([A-Z]{2,5}\)`)
+// extraTimezoneBlockRE strips alternate timezone displays after the first
+// parenthesized timezone abbreviation. Common in multi-timezone listings like:
+//
+//	"17:00 – 21:00 (SAST) 08:00 – 12:00 (PDT)"
+//	"07:00 AM – 11:00 AM (SAST) 09:00 AM – 13:00 PM (GMT+4) DUBAI ..."
+//
+// Keeps the first "(TZ)" and discards everything after it when followed by
+// a time-range pattern (indicating alternate timezone displays).
+var extraTimezoneBlockRE = regexp.MustCompile(`(?i)(\([A-Z]{2,5}\))\s+\d{1,2}:\s*\d{2}\s*(?:[AP]M\s*)?[–\-].*`)
 
 // brokenTimeColonRE collapses stray spaces in time patterns like "07: 00" → "07:00".
 // Common artifact from HTML strip_tags + collapse_spaces where "07:<br>00" or
