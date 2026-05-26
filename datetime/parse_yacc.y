@@ -34,6 +34,7 @@ package datetime
 %token RPAREN
 %token SAVE
 %token SEMICOLON
+%token STARTS
 %token SUB
 %token THROUGH
 %token T
@@ -45,6 +46,7 @@ package datetime
 %token TO
 %token UNTIL
 %token WHEN
+%token ENDS
 %token Z
 
 %token <string> IDENT
@@ -260,6 +262,10 @@ DayPlus1:
 
 DateTimeRange:
   DateTime {$$ = NewRangeWithStart($1)}
+
+| DatePrefixPlus DateTimeRange {$$ = $2}
+| STARTS ColonOpt DateTime ENDS ColonOpt DateTime {$$ = NewRange($3, $6)}
+| STARTS ColonOpt DateTime {$$ = NewRangeWithStart($3)}
 
 // TODO: we should handle semantics of this weekday, but not clear how.
 | DateTimeRange DateTimeSepOpt ON Weekday {$$ = $1}

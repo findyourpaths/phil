@@ -65,6 +65,7 @@ var DateFor2023Feb22 = NewRawDateFromYMD(2023, 2, 22)
 var DateFor2023Mar01 = NewRawDateFromYMD(2023, 3, 1)
 var DateFor2023Mar02 = NewRawDateFromYMD(2023, 3, 2)
 var DateFor2023Mar03 = NewRawDateFromYMD(2023, 3, 3)
+var DateFor2026Jun19 = NewRawDateFromYMD(2026, 6, 19)
 
 // --- Date range shortcuts (heavily reused) ---
 
@@ -87,6 +88,8 @@ var TimeFor12PM = &Time{Hour: 12}
 var TimeFor12_30PM = &Time{Hour: 12, Minute: 30}
 var TimeFor02PM = &Time{Hour: 14}
 var TimeFor03PM = &Time{Hour: 15}
+var TimeFor04PM = &Time{Hour: 16}
+var TimeFor04_30PM = &Time{Hour: 16, Minute: 30}
 var TimeFor05PM = &Time{Hour: 17}
 var TimeFor06PM = &Time{Hour: 18}
 var TimeFor06_30PM = &Time{Hour: 18, Minute: 30}
@@ -102,7 +105,9 @@ var TimeZoneForSAST = &TimeZone{Abbreviation: "SAST"}
 
 var TimeZoneForCET = &TimeZone{Abbreviation: "CET"}
 var TimeZoneForCT = &TimeZone{Abbreviation: "CT"}
+var TimeZoneForCDT = &TimeZone{Abbreviation: "CDT"}
 var TimeZoneForET = &TimeZone{Abbreviation: "ET"}
+var TimeZoneForEDT = &TimeZone{Abbreviation: "EDT"}
 var TimeZoneForEST = &TimeZone{Abbreviation: "EST"}
 var TimeZoneForEastern = &TimeZone{Name: "Eastern"}
 var TimeZoneForMST = &TimeZone{Abbreviation: "MST"}
@@ -486,6 +491,10 @@ func TestParse(t *testing.T) {
 		{in: "Friday 2/3 from 12:00 - 3 pm ET", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor12PM, TimeZoneForET), dt(DateForFeb03, TimeFor03PM, TimeZoneForET))},
 		//    Sunday, October 6, 9am - 4pm Pacific Time
 		{in: "Friday, February 3, 9am - 12pm Eastern Time", want: NewRangesWithStartEndDateTimes(dt(DateForFeb03, TimeFor09AM, TimeZoneForET), dt(DateForFeb03, TimeFor12PM, TimeZoneForET))},
+		{in: "Sat, February 4 · 4:00 PM PST", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb04, TimeFor04PM, TimeZoneForPST)), minDT: dt(DateFor2023Feb10, TimeFor09AM, TimeZoneForCT)},
+		{in: "Saturday, February 4 · 6:00 PM to 8:00 PM CDT", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb04, TimeFor06PM, TimeZoneForCDT), dt(DateFor2023Feb04, TimeFor08PM, TimeZoneForCDT)), minDT: dt(DateFor2023Feb10, TimeFor09AM, TimeZoneForCT)},
+		{in: "Saturday, February 4, 2023 · 6:00 PM to 8:00 PM CDT", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb04, TimeFor06PM, TimeZoneForCDT), dt(DateFor2023Feb04, TimeFor08PM, TimeZoneForCDT))},
+		{in: "Venue Online, via Zoom Starts Fri Jun 19 2026, 3:00pm EDT Ends Fri Jun 19 2026, 4:30pm EDT", want: NewRangesWithStartEndDateTimes(dt(DateFor2026Jun19, TimeFor03PM, TimeZoneForEDT), dt(DateFor2026Jun19, TimeFor04_30PM, TimeZoneForEDT))},
 		{in: "February 3, 2023 from 9:00 am to noon ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},
 		// {in: "February 3, 2023 / 9:00 AM", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor09AM, nil)), wantDiff: true},
 		{in: "February 3, 2023 / 9:00 AM - 12:00 PM ET", want: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor09AM, TimeZoneForET), dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET))},

@@ -412,6 +412,9 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			case "—":
 				return SUB
 
+			case "·":
+				return COMMA
+
 			default:
 				return ILLEGAL
 			}
@@ -467,6 +470,10 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return PM
 			case "save":
 				return SAVE
+			case "start", "starts":
+				return STARTS
+			case "end", "ends":
+				return ENDS
 			case "through":
 				return THROUGH
 			case "t":

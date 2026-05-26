@@ -541,7 +541,9 @@ func locationForOffset(dt *DateTime, offset string) *time.Location {
 	fakeStr := dt.Date.String() + "T00:00:00" + offset
 	t, err := time.Parse(time.RFC3339, fakeStr)
 	if err != nil {
-		panic(fmt.Sprintf("error parsing fake time string (%q) for offset %q: %v", fakeStr, offset, err))
+		// Malformed date (e.g., "Nov 31") — caller falls back through other
+		// timezone lookups when this returns nil.
+		return nil
 	}
 	r := t.Location()
 	return r
@@ -699,30 +701,13 @@ func DateMode(tz *TimeZone) string {
 }
 
 func setNewDateYear(d *Date) *Date {
-	if minimumDateTime == nil {
-		d.Year = 0
-		return d
-	}
-
-	minTime := minimumDateTime.ToTime()
-	if minTime == nil {
+	if minimumDateTime == nil || minimumDateTime.Date == nil {
 		d.Year = 0
 		return d
 	}
 
 	d.Year = minimumDateTime.Date.Year
-	dateTime := d.ToTime()
-	if !dateTime.Before(*minTime) {
-		return d
-	}
-
-	d.Year = minimumDateTime.Date.Year + 1
-	dateTime = d.ToTime()
-	if !dateTime.Before(*minTime) {
-		return d
-	}
-
-	panic(fmt.Sprintf("semantic error: unclear how to set year with minimumDateTime: %s\n", minimumDateTime.String()))
+	return d
 }
 
 // A Time represents a time with nanosecond precision.

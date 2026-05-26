@@ -259,7 +259,7 @@ go test -v
 
 **Shared standards** (parent level):
 - [go_style.md](../docs/go/go_style.md) - Go coding conventions
-- [llm_workflow.md](../docs/llm/llm_workflow.md) - LLM collaboration patterns
+- [WORKFLOW.md](../docs/WORKFLOW.md) - LLM collaboration patterns
 - [go_testing.md](../docs/go/go_testing.md) - Testing patterns
 
 **Project-specific**:
