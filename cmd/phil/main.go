@@ -25,7 +25,12 @@ func main() {
 		Time: &datetime.Time{},
 	}
 
-	parsed, err := datetime.Parse(minDT, datetime.DateModeNorthAmerican, input)
+	parsed, err := datetime.Parse(input, datetime.ParseOptions{
+		MinDateTime:     minDT,
+		DateMode:        datetime.DateModeNorthAmerican,
+		DefaultLocation: time.Local,
+		DefaultYear:     now.Year(),
+	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 		os.Exit(1)

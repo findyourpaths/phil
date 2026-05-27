@@ -11,10 +11,6 @@ import (
 	"github.com/samber/lo"
 )
 
-var minimumDateTime *DateTime
-
-var parseDateMode string
-
 var DateModeUnknown = ""
 
 // North American tends to parse dates as month-day-year.
@@ -120,7 +116,7 @@ func NewRangesWithStartEndDateTimes(start *DateTime, end *DateTime) *DateTimeRan
 type Frequency int
 
 const (
-	FrequencyDaily   Frequency = iota + 1
+	FrequencyDaily Frequency = iota + 1
 	FrequencyWeekly
 	FrequencyMonthly
 	FrequencyYearly
@@ -149,11 +145,11 @@ var frequencySteps = map[Frequency][3]int{
 // Recurrence captures recurrence metadata for patterns like
 // "5 Wednesdays 9:00am-12:00pm February 1st - March 1st".
 type Recurrence struct {
-	Frequency  Frequency       // how often the event repeats (daily, weekly, etc.)
-	Weekdays   []time.Weekday  // e.g. [Tue, Thu] for "Tuesdays and Thursdays"
-	NthWeekday []int           // e.g. [2, 4] for "2nd and 4th"
-	Count      int             // "5 Wednesdays" → 5 (0 means use Until)
-	Until      *Date           // end boundary date (alternative to Count)
+	Frequency  Frequency      // how often the event repeats (daily, weekly, etc.)
+	Weekdays   []time.Weekday // e.g. [Tue, Thu] for "Tuesdays and Thursdays"
+	NthWeekday []int          // e.g. [2, 4] for "2nd and 4th"
+	Count      int            // "5 Wednesdays" → 5 (0 means use Until)
+	Until      *Date          // end boundary date (alternative to Count)
 }
 
 // String returns a human-readable representation of the recurrence.
@@ -220,11 +216,19 @@ func (rngs *DateTimeRanges) Occurrences() []*DateTimeRange {
 		if first.End != nil {
 			endCurrent := current.AddDate(0, 0, endDayDelta)
 			endDate := &Date{Year: endCurrent.Year(), Month: endCurrent.Month(), Day: endCurrent.Day()}
-			endDT = &DateTime{Date: endDate, Time: first.End.Time, TimeZone: first.End.TimeZone}
+			endDT = &DateTime{
+				Date:     endDate,
+				Time:     first.End.Time,
+				TimeZone: timeZoneForOccurrence(first.End.TimeZone, endDate, first.End.Time),
+			}
 		}
 		result = append(result, &DateTimeRange{
-			Start: &DateTime{Date: startDate, Time: first.Start.Time, TimeZone: first.Start.TimeZone},
-			End:   endDT,
+			Start: &DateTime{
+				Date:     startDate,
+				Time:     first.Start.Time,
+				TimeZone: timeZoneForOccurrence(first.Start.TimeZone, startDate, first.Start.Time),
+			},
+			End: endDT,
 		})
 		current = current.AddDate(step[0], step[1], step[2])
 	}
@@ -478,15 +482,6 @@ func NewDateTimeWithTimeAndTimeZone(tt time.Time, abbreviation string, offset *i
 func NewDateTime(d *Date, t *Time, tz *TimeZone) *DateTime {
 	r := &DateTime{Date: d, Time: t, TimeZone: tz}
 
-	// If we have Date and Time info but no TimeZone, get it from Min if it exists.
-	if r.TimeZone == nil &&
-		r.Date != nil &&
-		r.Time != nil &&
-		minimumDateTime != nil &&
-		minimumDateTime.TimeZone != nil {
-		r.TimeZone = minimumDateTime.TimeZone
-	}
-
 	// If we have an unofficial TimeZone Name, replace it with an Abbreviation (e.g. "Eastern" -> "ET").
 	if r.TimeZone != nil &&
 		r.TimeZone.Name != "" {
@@ -573,10 +568,10 @@ func locationForAbbreviation(dt *DateTime, abbrev string) *time.Location {
 //
 // When a field is unspecified, it holds 0.
 type Date struct {
-	Year  int        // Year (e.g., 2014), starting at 1.
-	Month time.Month // Month of the year, starting at 1 for January.
-	Day   int        // Day of the month, starting at 1.
-	unknown []any          // Unprocessed Day and Month, with order depending upon the DateMode.
+	Year    int           // Year (e.g., 2014), starting at 1.
+	Month   time.Month    // Month of the year, starting at 1 for January.
+	Day     int           // Day of the month, starting at 1.
+	unknown []any         // Unprocessed Day and Month, with order depending upon the DateMode.
 	wd      *time.Weekday // nil = unset, non-nil = specific weekday
 }
 
@@ -605,10 +600,7 @@ func NewDateFromRaw(d *Date, tz *TimeZone) *Date {
 
 	dm := DateMode(tz)
 	if dm == DateModeUnknown {
-		dm = parseDateMode
-	}
-	if dm == DateModeUnknown && minimumDateTime != nil {
-		dm = DateMode(minimumDateTime.TimeZone)
+		dm = parseCtx.dateMode
 	}
 
 	// If we now know the DateMode for the Month and Day, process the raw Date.
@@ -701,12 +693,16 @@ func DateMode(tz *TimeZone) string {
 }
 
 func setNewDateYear(d *Date) *Date {
-	if minimumDateTime == nil || minimumDateTime.Date == nil {
+	if parseCtx.defaultYear != 0 {
+		d.Year = parseCtx.defaultYear
+		return d
+	}
+	if parseCtx.minimumDateTime == nil || parseCtx.minimumDateTime.Date == nil {
 		d.Year = 0
 		return d
 	}
 
-	d.Year = minimumDateTime.Date.Year
+	d.Year = parseCtx.minimumDateTime.Date.Year
 	return d
 }
 
@@ -775,6 +771,50 @@ func (tz *TimeZone) IANAName() string {
 	}
 
 	return ""
+}
+
+func timeForLocation(loc *time.Location, d *Date, tm *Time) time.Time {
+	h, m, s, nanos := 0, 0, 0, 0
+	if tm != nil {
+		h, m, s, nanos = tm.Hour, tm.Minute, tm.Second, tm.Nanosecond
+	}
+	return time.Date(d.Year, d.Month, d.Day, h, m, s, nanos, loc)
+}
+
+func timeZoneForLocation(loc *time.Location, d *Date, tm *Time) *TimeZone {
+	if loc == nil || d == nil || d.Year == 0 || d.Month == 0 || d.Day == 0 {
+		return nil
+	}
+	t := timeForLocation(loc, d, tm)
+	abbr, offsetSec := t.Zone()
+	return &TimeZone{
+		Name:         loc.String(),
+		Abbreviation: abbr,
+		Offset:       formatOffset(offsetSec),
+	}
+}
+
+func timeZoneForOccurrence(tz *TimeZone, d *Date, tm *Time) *TimeZone {
+	if tz == nil || tz.Name == "" {
+		return tz
+	}
+	name := tz.IANAName()
+	if name == "" {
+		return tz
+	}
+	loc := locationForName(name)
+	return timeZoneForLocation(loc, d, tm)
+}
+
+func formatOffset(offsetSec int) string {
+	sign := "+"
+	if offsetSec < 0 {
+		sign = "-"
+		offsetSec = -offsetSec
+	}
+	hours := offsetSec / 3600
+	minutes := (offsetSec % 3600) / 60
+	return fmt.Sprintf("%s%02d:%02d", sign, hours, minutes)
 }
 
 func NewTimeZone(nameAny any, abbrevAny any, offsetAny any) *TimeZone {
@@ -900,37 +940,37 @@ var ordinals = map[string]bool{
 }
 
 var weekdaysByNames = map[string]time.Weekday{
-	"su":          time.Sunday,
-	"sun":         time.Sunday,
-	"sunday":      time.Sunday,
-	"sundays":     time.Sunday,
-	"mo":          time.Monday,
-	"mon":         time.Monday,
-	"monday":      time.Monday,
-	"mondays":     time.Monday,
-	"tu":          time.Tuesday,
-	"tue":         time.Tuesday,
-	"tues":        time.Tuesday,
-	"tuesday":     time.Tuesday,
-	"tuesdays":    time.Tuesday,
-	"we":          time.Wednesday,
-	"wed":         time.Wednesday,
-	"weds":        time.Wednesday,
-	"wednesday":   time.Wednesday,
-	"wednesdays":  time.Wednesday,
-	"th":          time.Thursday,
-	"thu":         time.Thursday,
-	"thus":        time.Thursday,
-	"thursday":    time.Thursday,
-	"thursdays":   time.Thursday,
-	"fr":          time.Friday,
-	"fri":         time.Friday,
-	"friday":      time.Friday,
-	"fridays":     time.Friday,
-	"sa":          time.Saturday,
-	"sat":         time.Saturday,
-	"saturday":    time.Saturday,
-	"saturdays":   time.Saturday,
+	"su":         time.Sunday,
+	"sun":        time.Sunday,
+	"sunday":     time.Sunday,
+	"sundays":    time.Sunday,
+	"mo":         time.Monday,
+	"mon":        time.Monday,
+	"monday":     time.Monday,
+	"mondays":    time.Monday,
+	"tu":         time.Tuesday,
+	"tue":        time.Tuesday,
+	"tues":       time.Tuesday,
+	"tuesday":    time.Tuesday,
+	"tuesdays":   time.Tuesday,
+	"we":         time.Wednesday,
+	"wed":        time.Wednesday,
+	"weds":       time.Wednesday,
+	"wednesday":  time.Wednesday,
+	"wednesdays": time.Wednesday,
+	"th":         time.Thursday,
+	"thu":        time.Thursday,
+	"thus":       time.Thursday,
+	"thursday":   time.Thursday,
+	"thursdays":  time.Thursday,
+	"fr":         time.Friday,
+	"fri":        time.Friday,
+	"friday":     time.Friday,
+	"fridays":    time.Friday,
+	"sa":         time.Saturday,
+	"sat":        time.Saturday,
+	"saturday":   time.Saturday,
+	"saturdays":  time.Saturday,
 }
 
 // weekdayFromName converts a weekday name string to *time.Weekday.
@@ -1003,10 +1043,10 @@ var northAmericanTimeZoneAbbreviations = map[string]bool{
 // Single-char timezone abbreviations are now ignored via length check in parse_lex.go
 
 func NewRawDateFromRelative(relativeName string) *Date {
-	if minimumDateTime == nil {
+	if parseCtx.minimumDateTime == nil {
 		panic(fmt.Sprintf("semantic error: found relativeName %q but minimumDateTimeName is nil\n", relativeName))
 	}
-	minT := time.Date(minimumDateTime.Date.Year, minimumDateTime.Date.Month, minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
+	minT := time.Date(parseCtx.minimumDateTime.Date.Year, parseCtx.minimumDateTime.Date.Month, parseCtx.minimumDateTime.Date.Day, 0, 0, 0, 0, time.UTC)
 
 	relName := strings.ToLower(relativeName)
 	if relName == "yesterday" {
@@ -1014,7 +1054,7 @@ func NewRawDateFromRelative(relativeName string) *Date {
 		return &Date{Day: d, Month: m, Year: y}
 	}
 	if relName == "today" {
-		return minimumDateTime.Date
+		return parseCtx.minimumDateTime.Date
 	}
 	if relName == "tomorrow" {
 		y, m, d := minT.AddDate(0, 0, 1).Date()

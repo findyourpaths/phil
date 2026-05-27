@@ -412,6 +412,9 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			case "—":
 				return SUB
 
+			case "•":
+				return BULLET
+
 			case "·":
 				return COMMA
 
@@ -452,10 +455,10 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 			case "midnight":
 				return TIME_NAME
 			// "next" treated as IDENT to avoid consuming it as WeekdayPrefix
-		// when it appears as noise in sentences (e.g. "Our next cohort...").
-		// The WeekdayPrefix grammar rule discards the prefix anyway.
-		// case "next":
-		// 	return NEXT
+			// when it appears as noise in sentences (e.g. "Our next cohort...").
+			// The WeekdayPrefix grammar rule discards the prefix anyway.
+			// case "next":
+			// 	return NEXT
 			case "noon":
 				return TIME_NAME
 			case "of":

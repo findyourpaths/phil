@@ -45,11 +45,29 @@ var timezoneTZ = timezone.New()
 var cache = map[string]*DateTimeRanges{}
 var cacheMutex sync.RWMutex
 
-// parseMutex protects the global variables minimumDateTime and parseDateMode
+// ParseOptions configures parse-time context that the grammar cannot infer
+// from the input text alone.
+type ParseOptions struct {
+	MinDateTime     *DateTime
+	DateMode        string
+	DefaultLocation *time.Location
+	DefaultYear     int
+}
+
+type parserContext struct {
+	minimumDateTime *DateTime
+	dateMode        string
+	defaultLocation *time.Location
+	defaultYear     int
+}
+
+var parseCtx parserContext
+
+// parseMutex protects parseCtx
 // during Parse(). The GLR action system uses reflection to call action functions
 // with only their parsed child values — there is no way to thread a context
 // parameter through the action function signatures. The mutex serializes parsing
-// to ensure these globals remain stable for the duration of each Parse() call.
+// to ensure the context remains stable for the duration of each Parse() call.
 // This is acceptable because Parse() is CPU-only (microseconds per call).
 var parseMutex sync.Mutex
 
@@ -93,8 +111,10 @@ func looksLikeDate(s string) bool {
 	return false
 }
 
-func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, error) {
-	// fmt.Printf("datetime.Parse(year: %d, dateMode: %q, timeZone: %#v, in: %q)\n", year, dateMode, timeZone, in)
+func Parse(in string, opts ParseOptions) (rngs *DateTimeRanges, err error) {
+	if err := validateDateMode(opts.DateMode); err != nil {
+		return nil, err
+	}
 
 	// Pre-validation: reject strings that clearly aren't dates before invoking the GLR parser.
 	// This prevents panics from the parser trying to interpret random text as timezones.
@@ -107,16 +127,22 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	if yearMonthRE.MatchString(strings.TrimSpace(in)) {
 		year, _ := strconv.Atoi(in[:4])
 		month, _ := strconv.Atoi(in[5:7])
-		return NewRangesWithStartDates(&Date{Year: year, Month: time.Month(month)}), nil
+		rs := NewRangesWithStartDates(&Date{Year: year, Month: time.Month(month)})
+		if err := stampDateTimeRangesDefaultTZ(rs, opts.DefaultLocation); err != nil {
+			return nil, err
+		}
+		return rs, nil
 	}
 
 	defer func() {
-		if err := recover(); err != nil {
-			slog.Warn("in Parse(), got a panic trying to extract", "in", in, "err", err)
+		if recovered := recover(); recovered != nil {
+			slog.Warn("in Parse(), got a panic trying to extract", "in", in, "err", recovered)
+			rngs = nil
+			err = fmt.Errorf("phil.Parse: panic parsing %q: %v", in, recovered)
 		}
 	}()
 
-	key := fmt.Sprintf("%q %q %q", minDateTime.String(), dateMode, in)
+	key := parseCacheKey(in, opts)
 	cacheMutex.RLock()
 	r, found := cache[key]
 	cacheMutex.RUnlock()
@@ -137,12 +163,19 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	// Lock to protect global variables (minimumDateTime, parseDateMode) that are
 	// read by functions called during GLR parsing via reflection-based actions.
 	parseMutex.Lock()
-	defer parseMutex.Unlock()
+	parseCtx = parserContext{
+		minimumDateTime: opts.MinDateTime,
+		dateMode:        normalizedDateMode(opts.DateMode),
+		defaultLocation: opts.DefaultLocation,
+		defaultYear:     opts.DefaultYear,
+	}
+	defer func() {
+		parseCtx = parserContext{}
+		parseMutex.Unlock()
+	}()
 
-	minimumDateTime = minDateTime
-	debugf("minimumDateTime: %q\n", minimumDateTime.String())
-	parseDateMode = dateMode
-	debugf("parseDateMode: %q\n", parseDateMode)
+	debugf("minimumDateTime: %q\n", parseCtx.minimumDateTime.String())
+	debugf("parseDateMode: %q\n", parseCtx.dateMode)
 
 	g := &glr.Grammar{
 		Rules:   datetimeRules,
@@ -191,7 +224,7 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 	// setNewDateYear). NewRange propagates year across start/end within a
 	// range, but day-list items (DayPlus1 Month without Year) have no range
 	// partner to inherit from. Fix them here after all parsing is complete.
-	if minimumDateTime != nil {
+	if parseCtx.defaultYear != 0 || parseCtx.minimumDateTime != nil {
 		for _, item := range rs.Items {
 			if item.Start != nil && item.Start.Date != nil && item.Start.Date.Year == 0 &&
 				item.Start.Date.Month != 0 && item.Start.Date.Day != 0 {
@@ -204,9 +237,103 @@ func Parse(minDateTime *DateTime, dateMode string, in string) (*DateTimeRanges, 
 		}
 	}
 
+	if err := stampDateTimeRangesDefaultTZ(rs, opts.DefaultLocation); err != nil {
+		return nil, err
+	}
+
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
 	cache[key] = rs
 	cacheMutex.Unlock()
 	return rs, nil
+}
+
+func validateDateMode(mode string) error {
+	switch mode {
+	case DateModeUnknown, DateModeNorthAmerican, DateModeRest:
+		return nil
+	default:
+		return fmt.Errorf("phil.Parse: invalid DateMode %q; want '', 'na', or 'rest'", mode)
+	}
+}
+
+func normalizedDateMode(mode string) string {
+	if mode == DateModeUnknown {
+		return DateModeNorthAmerican
+	}
+	return mode
+}
+
+func parseCacheKey(in string, opts ParseOptions) string {
+	tzKey := ""
+	if opts.DefaultLocation != nil {
+		tzKey = opts.DefaultLocation.String()
+	}
+	yearKey := ""
+	if opts.DefaultYear != 0 {
+		yearKey = strconv.Itoa(opts.DefaultYear)
+	}
+	return fmt.Sprintf("%q %q %q %q %q", opts.MinDateTime.String(), opts.DateMode, tzKey, yearKey, in)
+}
+
+func stampDateTimeRangesDefaultTZ(rs *DateTimeRanges, loc *time.Location) error {
+	if rs == nil {
+		return nil
+	}
+	for _, item := range rs.Items {
+		if item == nil {
+			continue
+		}
+		if err := stampDefaultTZ(item.Start, loc); err != nil {
+			return err
+		}
+		if err := stampDefaultTZ(item.End, loc); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func stampDefaultTZ(dt *DateTime, loc *time.Location) error {
+	if dt == nil || dt.Date == nil ||
+		dt.Date.Year == 0 || dt.Date.Month == 0 || dt.Date.Day == 0 {
+		return nil
+	}
+	if dt.TimeZone != nil && dt.TimeZone.IANAName() != "" {
+		return nil
+	}
+	if dt.TimeZone != nil && dt.TimeZone.Offset == "" &&
+		(dt.TimeZone.Name != "" || dt.TimeZone.Abbreviation != "") {
+		return fmt.Errorf("phil.Parse: parsed timezone %#v is not IANA-resolvable", dt.TimeZone)
+	}
+	if loc == nil {
+		return fmt.Errorf("phil.Parse: parsed datetime %q has no IANA-resolvable timezone and no DefaultLocation", dt)
+	}
+
+	if dt.TimeZone != nil && dt.TimeZone.Offset != "" {
+		want := offsetForLocation(loc, dt)
+		if !offsetsEqual(dt.TimeZone.Offset, want) {
+			return fmt.Errorf("phil.Parse: parsed datetime %q has numeric offset %s, which does not match DefaultLocation %s offset %s",
+				dt, dt.TimeZone.Offset, loc.String(), want)
+		}
+	}
+
+	dt.TimeZone = timeZoneForLocation(loc, dt.Date, dt.Time)
+	return nil
+}
+
+func offsetForLocation(loc *time.Location, dt *DateTime) string {
+	t := timeForLocation(loc, dt.Date, dt.Time)
+	_, offsetSec := t.Zone()
+	return formatOffset(offsetSec)
+}
+
+func offsetsEqual(got, want string) bool {
+	if got == "-00:00" {
+		got = "+00:00"
+	}
+	if want == "-00:00" {
+		want = "+00:00"
+	}
+	return got == want
 }

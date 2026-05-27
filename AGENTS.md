@@ -39,6 +39,21 @@ Input: "Friday, March 15, 2024" → 2024-03-15
 3. **Parser** (`parse_glr.go`, `parse_yacc.go`) - Generated from grammar
 4. **DateTime types** (`datetime.go`) - Structured date/time representations
 
+### Parser Change Policy
+
+`parse_yacc.y` is the source of truth for datetime syntax. When a parse failure
+or wrong parse is caused by missing syntax, update the grammar first and
+regenerate the parser. Do not add preprocessing regular expressions in
+`parse_lex.go` to work around grammar gaps unless the grammar-first attempt has
+been documented in the change and the remaining problem is demonstrably lexical
+normalization (for example HTML artifacts, token boundaries, or punctuation
+classification). New syntax support should normally include:
+
+1. A failing parser test that names the real input shape.
+2. A `parse_yacc.y` production or token classification change.
+3. Regenerated parser artifacts from `make generate`.
+4. A passing targeted test.
+
 ### Key Types
 
 ```go

@@ -11,6 +11,7 @@ package datetime
 %token AND
 %token AT
 %token BEGINNING
+%token BULLET
 %token CALENDAR
 %token COLON
 %token COMMA
@@ -290,6 +291,12 @@ DateTimeRange:
 | INT Pm TimeZoneOpt RangeSepPlus Time TimeZoneOpt {$$ = NewRange(NewDateTime(nil, NewPMTime($1, nil, nil, nil), $3), NewDateTime(nil, $5, $6))}
 | TIME_NAME TimeZoneOpt RangeSepPlus Time TimeZoneOpt {$$ = NewRange(NewDateTime(nil, NewTime($1, nil, nil, nil), $2), NewDateTime(nil, $4, $5))}
 
+  // "May 28, Wednesday • 16:15 – 16:45"
+| Month Day DateTimeSepPlus Weekday DateTimeSepPlus Time RangeSepOpt Time TimeZoneOpt {$$ = NewRange(NewDateTime(NewRawDateFromWMDY($4, $1, $2, nil), $6, $9), NewDateTime(NewRawDateFromWMDY($4, $1, $2, nil), $8, $9))}
+| Day Month DateTimeSepPlus Weekday DateTimeSepPlus Time RangeSepOpt Time TimeZoneOpt {$$ = NewRange(NewDateTime(NewRawDateFromWDMY($4, $1, $2, nil), $6, $9), NewDateTime(NewRawDateFromWDMY($4, $1, $2, nil), $8, $9))}
+| Month Day Year DateTimeSepPlus Weekday DateTimeSepPlus Time RangeSepOpt Time TimeZoneOpt {$$ = NewRange(NewDateTime(NewRawDateFromWMDY($5, $1, $2, $3), $7, $10), NewDateTime(NewRawDateFromWMDY($5, $1, $2, $3), $9, $10))}
+| Day Month Year DateTimeSepPlus Weekday DateTimeSepPlus Time RangeSepOpt Time TimeZoneOpt {$$ = NewRange(NewDateTime(NewRawDateFromWDMY($5, $1, $2, $3), $7, $10), NewDateTime(NewRawDateFromWDMY($5, $1, $2, $3), $9, $10))}
+
 | DateTime RangeSepPlus Time {$$ = NewRange($1, NewDateTime($1.Date, $3, $1.TimeZone))}
 | DateTime RangeSepPlus Time TimeZone {$$ = NewRange(NewDateTime($1.Date, $1.Time, $4), NewDateTime($1.Date, $3, $4))}
 | Time RangeSepPlus DateTime {$$ = NewRange(NewDateTime($3.Date, $1, $3.TimeZone), $3)}
@@ -381,6 +388,7 @@ DateTimeSepPlus:
 DateTimeSep:
   COLON
 | COMMA
+| BULLET
 | DEC
 | QUO
 | SUB

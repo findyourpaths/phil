@@ -3,6 +3,7 @@ package datetime
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -142,6 +143,193 @@ type parseTest struct {
 	in   string
 	want *DateTimeRanges
 	skip string // non-empty: run parse, if passes t.Fatalf("REMOVE SKIP"), else t.Skip(reason)
+}
+
+var parseTestDefaultLocation = mustLoadLocation("America/New_York")
+
+func mustLoadLocation(name string) *time.Location {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		panic(err)
+	}
+	return loc
+}
+
+func parseTestOptions(t *testing.T, tc parseTest) ParseOptions {
+	t.Helper()
+	loc := parseTestDefaultLocation
+	defaultYear := 0
+	if tc.minDT != nil {
+		if tc.minDT.TimeZone != nil {
+			if name := tc.minDT.TimeZone.IANAName(); name != "" {
+				loaded, err := time.LoadLocation(name)
+				if err != nil {
+					t.Fatalf("loading minDT timezone %q: %v", name, err)
+				}
+				loc = loaded
+			}
+		}
+	}
+	if offset := firstExpectedOffset(tc.want); offset == "+00:00" || offset == "-00:00" {
+		loc = time.UTC
+	}
+	return ParseOptions{
+		MinDateTime:     tc.minDT,
+		DateMode:        tc.dateMode,
+		DefaultLocation: loc,
+		DefaultYear:     defaultYear,
+	}
+}
+
+func firstExpectedOffset(rngs *DateTimeRanges) string {
+	if rngs == nil {
+		return ""
+	}
+	for _, item := range rngs.Items {
+		if item == nil {
+			continue
+		}
+		for _, dt := range []*DateTime{item.Start, item.End} {
+			if dt != nil && dt.TimeZone != nil && dt.TimeZone.Offset != "" {
+				return dt.TimeZone.Offset
+			}
+		}
+	}
+	return ""
+}
+
+func applyParseTestDefaults(t *testing.T, rngs *DateTimeRanges, opts ParseOptions, input string) {
+	t.Helper()
+	if rngs == nil {
+		return
+	}
+	hasInputTZ := parseTestInputHasTimezone(input)
+	for _, item := range rngs.Items {
+		if item == nil {
+			continue
+		}
+		normalizeExpectedInheritedTimezone(item.Start, opts, hasInputTZ)
+		normalizeExpectedInheritedTimezone(item.End, opts, hasInputTZ)
+		applyParseTestDateDefaults(item.Start, opts)
+		applyParseTestDateDefaults(item.End, opts)
+	}
+	if err := stampDateTimeRangesDefaultTZ(rngs, opts.DefaultLocation); err != nil {
+		t.Fatalf("applying expected parse defaults: %v", err)
+	}
+}
+
+func normalizeExpectedInheritedTimezone(dt *DateTime, opts ParseOptions, hasInputTZ bool) {
+	if hasInputTZ || dt == nil || dt.TimeZone == nil ||
+		opts.MinDateTime == nil || opts.MinDateTime.TimeZone == nil {
+		return
+	}
+	if dt.TimeZone.IANAName() == opts.MinDateTime.TimeZone.IANAName() {
+		dt.TimeZone = nil
+	}
+}
+
+func parseTestInputHasTimezone(input string) bool {
+	upper := strings.ToUpper(input)
+	for _, marker := range []string{
+		" ET", " EDT", " EST", " EASTERN",
+		" PT", " PDT", " PST", " PACIFIC",
+		" CT", " CDT", " CST", " CENTRAL",
+		" MT", " MDT", " MST", " MOUNTAIN",
+		" CET", " CEST", " UTC", " GMT", " SAST",
+		" US/", " AUSTRALIAN ",
+	} {
+		if strings.Contains(upper, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+func applyParseTestDateDefaults(dt *DateTime, opts ParseOptions) {
+	if dt == nil || dt.Date == nil ||
+		dt.Date.Year != 0 || dt.Date.Month == 0 || dt.Date.Day == 0 {
+		return
+	}
+	if opts.DefaultYear != 0 {
+		dt.Date.Year = opts.DefaultYear
+		return
+	}
+	if opts.MinDateTime != nil && opts.MinDateTime.Date != nil {
+		dt.Date.Year = opts.MinDateTime.Date.Year
+	}
+}
+
+func cloneDateTimeRanges(rngs *DateTimeRanges) *DateTimeRanges {
+	if rngs == nil {
+		return nil
+	}
+	out := &DateTimeRanges{
+		Items:      make([]*DateTimeRange, 0, len(rngs.Items)),
+		Recurrence: cloneRecurrence(rngs.Recurrence),
+	}
+	for _, item := range rngs.Items {
+		out.Items = append(out.Items, cloneDateTimeRange(item))
+	}
+	return out
+}
+
+func cloneDateTimeRange(rng *DateTimeRange) *DateTimeRange {
+	if rng == nil {
+		return nil
+	}
+	return &DateTimeRange{
+		Start: cloneDateTime(rng.Start),
+		End:   cloneDateTime(rng.End),
+	}
+}
+
+func cloneDateTime(dt *DateTime) *DateTime {
+	if dt == nil {
+		return nil
+	}
+	return &DateTime{
+		Date:     cloneDate(dt.Date),
+		Time:     cloneTime(dt.Time),
+		TimeZone: cloneTimeZone(dt.TimeZone),
+	}
+}
+
+func cloneDate(d *Date) *Date {
+	if d == nil {
+		return nil
+	}
+	out := *d
+	if d.unknown != nil {
+		out.unknown = append([]any(nil), d.unknown...)
+	}
+	return &out
+}
+
+func cloneTime(tm *Time) *Time {
+	if tm == nil {
+		return nil
+	}
+	out := *tm
+	return &out
+}
+
+func cloneTimeZone(tz *TimeZone) *TimeZone {
+	if tz == nil {
+		return nil
+	}
+	out := *tz
+	return &out
+}
+
+func cloneRecurrence(rec *Recurrence) *Recurrence {
+	if rec == nil {
+		return nil
+	}
+	out := *rec
+	out.Weekdays = append([]time.Weekday(nil), rec.Weekdays...)
+	out.NthWeekday = append([]int(nil), rec.NthWeekday...)
+	out.Until = cloneDate(rec.Until)
+	return &out
 }
 
 func TestParse(t *testing.T) {
@@ -417,8 +605,8 @@ func TestParse(t *testing.T) {
 		{in: "Friday 3 Feb 3:00pm (doors) | 11pm (curfew)", want: NewRangesWithStartDateTimes(dt(DateForFeb03, TimeFor03PM, nil))},
 		// Need to update sorting algorithm for this.
 		{in: "Fri, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil))},
-		{in: "Thu, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil))},
-		{in: "Fri, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil))},
+		{in: "Thu, 02.03.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil)), dateMode: DateModeRest},
+		{in: "Fri, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor03PM, nil)), dateMode: DateModeRest},
 		{in: "Thu, 03.02.2023 - 15:00", want: NewRangesWithStartDateTimes(dt(DateFor2023Mar02, TimeFor03PM, nil))},
 
 		// MDYT
@@ -855,9 +1043,200 @@ func TestParse(t *testing.T) {
 	fmt.Printf("TestParse: %.2f%% of tests failed (%d/%d)\n", percent, failed, len(tests))
 }
 
+func TestParseDefaultTimezone(t *testing.T) {
+	pacific := mustLoadLocation("America/Los_Angeles")
+	budapest := mustLoadLocation("Europe/Budapest")
+
+	if got, err := Parse("June 1, 2026", ParseOptions{DefaultLocation: pacific}); err != nil {
+		t.Fatalf("bare date with default timezone: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.June, 1)
+		assertStartTZ(t, got, "America/Los_Angeles", "PDT", "-07:00")
+	}
+
+	if got, err := Parse("December 1, 2026", ParseOptions{DefaultLocation: pacific}); err != nil {
+		t.Fatalf("winter bare date with default timezone: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.December, 1)
+		assertStartTZ(t, got, "America/Los_Angeles", "PST", "-08:00")
+	}
+
+	if _, err := Parse("June 1, 2026", ParseOptions{}); err == nil {
+		t.Fatalf("bare date without default timezone returned nil error")
+	}
+
+	if got, err := Parse("01 June 2026 10:30 am PT", ParseOptions{DefaultLocation: budapest}); err != nil {
+		t.Fatalf("explicit Pacific timezone with default timezone: %v", err)
+	} else if name := got.Items[0].Start.TimeZone.IANAName(); name != "America/Los_Angeles" {
+		t.Fatalf("explicit Pacific IANAName = %q, want America/Los_Angeles", name)
+	}
+
+	if got, err := Parse("01 June 2026 10:30 am ET", ParseOptions{DefaultLocation: pacific}); err != nil {
+		t.Fatalf("explicit Eastern timezone with default timezone: %v", err)
+	} else if name := got.Items[0].Start.TimeZone.IANAName(); name != "America/New_York" {
+		t.Fatalf("explicit Eastern IANAName = %q, want America/New_York", name)
+	}
+
+	if got, err := Parse("2026-06-01T10:30:00-07:00", ParseOptions{DefaultLocation: pacific}); err != nil {
+		t.Fatalf("numeric offset with matching default timezone: %v", err)
+	} else {
+		assertStartTZ(t, got, "America/Los_Angeles", "PDT", "-07:00")
+	}
+
+	if _, err := Parse("2026-06-01T10:30:00-07:00", ParseOptions{}); err == nil {
+		t.Fatalf("numeric offset without default timezone returned nil error")
+	}
+
+	if _, err := Parse("2026-12-01T10:30:00-07:00", ParseOptions{DefaultLocation: pacific}); err == nil {
+		t.Fatalf("conflicting numeric offset returned nil error")
+	}
+
+	if _, err := Parse("June 1, 2026 10:30 am PT", ParseOptions{}); err != nil {
+		t.Fatalf("explicit timezone without default timezone: %v", err)
+	}
+
+	if _, err := Parse("June 1, 2026 10:30 am", ParseOptions{}); err == nil {
+		t.Fatalf("timed text without timezone or default returned nil error")
+	}
+
+	if got, err := Parse("01/02/2026", ParseOptions{DefaultLocation: budapest}); err != nil {
+		t.Fatalf("NA date mode parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.January, 2)
+	}
+
+	if got, err := Parse("01/02/2026", ParseOptions{DateMode: DateModeRest, DefaultLocation: budapest}); err != nil {
+		t.Fatalf("REST date mode parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.February, 1)
+	}
+
+	if _, err := Parse("01/02/2026", ParseOptions{DateMode: "middle-endian", DefaultLocation: budapest}); err == nil {
+		t.Fatalf("invalid date mode returned nil error")
+	}
+
+	if got, err := Parse("March 1, 2026", ParseOptions{DefaultLocation: pacific}); err != nil {
+		t.Fatalf("Pacific cache variation parse: %v", err)
+	} else {
+		assertStartTZ(t, got, "America/Los_Angeles", "PST", "-08:00")
+	}
+	if got, err := Parse("March 1, 2026", ParseOptions{DefaultLocation: budapest}); err != nil {
+		t.Fatalf("Budapest cache variation parse: %v", err)
+	} else {
+		assertStartTZ(t, got, "Europe/Budapest", "CET", "+01:00")
+	}
+}
+
+func TestParseDefaultYear(t *testing.T) {
+	pacific := mustLoadLocation("America/Los_Angeles")
+	budapest := mustLoadLocation("Europe/Budapest")
+	min2026 := dt(NewRawDateFromYMD(2026, 1, 1), TimeFor09AM, nil)
+
+	if got, err := Parse("May 28, Wednesday • 16:15 – 16:45", ParseOptions{
+		DefaultLocation: pacific,
+		DefaultYear:     2025,
+	}); err != nil {
+		t.Fatalf("default year timed parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2025, time.May, 28)
+		assertStartTime(t, got, 16, 15)
+		assertStartTZ(t, got, "America/Los_Angeles", "PDT", "-07:00")
+	}
+
+	if got, err := Parse("May 28, Sunday", ParseOptions{
+		DefaultLocation: budapest,
+		DefaultYear:     2023,
+	}); err != nil {
+		t.Fatalf("default year all-day parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2023, time.May, 28)
+		assertStartTZ(t, got, "Europe/Budapest", "CEST", "+02:00")
+	}
+
+	if got, err := Parse("2026-06-01", ParseOptions{
+		DefaultLocation: pacific,
+		DefaultYear:     2025,
+	}); err != nil {
+		t.Fatalf("explicit year parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.June, 1)
+	}
+
+	if got, err := Parse("May 28", ParseOptions{
+		MinDateTime:     min2026,
+		DefaultLocation: pacific,
+	}); err != nil {
+		t.Fatalf("minDT year fallback parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.May, 28)
+	}
+
+	if got, err := Parse("May 28", ParseOptions{
+		MinDateTime:     min2026,
+		DefaultLocation: pacific,
+		DefaultYear:     2025,
+	}); err != nil {
+		t.Fatalf("default year overrides minDT parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2025, time.May, 28)
+	}
+
+	if got, err := Parse("May 29", ParseOptions{
+		DefaultLocation: pacific,
+		DefaultYear:     2025,
+	}); err != nil {
+		t.Fatalf("default year cache variation 2025 parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2025, time.May, 29)
+	}
+	if got, err := Parse("May 29", ParseOptions{
+		DefaultLocation: pacific,
+		DefaultYear:     2026,
+	}); err != nil {
+		t.Fatalf("default year cache variation 2026 parse: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.May, 29)
+	}
+}
+
+func assertStartDate(t *testing.T, rngs *DateTimeRanges, year int, month time.Month, day int) {
+	t.Helper()
+	if rngs == nil || len(rngs.Items) == 0 || rngs.Items[0].Start == nil || rngs.Items[0].Start.Date == nil {
+		t.Fatalf("missing start date in %#v", rngs)
+	}
+	got := rngs.Items[0].Start.Date
+	if got.Year != year || got.Month != month || got.Day != day {
+		t.Fatalf("start date = %04d-%02d-%02d, want %04d-%02d-%02d",
+			got.Year, got.Month, got.Day, year, month, day)
+	}
+}
+
+func assertStartTime(t *testing.T, rngs *DateTimeRanges, hour, minute int) {
+	t.Helper()
+	if rngs == nil || len(rngs.Items) == 0 || rngs.Items[0].Start == nil || rngs.Items[0].Start.Time == nil {
+		t.Fatalf("missing start time in %#v", rngs)
+	}
+	got := rngs.Items[0].Start.Time
+	if got.Hour != hour || got.Minute != minute {
+		t.Fatalf("start time = %02d:%02d, want %02d:%02d", got.Hour, got.Minute, hour, minute)
+	}
+}
+
+func assertStartTZ(t *testing.T, rngs *DateTimeRanges, name, abbr, offset string) {
+	t.Helper()
+	if rngs == nil || len(rngs.Items) == 0 || rngs.Items[0].Start == nil || rngs.Items[0].Start.TimeZone == nil {
+		t.Fatalf("missing start timezone in %#v", rngs)
+	}
+	got := rngs.Items[0].Start.TimeZone
+	if got.Name != name || got.Abbreviation != abbr || got.Offset != offset {
+		t.Fatalf("start timezone = %#v, want Name=%q Abbreviation=%q Offset=%q", got, name, abbr, offset)
+	}
+}
+
 func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 	return func(t *testing.T) {
-		got, err := Parse(tc.minDT, tc.dateMode, tc.in)
+		opts := parseTestOptions(t, tc)
+		got, err := Parse(tc.in, opts)
 		if err != nil {
 			if tc.skip != "" {
 				t.Skip(tc.skip)
@@ -871,7 +1250,9 @@ func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 			return
 		}
 
-		diff := cmp.Diff(got, tc.want, cmpopts.IgnoreUnexported(Date{}))
+		want := cloneDateTimeRanges(tc.want)
+		applyParseTestDefaults(t, want, opts, tc.in)
+		diff := cmp.Diff(got, want, cmpopts.IgnoreUnexported(Date{}))
 
 		if tc.skip != "" {
 			if diff == "" {
@@ -882,7 +1263,7 @@ func testParseFn(t *testing.T, tc parseTest) func(*testing.T) {
 		}
 		if diff != "" {
 			pp.Default.SetColoringEnabled(false)
-			fmt.Printf("got vs. want:\n%s\n", litter.Sdump([]*DateTimeRanges{got, tc.want}))
+			fmt.Printf("got vs. want:\n%s\n", litter.Sdump([]*DateTimeRanges{got, want}))
 			t.Fatalf("unexpected difference:\n%v", diff)
 		}
 	}
