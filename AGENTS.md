@@ -6,6 +6,20 @@
 
 ---
 
+## Branching
+
+**Commit straight to `main`. Do not create feature branches in this repo.**
+
+The paths project consumes this library via:
+- **Local**: paths uses a Go workspace (`/Users/wag/Dropbox/Projects/go_<worktree>.work`) listing `./phil` — local paths builds use your sibling worktree. goskyr does the same.
+- **CI**: paths' `go.mod` (and goskyr's `go.mod` independently) pins a pseudo-version (`v0.0.0-<ts>-<sha>`). `go mod download` resolves it from `origin/main` via `proxy.golang.org` (or direct, with `GOPRIVATE=github.com/findyourpaths/*`). If the pinned SHA is not reachable on `origin/main`, the build fails with `unknown revision`.
+
+When a paths or goskyr change depends on a phil change: push phil to `origin/main` FIRST. Then in the consuming repo, run `GOPRIVATE=github.com/findyourpaths/* go get github.com/findyourpaths/phil@main && go mod tidy` (paths has `make bump-libs` as a shortcut), commit `go.mod`/`go.sum`, and push. `/gitsh` in paths enforces this order.
+
+For exploratory work, use a local branch as scratch space, then rebase to `main` before the dependent paths/goskyr change ships. See `../docs/WORKFLOW.md` §9 "Cross-Repo Discipline".
+
+---
+
 ## Project Overview
 
 **Phil** is a natural language date/time parser that converts human-readable date expressions into structured datetime objects.

@@ -110,7 +110,7 @@ func parseGoldenFile(path string) (*goldenTestCase, error) {
 		line := lines[i]
 
 		if i == 0 {
-			tc.input = strings.TrimPrefix(line, "# ")
+			tc.input = strings.TrimSpace(strings.TrimPrefix(line, "# "))
 			continue
 		}
 
@@ -120,7 +120,7 @@ func parseGoldenFile(path string) (*goldenTestCase, error) {
 			continue
 		}
 
-		content := strings.TrimPrefix(line, "# ")
+		content := strings.TrimSpace(strings.TrimPrefix(line, "# "))
 		switch {
 		case strings.HasPrefix(content, "dateMode: "):
 			mode := strings.TrimPrefix(content, "dateMode: ")
@@ -210,6 +210,31 @@ func parseMinDT(s string) (*datetime.DateTime, error) {
 		Time:     &datetime.Time{Hour: hour, Minute: minute},
 		TimeZone: &datetime.TimeZone{Abbreviation: tz},
 	}, nil
+}
+
+func parseOptions(input string, minDT *datetime.DateTime, dateMode string) datetime.ParseOptions {
+	var loc *time.Location
+	if minDT != nil && minDT.TimeZone != nil {
+		if name := minDT.TimeZone.IANAName(); name != "" {
+			loaded, err := time.LoadLocation(name)
+			if err == nil {
+				loc = loaded
+			}
+		}
+	}
+	if strings.Contains(input, "+00:00") || strings.Contains(input, "-00:00") {
+		loc = time.UTC
+	}
+	defaultYear := 0
+	if minDT != nil && minDT.Date != nil {
+		defaultYear = minDT.Date.Year
+	}
+	return datetime.ParseOptions{
+		MinDateTime:     minDT,
+		DateMode:        dateMode,
+		DefaultLocation: loc,
+		DefaultYear:     defaultYear,
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -323,7 +348,7 @@ func TestIntegration_ParseToICS(t *testing.T) {
 				minDT = defaultMinDT
 			}
 
-			parsed, parseErr := datetime.Parse(minDT, tc.dateMode, tc.input)
+			parsed, parseErr := datetime.Parse(tc.input, parseOptions(tc.input, minDT, tc.dateMode))
 			if parseErr != nil {
 				t.Fatalf("Parse error: %v", parseErr)
 			}
@@ -703,7 +728,7 @@ func generateGoldenFiles(t *testing.T) {
 			continue
 		}
 
-		parsed, err := datetime.Parse(minDT, tc.dateMode, tc.in)
+		parsed, err := datetime.Parse(tc.in, parseOptions(tc.in, minDT, tc.dateMode))
 		if err != nil {
 			t.Fatalf("[%d] Parse error for %q: %v", i, tc.in, err)
 		}
