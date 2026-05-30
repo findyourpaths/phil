@@ -238,7 +238,9 @@ func (rngs *DateTimeRanges) Occurrences() []*DateTimeRange {
 func HasStartMonthAndDay(rngs *DateTimeRanges) bool {
 	return rngs != nil &&
 		len(rngs.Items) > 0 &&
+		rngs.Items[0] != nil &&
 		rngs.Items[0].Start != nil &&
+		rngs.Items[0].Start.Date != nil &&
 		rngs.Items[0].Start.Date.Month > 0 &&
 		rngs.Items[0].Start.Date.Day > 0
 }
