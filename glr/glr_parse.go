@@ -164,8 +164,18 @@ func GetParseNodeValue(g *Grammar, n *ParseNode, spaces string) (any, error) {
 	func() {
 		defer func() {
 			if e := recover(); e != nil {
-				err = errors.New(e.(string))
-				// fmt.Printf("got panic error: %v", err)
+				// A candidate semantic action rejects its path by panicking — with a
+				// string ("semantic error: ..."), an error, or a runtime error value.
+				// Don't assume string: a bare e.(string) would itself panic on the
+				// latter, escaping this recover and aborting the whole parse.
+				switch v := e.(type) {
+				case error:
+					err = v
+				case string:
+					err = errors.New(v)
+				default:
+					err = fmt.Errorf("%v", v)
+				}
 				debugf("%sgot panic error: %v", spaces, err)
 			}
 		}()

@@ -329,6 +329,12 @@ func preprocess(input string) preprocessResult {
 	input = boundaryRE2.ReplaceAllString(input, `$1 $2`)
 	input = spacifyRE.ReplaceAllString(input, ` $1 `)
 	input = strings.Replace(input, " ' ", " ", -1)
+	// A newline between date/time expressions is a list separator: normalize it to
+	// "and" so the day-list grammar parses multi-day schedules ("Sat … \n Sun …") as
+	// separate events, instead of collapsing the newline to a space (which lets a
+	// trailing time bind to the next line's leading weekday — "5:00pm \n Sunday" read
+	// as "5:00pm on Sunday").
+	input = newlineToAndRE.ReplaceAllString(strings.TrimSpace(input), " and ")
 	input = CleanTextLine(input)
 	debugf("input after processing: %q\n", input)
 
@@ -346,6 +352,7 @@ func NewDatetimeLexer(input string) *datetimeLexer {
 }
 
 var whitespacesRE = regexp.MustCompile(`\s+`)
+var newlineToAndRE = regexp.MustCompile(`[ \t]*\n[ \t\n]*`)
 
 func CleanTextLine(s string) string {
 	r := bluemonday.StrictPolicy().AddSpaceWhenStrippingTag(true).Sanitize(s)
