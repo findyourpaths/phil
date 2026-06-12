@@ -8,7 +8,6 @@ import (
 	"github.com/findyourpaths/phil/datetime"
 )
 
-
 // ---------------------------------------------------------------------------
 // Conversion tests
 // ---------------------------------------------------------------------------
@@ -162,6 +161,24 @@ func TestNewCalendar_Conversion(t *testing.T) {
 				t.Errorf("ICS missing DESCRIPTION %q", tc.info.Description)
 			}
 		})
+	}
+}
+
+func TestParsedCivilDateOnlyEmitsAllDayDate(t *testing.T) {
+	ranges, err := datetime.Parse("June 1, 2026", datetime.ParseOptions{})
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
+	cal, err := NewCalendar(ranges, &EventInfo{Summary: "Civil Date"})
+	if err != nil {
+		t.Fatalf("NewCalendar error: %v", err)
+	}
+	icsStr := ICS(cal)
+	if !strings.Contains(icsStr, "DTSTART;VALUE=DATE:20260601") {
+		t.Fatalf("ICS = %q, want all-day DTSTART DATE", icsStr)
+	}
+	if strings.Contains(icsStr, "DTSTART:20260601T") {
+		t.Fatalf("ICS = %q, want no DATE-TIME DTSTART for civil date-only parse", icsStr)
 	}
 }
 

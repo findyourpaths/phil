@@ -1061,8 +1061,11 @@ func TestParseDefaultTimezone(t *testing.T) {
 		assertStartTZ(t, got, "America/Los_Angeles", "PST", "-08:00")
 	}
 
-	if _, err := Parse("June 1, 2026", ParseOptions{}); err == nil {
-		t.Fatalf("bare date without default timezone returned nil error")
+	if got, err := Parse("June 1, 2026", ParseOptions{}); err != nil {
+		t.Fatalf("bare date without default timezone: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.June, 1)
+		assertStartNoTZ(t, got)
 	}
 
 	if got, err := Parse("01 June 2026 10:30 am PT", ParseOptions{DefaultLocation: budapest}); err != nil {
@@ -1083,8 +1086,12 @@ func TestParseDefaultTimezone(t *testing.T) {
 		assertStartTZ(t, got, "America/Los_Angeles", "PDT", "-07:00")
 	}
 
-	if _, err := Parse("2026-06-01T10:30:00-07:00", ParseOptions{}); err == nil {
-		t.Fatalf("numeric offset without default timezone returned nil error")
+	if got, err := Parse("2026-06-01T10:30:00-07:00", ParseOptions{}); err != nil {
+		t.Fatalf("numeric offset without default timezone: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.June, 1)
+		assertStartTime(t, got, 10, 30)
+		assertStartTZ(t, got, "", "", "-07:00")
 	}
 
 	if _, err := Parse("2026-12-01T10:30:00-07:00", ParseOptions{DefaultLocation: pacific}); err == nil {
@@ -1095,8 +1102,12 @@ func TestParseDefaultTimezone(t *testing.T) {
 		t.Fatalf("explicit timezone without default timezone: %v", err)
 	}
 
-	if _, err := Parse("June 1, 2026 10:30 am", ParseOptions{}); err == nil {
-		t.Fatalf("timed text without timezone or default returned nil error")
+	if got, err := Parse("June 1, 2026 10:30 am", ParseOptions{}); err != nil {
+		t.Fatalf("timed text without timezone or default: %v", err)
+	} else {
+		assertStartDate(t, got, 2026, time.June, 1)
+		assertStartTime(t, got, 10, 30)
+		assertStartNoTZ(t, got)
 	}
 
 	if got, err := Parse("01/02/2026", ParseOptions{DefaultLocation: budapest}); err != nil {
@@ -1124,6 +1135,59 @@ func TestParseDefaultTimezone(t *testing.T) {
 		t.Fatalf("Budapest cache variation parse: %v", err)
 	} else {
 		assertStartTZ(t, got, "Europe/Budapest", "CET", "+01:00")
+	}
+}
+
+func TestParseCacheReturnsClone(t *testing.T) {
+	first, err := Parse("June 2, 2026", ParseOptions{})
+	if err != nil {
+		t.Fatalf("first parse: %v", err)
+	}
+	assertStartDate(t, first, 2026, time.June, 2)
+	first.Items[0].Start.Date.Year = 1999
+
+	second, err := Parse("June 2, 2026", ParseOptions{})
+	if err != nil {
+		t.Fatalf("second parse: %v", err)
+	}
+	assertStartDate(t, second, 2026, time.June, 2)
+}
+
+func TestClearParseCache(t *testing.T) {
+	first, err := Parse("June 3, 2026", ParseOptions{})
+	if err != nil {
+		t.Fatalf("first parse: %v", err)
+	}
+	assertStartDate(t, first, 2026, time.June, 3)
+
+	cacheMutex.Lock()
+	cache[parseCacheKey("June 3, 2026", ParseOptions{})] = NewRangesWithStartDates(NewRawDateFromYMD(1999, 1, 1))
+	cacheMutex.Unlock()
+
+	ClearParseCache()
+
+	second, err := Parse("June 3, 2026", ParseOptions{})
+	if err != nil {
+		t.Fatalf("second parse: %v", err)
+	}
+	assertStartDate(t, second, 2026, time.June, 3)
+}
+
+func TestParseDualZoneFirstStated(t *testing.T) {
+	got, err := Parse("February 3, 2026 4pm Pacific/7pm Eastern", ParseOptions{})
+	if err != nil {
+		t.Fatalf("dual-zone parse: %v", err)
+	}
+	assertStartDate(t, got, 2026, time.February, 3)
+	assertStartTime(t, got, 16, 0)
+	if len(got.Items) != 1 || got.Items[0].Start == nil || got.Items[0].Start.TimeZone == nil {
+		t.Fatalf("missing dual-zone start timezone in %#v", got)
+	}
+	if name := got.Items[0].Start.TimeZone.IANAName(); name != "America/Los_Angeles" {
+		t.Fatalf("dual-zone IANAName = %q, want America/Los_Angeles", name)
+	}
+	if got.Items[0].End != nil {
+		t.Fatalf("dual-zone parse end = %#v, want nil", got.Items[0].End)
 	}
 }
 
@@ -1230,6 +1294,16 @@ func assertStartTZ(t *testing.T, rngs *DateTimeRanges, name, abbr, offset string
 	got := rngs.Items[0].Start.TimeZone
 	if got.Name != name || got.Abbreviation != abbr || got.Offset != offset {
 		t.Fatalf("start timezone = %#v, want Name=%q Abbreviation=%q Offset=%q", got, name, abbr, offset)
+	}
+}
+
+func assertStartNoTZ(t *testing.T, rngs *DateTimeRanges) {
+	t.Helper()
+	if rngs == nil || len(rngs.Items) == 0 || rngs.Items[0].Start == nil {
+		t.Fatalf("missing start datetime in %#v", rngs)
+	}
+	if got := rngs.Items[0].Start.TimeZone; got != nil {
+		t.Fatalf("start timezone = %#v, want nil", got)
 	}
 }
 

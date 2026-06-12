@@ -21,6 +21,11 @@ import (
 // slower and uses much more memory.
 var EnableShiftToSameState = false
 
+// ErrParseBudgetExceeded is returned when GLR parsing exceeds its internal work budget.
+var ErrParseBudgetExceeded = errors.New("glr: parse budget exceeded")
+
+var maxGLRParseWork = 1000000
+
 // Debug flags
 // var DoDebug = true
 
@@ -380,6 +385,9 @@ type GLRState struct {
 	lookahead      *ParseNode
 	debug          bool
 	position       int
+	work           int
+	maxWork        int
+	err            error
 }
 
 type Lexer interface {
@@ -405,7 +413,8 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	s := &GLRState{
 		// ruleNodes: map[string]*ParseNode{},
 		// ruleNodes: []*ParseNode{},
-		debug: false,
+		debug:   false,
+		maxWork: maxGLRParseWork,
 	}
 
 	// Initialize with start state
@@ -415,6 +424,9 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 
 	vals := []string{}
 	for {
+		if !s.charge(1) {
+			return nil, s.err
+		}
 		debugf("\n")
 
 		// Create parse node for token
@@ -433,7 +445,13 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 		}
 
 		if !parseSymbol(g, s, term) {
+			if s.err != nil {
+				return nil, s.err
+			}
 			continue // Skip invalid tokens
+		}
+		if s.err != nil {
+			return nil, s.err
 		}
 
 		if !hasMore {
@@ -487,6 +505,18 @@ func Parse(g *Grammar, l Lexer) ([]*ParseNode, error) {
 	return rs, nil
 }
 
+func (s *GLRState) charge(n int) bool {
+	if s.err != nil {
+		return false
+	}
+	s.work += n
+	if s.maxWork > 0 && s.work > s.maxWork {
+		s.err = fmt.Errorf("%w after %d work units at token position %d", ErrParseBudgetExceeded, s.work, s.position)
+		return false
+	}
+	return true
+}
+
 func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
 	debugf(fmt.Sprintf("parsing term: %#v\n", term))
 	printAllParsers(s, nil)
@@ -502,6 +532,9 @@ func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
 
 	// Process all parsers
 	for len(s.parsersToAct) > 0 {
+		if !s.charge(1) {
+			return false
+		}
 		debugf("processing parsers\n")
 		p := s.parsersToAct[0]
 		s.parsersToAct = s.parsersToAct[1:]
@@ -510,6 +543,9 @@ func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
 		debugf("symbol nodes\n")
 		printNodes(s.symbolNodes, "  ")
 		actor(g, s, p)
+		if s.err != nil {
+			return false
+		}
 	}
 
 	// Perform shifts if any available
@@ -519,6 +555,9 @@ func parseSymbol(g *Grammar, s *GLRState, term *ParseNode) bool {
 	}
 
 	s.activeParsers = shifter(s)
+	if s.err != nil {
+		return false
+	}
 	return true
 }
 
@@ -526,6 +565,9 @@ func actor(g *Grammar, s *GLRState, p *StackNode) {
 	as := getActions(g, p.state, s.lookahead.Symbol)
 	debugf("found %d actions for p.state: %d, s.lookahead.symbol: %q\n", len(as), p.state, s.lookahead.Symbol)
 	for i, a := range as {
+		if !s.charge(1) {
+			return
+		}
 		debugf("  looking at action for p.state: %d, s.lookahead.symbol: %q, actions[%d]: %#v\n", p.state, s.lookahead.Symbol, i, a)
 
 		switch a.Type {
@@ -555,6 +597,9 @@ func getActions(g *Grammar, state int, sym string) []Action {
 
 func doReductions(g *Grammar, s *GLRState, p *StackNode, rlID int, length int, kids []*ParseNode, linkToSee *StackLink, linkSeen bool) {
 	// fmt.Printf("doReductions(g, sState, p.state: %d, rlID: %d, length %d, len(kids): %d, linkToSee, linkSeen: %t)\n", p.state, rlID, length, len(kids), linkSeen)
+	if !s.charge(1) {
+		return
+	}
 	if length == 0 {
 		if linkSeen {
 			reducer(g, s, p, rlID, kids)
@@ -563,6 +608,9 @@ func doReductions(g *Grammar, s *GLRState, p *StackNode, rlID int, length int, k
 	}
 
 	for _, link := range p.backlinks {
+		if s.err != nil {
+			return
+		}
 		newLinkSeen := linkSeen || link == linkToSee
 		if link.stackNode.state == p.state {
 			doReductions(g, s, link.stackNode, rlID, length, kids, linkToSee, newLinkSeen)
@@ -573,6 +621,9 @@ func doReductions(g *Grammar, s *GLRState, p *StackNode, rlID int, length int, k
 }
 
 func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode) {
+	if !s.charge(1) {
+		return
+	}
 	rl := &(g.Rules.Items[rlID])
 	debugf("reducer with rule %d: %s\n", rlID, rl)
 	printAllParsers(s, p)
@@ -626,6 +677,9 @@ func reducer(g *Grammar, s *GLRState, p *StackNode, rlID int, kids []*ParseNode)
 	// Process additional reductions
 	debugf("  looking at other parsers\n")
 	for _, otherp := range s.activeParsers {
+		if s.err != nil {
+			return
+		}
 		if contains(s.parsersToAct, otherp) {
 			continue
 		}
@@ -643,6 +697,9 @@ func shifter(s *GLRState) []*StackNode {
 	var rs []*StackNode
 
 	for i, p := range s.parsersToShift {
+		if !s.charge(1) {
+			return nil
+		}
 		newState := s.statesToShiftTo[i]
 		newLink := &StackLink{stackNode: p, node: s.lookahead}
 		r := getStackNode(rs, newState)
@@ -687,6 +744,9 @@ func getRuleNode(g *Grammar, s *GLRState, rlID int, children []*ParseNode) *Pars
 	// if node, exists := s.ruleNodes[key]; exists {
 	// 	return node
 	// }
+	if !s.charge(1) {
+		return nil
+	}
 
 	r := &ParseNode{
 		Symbol: rl.Nonterminal,
@@ -709,6 +769,9 @@ func getRuleNode(g *Grammar, s *GLRState, rlID int, children []*ParseNode) *Pars
 }
 
 func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
+	if n == nil {
+		return nil
+	}
 	debugf("  maybe getting old symbol node for: %s\n", n)
 	for _, old := range s.symbolNodes {
 		if old.Symbol == n.Symbol && old.startPos == n.startPos && old.endPos == n.endPos {
@@ -722,6 +785,9 @@ func getSymbolNode(s *GLRState, n *ParseNode) *ParseNode {
 }
 
 func addAlternative(s *GLRState, old *ParseNode, new *ParseNode) *ParseNode {
+	if !s.charge(1) {
+		return old
+	}
 	debugf("maybe adding alternative with old.symbol: %q, old.isAlt: %t, new.symbol: %q, new.isAlt: %t\n", old.Symbol, old.isAlt, new.Symbol, new.isAlt)
 	debugf("old\n")
 	printNodeRoot(old)

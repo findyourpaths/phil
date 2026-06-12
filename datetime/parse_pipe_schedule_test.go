@@ -16,8 +16,8 @@ func TestPipeSeparatedScheduleParses(t *testing.T) {
 		in   string
 		want string
 	}{
-		{"Saturday, September 12 | 10:00am – 5:00pm", "09-12T10:00:00Z - 0000-09-12T17:00:00Z"},
-		{"Friday, November 6 | 6:00pm – 9:00pm", "11-06T18:00:00Z - 0000-11-06T21:00:00Z"},
+		{"Saturday, September 12 | 10:00am – 5:00pm", "09-12T10:00:00 - 0000-09-12T17:00:00"},
+		{"Friday, November 6 | 6:00pm – 9:00pm", "11-06T18:00:00 - 0000-11-06T21:00:00"},
 	}
 	for _, tc := range cases {
 		rngs, err := Parse(tc.in, ParseOptions{})

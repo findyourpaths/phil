@@ -45,11 +45,21 @@ var timezoneTZ = timezone.New()
 var cache = map[string]*DateTimeRanges{}
 var cacheMutex sync.RWMutex
 
+// ClearParseCache drops cached Parse results. Long-running authoring processes
+// use this to isolate exploratory parser calls from later deterministic passes.
+func ClearParseCache() {
+	cacheMutex.Lock()
+	cache = map[string]*DateTimeRanges{}
+	cacheMutex.Unlock()
+}
+
 // ParseOptions configures parse-time context that the grammar cannot infer
 // from the input text alone.
 type ParseOptions struct {
-	MinDateTime     *DateTime
-	DateMode        string
+	MinDateTime *DateTime
+	DateMode    string
+	// DefaultLocation anchors otherwise civil results to an IANA location. When
+	// nil, Parse preserves civil date/time output instead of inventing UTC.
 	DefaultLocation *time.Location
 	DefaultYear     int
 }
@@ -147,7 +157,7 @@ func Parse(in string, opts ParseOptions) (rngs *DateTimeRanges, err error) {
 	r, found := cache[key]
 	cacheMutex.RUnlock()
 	if found {
-		return r, nil
+		return r.Clone(), nil
 	}
 
 	// if minDT == nil {
@@ -243,7 +253,7 @@ func Parse(in string, opts ParseOptions) (rngs *DateTimeRanges, err error) {
 
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
-	cache[key] = rs
+	cache[key] = rs.Clone()
 	cacheMutex.Unlock()
 	return rs, nil
 }
@@ -302,12 +312,8 @@ func stampDefaultTZ(dt *DateTime, loc *time.Location) error {
 	if dt.TimeZone != nil && dt.TimeZone.IANAName() != "" {
 		return nil
 	}
-	if dt.TimeZone != nil && dt.TimeZone.Offset == "" &&
-		(dt.TimeZone.Name != "" || dt.TimeZone.Abbreviation != "") {
-		return fmt.Errorf("phil.Parse: parsed timezone %#v is not IANA-resolvable", dt.TimeZone)
-	}
 	if loc == nil {
-		return fmt.Errorf("phil.Parse: parsed datetime %q has no IANA-resolvable timezone and no DefaultLocation", dt)
+		return nil
 	}
 
 	if dt.TimeZone != nil && dt.TimeZone.Offset != "" {

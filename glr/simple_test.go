@@ -2,6 +2,7 @@
 package glr
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -121,6 +122,18 @@ func TestParse(t *testing.T) {
 			// Verify the parse tree structure
 			verifyParseTree(t, results[0])
 		})
+	}
+}
+
+func TestParseWorkBudget(t *testing.T) {
+	old := maxGLRParseWork
+	maxGLRParseWork = 1
+	t.Cleanup(func() { maxGLRParseWork = old })
+
+	g := &Grammar{Rules: glrRules, Actions: glrActions, States: glrStates}
+	_, err := Parse(g, NewSimpleLexer("a b c"))
+	if !errors.Is(err, ErrParseBudgetExceeded) {
+		t.Fatalf("Parse error = %v, want ErrParseBudgetExceeded", err)
 	}
 }
 

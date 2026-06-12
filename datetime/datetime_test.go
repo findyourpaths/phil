@@ -16,7 +16,9 @@ type toStringTest struct {
 
 func TestToString(t *testing.T) {
 	tests := []toStringTest{
-		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil)), want: "2023-02-03T12:00:00Z"},
+		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, nil, nil)), want: "2023-02-03"},
+		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, nil)), want: "2023-02-03T12:00:00"},
+		{in: NewRangesWithStartEndDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET), dt(DateFor2023Feb03, nil, TimeZoneForET)), want: "2023-02-03T12:00:00-05:00 - 2023-02-03"},
 		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, TimeZoneForET)), want: "2023-02-03T12:00:00-05:00"},
 		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "+00:00"})), want: "2023-02-03T12:00:00Z"},
 		{in: NewRangesWithStartDateTimes(dt(DateFor2023Feb03, TimeFor12PM, &TimeZone{Offset: "-00:00"})), want: "2023-02-03T12:00:00Z"},
@@ -47,7 +49,6 @@ func testToStringFn(t *testing.T, tc toStringTest) func(*testing.T) {
 		}
 	}
 }
-
 
 func TestOccurrences(t *testing.T) {
 	tests := []struct {

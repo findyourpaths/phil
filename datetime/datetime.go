@@ -43,6 +43,87 @@ func (rngs *DateTimeRanges) String() string {
 	return s
 }
 
+func (rngs *DateTimeRanges) Clone() *DateTimeRanges {
+	if rngs == nil {
+		return nil
+	}
+	out := &DateTimeRanges{
+		Items:      make([]*DateTimeRange, len(rngs.Items)),
+		Recurrence: rngs.Recurrence.Clone(),
+	}
+	for i, item := range rngs.Items {
+		out.Items[i] = item.Clone()
+	}
+	return out
+}
+
+func (rec *Recurrence) Clone() *Recurrence {
+	if rec == nil {
+		return nil
+	}
+	out := *rec
+	if rec.Weekdays != nil {
+		out.Weekdays = append([]time.Weekday(nil), rec.Weekdays...)
+	}
+	if rec.NthWeekday != nil {
+		out.NthWeekday = append([]int(nil), rec.NthWeekday...)
+	}
+	out.Until = rec.Until.Clone()
+	return &out
+}
+
+func (rng *DateTimeRange) Clone() *DateTimeRange {
+	if rng == nil {
+		return nil
+	}
+	return &DateTimeRange{
+		Start: rng.Start.Clone(),
+		End:   rng.End.Clone(),
+	}
+}
+
+func (dt *DateTime) Clone() *DateTime {
+	if dt == nil {
+		return nil
+	}
+	return &DateTime{
+		Date:     dt.Date.Clone(),
+		Time:     dt.Time.Clone(),
+		TimeZone: dt.TimeZone.Clone(),
+	}
+}
+
+func (d *Date) Clone() *Date {
+	if d == nil {
+		return nil
+	}
+	out := *d
+	if d.unknown != nil {
+		out.unknown = append([]any(nil), d.unknown...)
+	}
+	if d.wd != nil {
+		wd := *d.wd
+		out.wd = &wd
+	}
+	return &out
+}
+
+func (t *Time) Clone() *Time {
+	if t == nil {
+		return nil
+	}
+	out := *t
+	return &out
+}
+
+func (tz *TimeZone) Clone() *TimeZone {
+	if tz == nil {
+		return nil
+	}
+	out := *tz
+	return &out
+}
+
 func AppendDateTimeRanges(rngs *DateTimeRanges, rng *DateTimeRange) *DateTimeRanges {
 	rngs.Items = append(rngs.Items, rng)
 	return rngs
@@ -399,12 +480,26 @@ func (dt *DateTime) String() string {
 	if dt == nil {
 		return ""
 	}
-	if dt.Date != nil && dt.Time != nil && dt.TimeZone != nil {
+	if dt.Date != nil && dt.Time != nil && dt.TimeZone != nil &&
+		(dt.TimeZone.Offset != "" || dt.TimeZone.IANAName() != "") {
 		if t := dt.ToTime(); t != nil {
 			return t.Format(time.RFC3339)
 		}
 	}
-	return dt.Date.String() + dt.Time.String() + dt.TimeZone.String()
+
+	date := ""
+	if dt.Date != nil {
+		date = dt.Date.String()
+	}
+	clock := ""
+	if dt.Time != nil {
+		clock = dt.Time.String()
+	}
+	zone := ""
+	if dt.Time != nil && dt.TimeZone != nil {
+		zone = dt.TimeZone.String()
+	}
+	return date + clock + zone
 }
 
 func (dt *DateTime) ToTime() *time.Time {
