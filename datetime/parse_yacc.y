@@ -434,9 +434,9 @@ RFC3339Date:
 ;
 
 RFC3339Time:
-  T INT COLON INT COLON INT {$$ = NewTime($2, $4, $6, nil)}
+  T INT COLON INT COLON INT {$$ = NewTime24($2, $4, $6, nil)}
   // "T12:00" (HH:MM without seconds)
-| T INT COLON INT {$$ = NewTime($2, $4, nil, nil)}
+| T INT COLON INT {$$ = NewTime24($2, $4, nil, nil)}
 ;
 
 RFC3339TimeZone:

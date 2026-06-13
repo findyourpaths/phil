@@ -294,6 +294,10 @@ func stampDateTimeRangesDefaultTZ(rs *DateTimeRanges, loc *time.Location) error 
 		if item == nil {
 			continue
 		}
+		// Meridiem inheritance has already run at range construction; drop the
+		// parse-internal ambiguity marker so Parse output is canonical.
+		clearMeridiemImplied(item.Start)
+		clearMeridiemImplied(item.End)
 		if err := stampDefaultTZ(item.Start, loc); err != nil {
 			return err
 		}
@@ -302,6 +306,12 @@ func stampDateTimeRangesDefaultTZ(rs *DateTimeRanges, loc *time.Location) error 
 		}
 	}
 	return nil
+}
+
+func clearMeridiemImplied(dt *DateTime) {
+	if dt != nil && dt.Time != nil {
+		dt.Time.MeridiemImplied = false
+	}
 }
 
 func stampDefaultTZ(dt *DateTime, loc *time.Location) error {

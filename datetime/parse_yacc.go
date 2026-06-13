@@ -1506,12 +1506,12 @@ yydefault:
 	case 144:
 		yyDollar = yyS[yypt-6 : yypt+1]
 		{
-			yyVAL.Time = NewTime(yyDollar[2].string, yyDollar[4].string, yyDollar[6].string, nil)
+			yyVAL.Time = NewTime24(yyDollar[2].string, yyDollar[4].string, yyDollar[6].string, nil)
 		}
 	case 145:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.Time = NewTime(yyDollar[2].string, yyDollar[4].string, nil, nil)
+			yyVAL.Time = NewTime24(yyDollar[2].string, yyDollar[4].string, nil, nil)
 		}
 	case 146:
 		yyDollar = yyS[yypt-1 : yypt+1]

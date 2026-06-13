@@ -351,6 +351,29 @@ func (rng *DateTimeRange) IANAName() string {
 	return rng.Start.IANAName()
 }
 
+// inheritStartMeridiem resolves a same-day range whose start time carried no
+// AM/PM marker against an end time with an explicit PM: "6:00 - 7:30 pm"
+// means 6 PM. The start inherits PM only when that keeps start <= end, so the
+// cross-noon reading of "11:00 - 1:30 pm" stays 11 AM. Explicit markers on
+// the start ("6:00 am - 7:30 pm") are never overridden.
+func inheritStartMeridiem(start *DateTime, end *DateTime) {
+	if !start.Time.MeridiemImplied || end.Time.MeridiemImplied {
+		return
+	}
+	if start.Date != nil && end.Date != nil && start.Date.String() != end.Date.String() {
+		return
+	}
+	if start.Time.Hour < 1 || start.Time.Hour >= 12 || end.Time.Hour < 12 {
+		return
+	}
+	pmHour := start.Time.Hour + 12
+	if pmHour > end.Time.Hour || (pmHour == end.Time.Hour && start.Time.Minute > end.Time.Minute) {
+		return
+	}
+	start.Time.Hour = pmHour
+	start.Time.MeridiemImplied = false
+}
+
 func NewRangeWithStartDate(startD *Date) *DateTimeRange {
 	return NewRangeWithStartEndDates(startD, nil)
 }
@@ -390,6 +413,7 @@ func NewRange(start *DateTime, end *DateTime) *DateTimeRange {
 			} else if start.Date != nil && end.Date == nil {
 				end.Date = start.Date
 			}
+			inheritStartMeridiem(start, end)
 		}
 
 		if start.Date != nil && end.Date != nil {
@@ -815,6 +839,12 @@ type Time struct {
 	Minute     int // The minute of the hour; range [0-59]
 	Second     int // The second of the minute; range [0-59]
 	Nanosecond int // The nanosecond of the second; range [0-999999999]
+
+	// MeridiemImplied is true when the source text carried no AM/PM marker and
+	// the hour is ambiguous (1-12). Range construction uses it to let a bare
+	// start time inherit the end's explicit PM ("6:00 - 7:30 pm" means 6 PM);
+	// it is presentation metadata and does not affect String().
+	MeridiemImplied bool
 }
 
 // String returns the date in the format described in ParseTime. If Nanoseconds
@@ -1224,11 +1254,13 @@ func NewAMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 		panic(fmt.Sprintf("semantic error: found hour %#v but failed AM bounds check\n", r.Hour))
 	}
 	r.Hour = r.Hour % 12
+	r.MeridiemImplied = false
 	return r
 }
 
 func NewPMTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
+	r.MeridiemImplied = false
 	if r.Hour > 12 {
 		// 24-hour time with redundant PM suffix (e.g., "17:00 PM").
 		// Treat as 24-hour time — ignore the PM indicator.
@@ -1243,5 +1275,13 @@ func NewTime(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
 	minute := findInt(minuteUnit, minuteAny)
 	second := findInt(secondUnit, secondAny)
 	ns := findInt(nsUnit, nsAny)
-	return &Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns}
+	return &Time{Hour: hour, Minute: minute, Second: second, Nanosecond: ns, MeridiemImplied: hour >= 1 && hour <= 12}
+}
+
+// NewTime24 builds a Time from notation that is 24-hour by definition
+// (RFC 3339 "T06:00"); the hour is never meridiem-ambiguous.
+func NewTime24(hourAny any, minuteAny any, secondAny any, nsAny any) *Time {
+	r := NewTime(hourAny, minuteAny, secondAny, nsAny)
+	r.MeridiemImplied = false
+	return r
 }
