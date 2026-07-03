@@ -62,6 +62,12 @@ var weekdayPluralPrefixRE = regexp.MustCompile(`(?i)^\s*(?:mondays|tuesdays|wedn
 // Captures the weekday name in group 1 for recurrence extraction.
 var everyWeekdayRE = regexp.MustCompile(`(?i)\bevery\s+(?:other\s+)?((?:mon|tue|wed|thu|fri|sat|sun)\w*)\b`)
 
+// weekOfPrefixRE strips "week of" wrappers from range endpoints. The phrase is
+// event copy, not part of the civil date; removing the optional weekday also
+// avoids rejecting copy like "week of Sunday, February 3" when the date's
+// computed weekday differs.
+var weekOfPrefixRE = regexp.MustCompile(`(?i)\bweek\s+of\s+(?:(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\s*,?\s*)?`)
+
 // weekdaySingularTimeRangeRE matches a singular weekday (with optional slash-separated
 // alternatives) at the start of input, followed by a time RANGE pattern: digit +
 // am/pm/colon, then a range separator (to, -, –, through, till, until), then another
@@ -123,8 +129,8 @@ var commaBeforeAndRE = regexp.MustCompile(`(?i),\s+and\b`)
 // Matches DM order only: "Day(s) Month, Day(s) Month" where Month is a full or abbreviated name.
 var multiMonthCommaRE = regexp.MustCompile(`(?i)(` + monthNamesRE + `)\s*,\s*(\d{1,2}\s+` + monthNamesRE + `)`)
 
-// monthNamesRE matches English month names (full and 3-letter abbreviations).
-const monthNamesRE = `(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)`
+// monthNamesRE matches English and Portuguese month names (full and common abbreviations).
+const monthNamesRE = `(?:jan(?:uary|eiro)?|feb(?:ruary)?|fev(?:ereiro)?|mar(?:ch|[çc]o)?|apr(?:il)?|abr(?:il)?|may|maio|jun(?:e|ho)?|jul(?:y|ho)?|aug(?:ust)?|ago(?:sto)?|sep(?:t?(?:ember)?|tembro)?|set(?:embro)?|oct(?:ober)?|out(?:ubro)?|nov(?:ember|embro)?|dec(?:ember)?|dez(?:embro)?)`
 
 // extraTimezoneBlockRE strips alternate timezone displays after the first
 // parenthesized timezone abbreviation. Common in multi-timezone listings like:
@@ -256,6 +262,7 @@ var stripPatterns = []struct {
 	{weekdayCountRE, "$1"},
 	{weekdayPluralPrefixRE, ""},
 	{everyWeekdayRE, ""},
+	{weekOfPrefixRE, ""},
 	{weekdaySingularTimeRangeRE, "$1"},
 	{dayNumberRE, ""},
 	{markdownBoldRE, ""},

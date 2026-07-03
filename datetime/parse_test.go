@@ -390,6 +390,14 @@ func TestParse(t *testing.T) {
 		{in: "3 February, 2023", want: DateRangesFor2023Feb03},
 		{in: "Friday 3rd Feb 2023", want: DateRangesFor2023Feb03},
 
+		// Month-name date, separator-delimited (incl. hyphen): "DD-Mon-YYYY" and the month-first mirror.
+		{in: "3-Feb-2023", want: DateRangesFor2023Feb03},
+		{in: "03-Feb-2023", want: DateRangesFor2023Feb03},
+		{in: "Feb-3-2023", want: DateRangesFor2023Feb03},
+		{in: "3/Feb/2023", want: DateRangesFor2023Feb03},
+		{in: "Feb/3/2023", want: DateRangesFor2023Feb03},
+		{in: "Friday, 3-Feb-2023", want: DateRangesFor2023Feb03},
+
 		// MY
 		{in: "Feb 2023", want: DateRangesFor2023Feb},
 
@@ -475,6 +483,14 @@ func TestParse(t *testing.T) {
 		{in: "Course schedule: 23, 25, 30 June, 2 July 2023 17:00 PM \u2013 21:00 PM (SAST)", want: NewRangesFromDatesTimeRange(
 			[]*Date{NewRawDateFromYMD(2023, 6, 23), NewRawDateFromYMD(2023, 6, 25), NewRawDateFromYMD(2023, 6, 30), NewRawDateFromYMD(2023, 7, 2)},
 			TimeFor05PM, TimeFor09PM, TimeZoneForSAST)},
+		// Pass-2 aephoria shape: comma day-list, pseudo-meridiem 24h times, parallel timezone blocks.
+		{in: "Course schedule: 1, 3, 8, 10 February 2023 17:00 PM \u2013 21:00 PM (SAST) 08:00 AM \u2013 12:00 PM (PDT)", want: NewRangesFromDatesTimeRange(
+			[]*Date{DateFor2023Feb01, DateFor2023Feb03, DateFor2023Feb08, DateFor2023Feb10},
+			TimeFor05PM, TimeFor09PM, TimeZoneForSAST)},
+		// Portuguese month names from internalfamilysystems-pt bind like English names.
+		{in: "Course schedule: 1, 3, 8, 10 fevereiro 2023 17:00 PM \u2013 21:00 PM (SAST)", want: NewRangesFromDatesTimeRange(
+			[]*Date{DateFor2023Feb01, DateFor2023Feb03, DateFor2023Feb08, DateFor2023Feb10},
+			TimeFor05PM, TimeFor09PM, TimeZoneForSAST)},
 
 		//
 		// Date Range
@@ -516,6 +532,7 @@ func TestParse(t *testing.T) {
 		{in: "Fri Feb 3rd - 4th Sat February 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "February 3 - March 2, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Mar02)},
 		{in: "SAVE THE DATES: Feb 3-4, 2023", want: DateRangesFrom2023Feb03To2023Feb04},
+		{in: "Week of Sunday, February 3 \u2013 week of March 2, 2023", want: NewRangesWithStartEndDates(DateFor2023Feb03, DateFor2023Mar02)},
 		// DMY
 		{in: "3-4 Feb 2023", want: DateRangesFrom2023Feb03To2023Feb04},
 		{in: "3-4 Feb. 2023", want: DateRangesFrom2023Feb03To2023Feb04},

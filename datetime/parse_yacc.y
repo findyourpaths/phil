@@ -478,6 +478,12 @@ Date:
   // "3 Feb 2023"
 | WeekdayOpt Day Month Year {$$ = NewRawDateFromWDMY($1, $2, $3, $4)}
 
+  // "Feb-3-2023", "Feb/3/2023" — month-day-year, month name, separator-delimited (incl. hyphen).
+| WeekdayOpt Month MonthDateSep Day MonthDateSep Year {$$ = NewRawDateFromWMDY($1, $2, $4, $6)}
+
+  // "3-Feb-2023", "03-Jul-2026" — day-month-year, month name, separator-delimited (incl. hyphen).
+| WeekdayOpt Day MonthDateSep Month MonthDateSep Year {$$ = NewRawDateFromWDMY($1, $2, $4, $6)}
+
   // "2/3/2023", but ambiguous between North America (month-day-year) and other (day-month-year) styles.
 | WeekdayOpt Day DateSepPlus Day DateSepPlus Year {$$ = NewRawDateFromAmbiguous($1, $2, $4, $6)}
 
@@ -519,6 +525,16 @@ DateSep:
 | COMMA
 | DEC
 | PERIOD
+| QUO
+;
+
+// Separator for month-name dates: hyphen or slash ("03-Jul-2026", "03/Jul/2026").
+// A MONTH_NAME token fixes which component is the month, so these cannot be confused
+// with the year-month range separator that keeps SUB out of DateSep. PERIOD is
+// excluded: it collides with the trailing-abbreviation dot ("Feb."), which would
+// otherwise steal the year from a day range ("3-4 Feb. 2023").
+MonthDateSep:
+  SUB
 | QUO
 ;
 
