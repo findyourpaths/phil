@@ -112,6 +112,20 @@ func TestOccurrences(t *testing.T) {
 				{Year: 2023, Month: 2, Day: 3},
 			},
 		},
+		{
+			name: "weekly_interval_occurrences",
+			ranges: NewRecurringRanges(
+				NewRange(
+					&DateTime{Date: DateFor2023Feb01, Time: TimeFor09AM},
+					&DateTime{Date: DateFor2023Feb01, Time: TimeFor12PM}),
+				&Recurrence{Frequency: FrequencyWeekly, Interval: 2, Count: 3, Weekdays: []time.Weekday{time.Wednesday}}),
+			wantCount: 3,
+			wantDates: []Date{
+				{Year: 2023, Month: 2, Day: 1},
+				{Year: 2023, Month: 2, Day: 15},
+				{Year: 2023, Month: 3, Day: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {

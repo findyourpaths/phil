@@ -31,13 +31,20 @@ func FormatRRule(rec *datetime.Recurrence) string {
 		return ""
 	}
 	s := "FREQ=" + frequencyICalStrings[rec.Frequency]
+	if rec.Interval > 1 {
+		s += ";INTERVAL=" + strconv.Itoa(rec.Interval)
+	}
 	if rec.Count > 0 {
 		s += ";COUNT=" + strconv.Itoa(rec.Count)
 	}
 	if len(rec.Weekdays) > 0 {
 		var days []string
-		for _, wd := range rec.Weekdays {
-			days = append(days, weekdayICalStrings[wd])
+		for i, wd := range rec.Weekdays {
+			day := weekdayICalStrings[wd]
+			if i < len(rec.NthWeekday) && rec.NthWeekday[i] != 0 {
+				day = strconv.Itoa(rec.NthWeekday[i]) + day
+			}
+			days = append(days, day)
 		}
 		s += ";BYDAY=" + strings.Join(days, ",")
 	}

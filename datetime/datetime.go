@@ -227,6 +227,7 @@ var frequencySteps = map[Frequency][3]int{
 // "5 Wednesdays 9:00am-12:00pm February 1st - March 1st".
 type Recurrence struct {
 	Frequency  Frequency      // how often the event repeats (daily, weekly, etc.)
+	Interval   int            // repeat interval; 2 with weekly means every other week
 	Weekdays   []time.Weekday // e.g. [Tue, Thu] for "Tuesdays and Thursdays"
 	NthWeekday []int          // e.g. [2, 4] for "2nd and 4th"
 	Count      int            // "5 Wednesdays" → 5 (0 means use Until)
@@ -239,6 +240,9 @@ func (r *Recurrence) String() string {
 		return ""
 	}
 	s := r.Frequency.String()
+	if r.Interval > 1 {
+		s += " every " + strconv.Itoa(r.Interval)
+	}
 	if r.Count > 0 {
 		s += " x" + strconv.Itoa(r.Count)
 	}
@@ -279,6 +283,10 @@ func (rngs *DateTimeRanges) Occurrences() []*DateTimeRange {
 	}
 
 	step := frequencySteps[rec.Frequency]
+	interval := rec.Interval
+	if interval < 1 {
+		interval = 1
+	}
 	var result []*DateTimeRange
 	current := *first.Start.Date.ToTime()
 	for {
@@ -311,7 +319,7 @@ func (rngs *DateTimeRanges) Occurrences() []*DateTimeRange {
 			},
 			End: endDT,
 		})
-		current = current.AddDate(step[0], step[1], step[2])
+		current = current.AddDate(step[0]*interval, step[1]*interval, step[2]*interval)
 	}
 	return result
 }

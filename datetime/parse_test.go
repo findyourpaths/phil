@@ -87,11 +87,13 @@ var TimeFor10AM = &Time{Hour: 10}
 var TimeFor11AM = &Time{Hour: 11}
 var TimeFor12PM = &Time{Hour: 12}
 var TimeFor12_30PM = &Time{Hour: 12, Minute: 30}
+var TimeFor01_30PM = &Time{Hour: 13, Minute: 30}
 var TimeFor02PM = &Time{Hour: 14}
 var TimeFor03PM = &Time{Hour: 15}
 var TimeFor04PM = &Time{Hour: 16}
 var TimeFor04_30PM = &Time{Hour: 16, Minute: 30}
 var TimeFor05PM = &Time{Hour: 17}
+var TimeFor05_30PM = &Time{Hour: 17, Minute: 30}
 var TimeFor06PM = &Time{Hour: 18}
 var TimeFor06_30PM = &Time{Hour: 18, Minute: 30}
 var TimeFor07PM = &Time{Hour: 19}
@@ -120,6 +122,9 @@ var TimeZoneForUTC = &TimeZone{Abbreviation: "UTC"}
 
 // --- Recurrence fixtures ---
 
+var RecurrenceBiweeklySun = &Recurrence{Frequency: FrequencyWeekly, Interval: 2, Weekdays: []time.Weekday{time.Sunday}}
+var RecurrenceBiweeklyWed = &Recurrence{Frequency: FrequencyWeekly, Interval: 2, Weekdays: []time.Weekday{time.Wednesday}}
+var RecurrenceMonthlyFirstWed = &Recurrence{Frequency: FrequencyMonthly, Weekdays: []time.Weekday{time.Wednesday}, NthWeekday: []int{1}}
 var RecurrenceWeeklyFri = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{time.Friday}}
 var RecurrenceWeeklySun = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{time.Sunday}}
 var RecurrenceWeeklyTue = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{time.Tuesday}}
@@ -951,6 +956,21 @@ func TestParse(t *testing.T) {
 			dt(nil, TimeFor07PM, TimeZoneForET),
 			dt(nil, TimeFor09PM, TimeZoneForET)),
 			skip: "parser: recurrence"},
+		// E31: Recurring prose + 24-hour h-suffix range
+		{in: "Sundays on even weeks and setting the time of 19-21h (CET).", want: withRec(NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor07PM, TimeZoneForCET),
+			dt(nil, TimeFor09PM, TimeZoneForCET)), RecurrenceBiweeklySun)},
+		// E32: Monthly ordinal recurrence with time-only range
+		{in: "1st Wednesday of the month from 5:30pm - 7:00pm PST", want: withRec(NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor05_30PM, TimeZoneForPST),
+			dt(nil, TimeFor07PM, TimeZoneForPST)), RecurrenceMonthlyFirstWed)},
+		// E33: Biweekly prose with weekday and dotted PM suffix
+		{in: "Bi-weekly meetings, Wednesdays at 12:00-1:30 p.m. EST", want: withRec(NewRangesWithStartEndDateTimes(
+			dt(nil, TimeFor12PM, TimeZoneForEST),
+			dt(nil, TimeFor01_30PM, TimeZoneForEST)), RecurrenceBiweeklyWed)},
+		// E34: Placeholders without concrete schedule data should not parse.
+		{in: "TBD", want: nil},
+		{in: "Dates and times will be adjusted to suit the majority of group members.", want: nil},
 
 		//
 		// Category F: Redundant 12h + 24h Times (Google Calendar ICS)

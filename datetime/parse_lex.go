@@ -22,7 +22,7 @@ type datetimeLexer struct {
 	scanner    scanner.Scanner
 	err        error
 	root       *DateTimeRanges
-	recurrence *Recurrence // captured from stripped plural weekday prefix
+	recurrence *Recurrence // captured during preprocessing when recurrence prose is stripped
 }
 
 // Match a digit on one side and a letter on another. Used to separate `12pm`.
@@ -61,6 +61,30 @@ var weekdayPluralPrefixRE = regexp.MustCompile(`(?i)^\s*(?:mondays|tuesdays|wedn
 // is recurrence metadata. Stripping it leaves the time range + date which parses normally.
 // Captures the weekday name in group 1 for recurrence extraction.
 var everyWeekdayRE = regexp.MustCompile(`(?i)\bevery\s+(?:other\s+)?((?:mon|tue|wed|thu|fri|sat|sun)\w*)\b`)
+
+// everyOtherWeekdayRE matches the interval-bearing subset of everyWeekdayRE.
+var everyOtherWeekdayRE = regexp.MustCompile(`(?i)\bevery\s+other\s+((?:mon|tue|wed|thu|fri|sat|sun)\w*)\b`)
+
+// weekdayEvenWeeksRE matches prose like "Sundays on even weeks" where the
+// weekday is recurrence metadata and "even weeks" means a 2-week interval.
+var weekdayEvenWeeksRE = regexp.MustCompile(`(?i)\b((?:mon|tue|wed|thu|fri|sat|sun)\w*)\s+on\s+even\s+weeks\b`)
+
+// biweeklyWeekdayRE matches prose like "Bi-weekly meetings, Wednesdays ...".
+var biweeklyWeekdayRE = regexp.MustCompile(`(?i)\bbi[-\s]?weekly\b[^,;]*[,;]?\s*((?:mon|tue|wed|thu|fri|sat|sun)\w*)\b`)
+
+// ordinalWeekdayMonthlyRE matches prose like "1st Wednesday of the month".
+var ordinalWeekdayMonthlyRE = regexp.MustCompile(`(?i)\b(1st|first|2nd|second|3rd|third|4th|fourth|last)\s+((?:mon|tue|wed|thu|fri|sat|sun)\w*)\s+of\s+the\s+month\b`)
+
+// weekdayEvenWeeksTimePrefixRE strips the prose wrapper from strings like
+// "Sundays on even weeks and setting the time of 19-21h".
+var weekdayEvenWeeksTimePrefixRE = regexp.MustCompile(`(?i)^\s*(?:mon|tue|wed|thu|fri|sat|sun)\w*\s+on\s+even\s+weeks\s+(?:and\s+)?(?:setting\s+the\s+)?time\s+of\s+`)
+
+// biweeklyMeetingsPrefixRE strips the leading prose from "Bi-weekly meetings, Wednesdays ...".
+var biweeklyMeetingsPrefixRE = regexp.MustCompile(`(?i)^\s*bi[-\s]?weekly(?:\s+meetings?)?\s*,?\s*`)
+
+// ordinalWeekdayMonthlyPrefixRE strips the leading recurrence phrase from
+// "1st Wednesday of the month from 5:30pm - 7:00pm PST".
+var ordinalWeekdayMonthlyPrefixRE = regexp.MustCompile(`(?i)^\s*(?:1st|first|2nd|second|3rd|third|4th|fourth|last)\s+(?:mon|tue|wed|thu|fri|sat|sun)\w*\s+of\s+the\s+month\s+(?:from|at)?\s*`)
 
 // weekOfPrefixRE strips "week of" wrappers from range endpoints. The phrase is
 // event copy, not part of the civil date; removing the optional weekday also
@@ -148,6 +172,9 @@ var extraTimezoneBlockRE = regexp.MustCompile(`(?i)(\([A-Z]{2,5}\))\s+\d{1,2}:\s
 // follow the colon (minutes), avoiding date-time separators like "3: 9am".
 var brokenTimeColonRE = regexp.MustCompile(`\b(\d{1,2}):\s+(\d{2})\b`)
 
+// hourSuffixRangeRE normalizes 24-hour "h" ranges like "19-21h".
+var hourSuffixRangeRE = regexp.MustCompile(`(?i)\b(\d{1,2})\s*([-–])\s*(\d{1,2})\s*h\b`)
+
 // colonDateTimeSepRE converts a colon between a day number and a time into a comma.
 // In "February 3: 9am", the colon is a presentational separator, not a time separator.
 // Without this, "3:9" gets consumed as Time(3:09). Requires whitespace after the colon
@@ -162,6 +189,10 @@ var slashTimesSepRE = regexp.MustCompile(`(?i)([AP]M)\s*/\s*(\d)`)
 // twoDigitYearRE matches M/D/YY or D/M/YY patterns where the year is exactly 2 digits.
 // The negative lookahead (?!\d) prevents matching 4-digit years like "2/3/2023".
 var twoDigitYearRE = regexp.MustCompile(`(\d{1,2}/\d{1,2}/)(\d{2})(?:\D|$)`)
+
+// simpleTimeRangeRE parses the narrow post-preprocessing shape left by recurring
+// prose wrappers: "5:30pm - 7:00pm PST", "12:00-1:30 p.m. EST", "7pm-9pm (CET)".
+var simpleTimeRangeRE = regexp.MustCompile(`(?i)^\s*(\d{1,2})(?::(\d{2}))?\s*([ap]\.?\s*m\.?)?\s*[-–]\s*(\d{1,2})(?::(\d{2}))?\s*([ap]\.?\s*m\.?)?\s*(?:\(?\s*([a-z][a-z0-9_/\-+]{0,40})\s*\)?)?\.?\s*$`)
 
 // expandTwoDigitYears replaces 2-digit years in slash-separated date patterns
 // with 4-digit years (00-49 → 2000s, 50-99 → 1900s) before boundary splitting
@@ -249,6 +280,142 @@ func collapseRedundantTimes(input string) string {
 	})
 }
 
+func normalizeHourSuffixRanges(input string) string {
+	return hourSuffixRangeRE.ReplaceAllStringFunc(input, func(match string) string {
+		sub := hourSuffixRangeRE.FindStringSubmatch(match)
+		startHour, startErr := strconv.Atoi(sub[1])
+		endHour, endErr := strconv.Atoi(sub[3])
+		if startErr != nil || endErr != nil || startHour > 23 || endHour > 23 {
+			return match
+		}
+		return meridiemHour(startHour) + sub[2] + meridiemHour(endHour)
+	})
+}
+
+func meridiemHour(hour int) string {
+	switch {
+	case hour == 0:
+		return "12am"
+	case hour < 12:
+		return strconv.Itoa(hour) + "am"
+	case hour == 12:
+		return "12pm"
+	default:
+		return strconv.Itoa(hour-12) + "pm"
+	}
+}
+
+func captureRecurrence(input string) *Recurrence {
+	if sub := ordinalWeekdayMonthlyRE.FindStringSubmatch(input); sub != nil {
+		wd, ok := recurrenceWeekday(sub[2])
+		nth, nthOK := recurrenceOrdinal(sub[1])
+		if ok && nthOK {
+			return &Recurrence{
+				Frequency:  FrequencyMonthly,
+				Weekdays:   []time.Weekday{wd},
+				NthWeekday: []int{nth},
+			}
+		}
+	}
+	if sub := weekdayEvenWeeksRE.FindStringSubmatch(input); sub != nil {
+		if wd, ok := recurrenceWeekday(sub[1]); ok {
+			return &Recurrence{Frequency: FrequencyWeekly, Interval: 2, Weekdays: []time.Weekday{wd}}
+		}
+	}
+	if sub := biweeklyWeekdayRE.FindStringSubmatch(input); sub != nil {
+		if wd, ok := recurrenceWeekday(sub[1]); ok {
+			return &Recurrence{Frequency: FrequencyWeekly, Interval: 2, Weekdays: []time.Weekday{wd}}
+		}
+	}
+	if sub := everyOtherWeekdayRE.FindStringSubmatch(input); sub != nil {
+		if wd, ok := recurrenceWeekday(sub[1]); ok {
+			return &Recurrence{Frequency: FrequencyWeekly, Interval: 2, Weekdays: []time.Weekday{wd}}
+		}
+	}
+	if m := weekdayPluralPrefixRE.FindString(input); m != "" && !strings.ContainsAny(m, ",:-") {
+		if fields := strings.Fields(m); len(fields) > 0 {
+			if wd, ok := recurrenceWeekday(fields[0]); ok {
+				return &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{wd}}
+			}
+		}
+	}
+	if sub := everyWeekdayRE.FindStringSubmatch(input); sub != nil {
+		if wd, ok := recurrenceWeekday(sub[1]); ok {
+			return &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{wd}}
+		}
+	}
+	return nil
+}
+
+func recurrenceWeekday(name string) (time.Weekday, bool) {
+	wd, ok := weekdaysByNames[strings.ToLower(strings.Trim(name, " \t\n\r,.;:"))]
+	return wd, ok
+}
+
+func recurrenceOrdinal(name string) (int, bool) {
+	switch strings.ToLower(name) {
+	case "1st", "first":
+		return 1, true
+	case "2nd", "second":
+		return 2, true
+	case "3rd", "third":
+		return 3, true
+	case "4th", "fourth":
+		return 4, true
+	case "last":
+		return -1, true
+	default:
+		return 0, false
+	}
+}
+
+func parseSimpleRecurringTimeRange(input string) *DateTimeRanges {
+	sub := simpleTimeRangeRE.FindStringSubmatch(input)
+	if sub == nil {
+		return nil
+	}
+	start := NewDateTime(nil, recurrenceClock(sub[1], sub[2], sub[3]), nil)
+	tz := recurrenceTimeZone(sub[7])
+	end := NewDateTime(nil, recurrenceClock(sub[4], sub[5], sub[6]), tz)
+	return NewRangesWithStartEndDateTimes(start, end)
+}
+
+func recurrenceClock(hour string, minute string, meridiem string) *Time {
+	switch normalizedMeridiem(meridiem) {
+	case "am":
+		return NewAMTime(hour, minute, nil, nil)
+	case "pm":
+		return NewPMTime(hour, minute, nil, nil)
+	default:
+		return NewTime(hour, minute, nil, nil)
+	}
+}
+
+func normalizedMeridiem(meridiem string) string {
+	if meridiem == "" {
+		return ""
+	}
+	meridiem = strings.ToLower(meridiem)
+	meridiem = strings.ReplaceAll(meridiem, ".", "")
+	meridiem = strings.ReplaceAll(meridiem, " ", "")
+	return meridiem
+}
+
+func recurrenceTimeZone(name string) *TimeZone {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil
+	}
+	if abbrev := timeZoneAbbreviationsByNames[strings.ToLower(name)]; abbrev != "" {
+		return NewTimeZone(name, abbrev, nil)
+	}
+	upper := strings.ToUpper(name)
+	if upper == name && len(name) <= 5 {
+		return NewTimeZone(nil, name, nil)
+	}
+	return NewTimeZone(name, nil, nil)
+}
+
 // noisePatterns are stripped with empty replacement during preprocessing.
 var noisePatterns = []*regexp.Regexp{
 	noiseNewRE, noiseLabelRE, noiseAgePlusRE, noiseFreeRE, noiseSessionsRE,
@@ -260,6 +427,9 @@ var stripPatterns = []struct {
 	repl string
 }{
 	{weekdayCountRE, "$1"},
+	{weekdayEvenWeeksTimePrefixRE, ""},
+	{biweeklyMeetingsPrefixRE, ""},
+	{ordinalWeekdayMonthlyPrefixRE, ""},
 	{weekdayPluralPrefixRE, ""},
 	{everyWeekdayRE, ""},
 	{weekOfPrefixRE, ""},
@@ -273,6 +443,7 @@ var stripPatterns = []struct {
 type preprocessResult struct {
 	input      string
 	recurrence *Recurrence
+	root       *DateTimeRanges
 }
 
 // preprocess normalizes the input string and extracts recurrence metadata.
@@ -290,24 +461,15 @@ func preprocess(input string) preprocessResult {
 		input = re.ReplaceAllString(input, "")
 	}
 
-	// Capture recurrence weekday from plural prefix or "every WEEKDAY" before stripping.
-	var recurrence *Recurrence
-	if m := weekdayPluralPrefixRE.FindString(input); m != "" {
-		wdName := strings.ToLower(strings.TrimRight(strings.Fields(m)[0], "s"))
-		if wd, ok := weekdaysByNames[wdName]; ok {
-			recurrence = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{wd}}
-		}
-	} else if sub := everyWeekdayRE.FindStringSubmatch(input); sub != nil {
-		wdName := strings.ToLower(strings.TrimSuffix(sub[1], "s"))
-		if wd, ok := weekdaysByNames[wdName]; ok {
-			recurrence = &Recurrence{Frequency: FrequencyWeekly, Weekdays: []time.Weekday{wd}}
-		}
-	}
+	// Capture recurrence metadata before stripping recurrence prose.
+	recurrence := captureRecurrence(input)
 
 	// Strip patterns (weekday counts, plural prefixes, etc.).
 	for _, sp := range stripPatterns {
 		input = sp.re.ReplaceAllString(input, sp.repl)
 	}
+
+	input = normalizeHourSuffixRanges(input)
 
 	// Collapse redundant 24h times after their 12h equivalents (Google Calendar ICS).
 	input = collapseRedundantTimes(input)
@@ -331,6 +493,11 @@ func preprocess(input string) preprocessResult {
 	input = colonDateTimeSepRE.ReplaceAllString(input, "$1, $2")
 	input = slashTimesSepRE.ReplaceAllString(input, "$1, $2")
 
+	var root *DateTimeRanges
+	if recurrence != nil {
+		root = parseSimpleRecurringTimeRange(CleanTextLine(input))
+	}
+
 	// Boundary splitting and final cleanup.
 	input = boundaryRE1.ReplaceAllString(input, `$1 $2`)
 	input = boundaryRE2.ReplaceAllString(input, `$1 $2`)
@@ -345,7 +512,7 @@ func preprocess(input string) preprocessResult {
 	input = CleanTextLine(input)
 	debugf("input after processing: %q\n", input)
 
-	return preprocessResult{input: input, recurrence: recurrence}
+	return preprocessResult{input: input, recurrence: recurrence, root: root}
 }
 
 func NewDatetimeLexer(input string) *datetimeLexer {
@@ -353,6 +520,7 @@ func NewDatetimeLexer(input string) *datetimeLexer {
 	l := &datetimeLexer{
 		lval:       &yySymType{},
 		recurrence: pp.recurrence,
+		root:       pp.root,
 	}
 	l.scanner = glr.NewLexerScanner(l, pp.input)
 	return l

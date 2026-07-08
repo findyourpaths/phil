@@ -193,6 +193,9 @@ func Parse(in string, opts ParseOptions) (rngs *DateTimeRanges, err error) {
 		States:  datetimeStates,
 	}
 	lexer := NewDatetimeLexer(in)
+	if lexer.root != nil {
+		return finalizeParseResult(lexer.root, lexer.recurrence, opts, key)
+	}
 	roots, err := glr.Parse(g, lexer)
 	if yyDebug == 3 {
 		fmt.Printf("tree:\n%# v\n", pretty.Formatter(roots))
@@ -221,12 +224,15 @@ func Parse(in string, opts ParseOptions) (rngs *DateTimeRanges, err error) {
 	}
 
 	rs = rsAny.(*DateTimeRanges)
+	return finalizeParseResult(rs, lexer.recurrence, opts, key)
+}
 
+func finalizeParseResult(rs *DateTimeRanges, recurrence *Recurrence, opts ParseOptions, key string) (*DateTimeRanges, error) {
 	// Attach recurrence captured from preprocessing (e.g., stripped plural weekday).
 	// Only attach to single-range results — multi-range results are already expanded
 	// and the recurrence is just informational (would cause ICS expansion errors).
-	if lexer.recurrence != nil && rs.Recurrence == nil && len(rs.Items) <= 1 {
-		rs.Recurrence = lexer.recurrence
+	if recurrence != nil && rs.Recurrence == nil && len(rs.Items) <= 1 {
+		rs.Recurrence = recurrence
 	}
 
 	// Resolve missing years using minimumDateTime. Grammar actions like
