@@ -452,6 +452,9 @@ RFC3339TimeZone:
 
 Date:
   DatePrefixPlus Date {$$ = $2}
+  // ISO dates reduce to Date so they compose with ordinary space-separated times.
+  // Strict RFC3339 timestamps remain covered by RFC3339DateTime.
+| RFC3339Date
 
 | RELATIVE_DAY {$$ = NewRawDateFromRelative($1)}
 | RELATIVE_DAY WeekdayOpt {$$ = NewRawDateFromRelative($1)}

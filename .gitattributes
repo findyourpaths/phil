@@ -1,0 +1,2 @@
+# goyacc's tracked parser-state diagnostic preserves generator-authored trailing spaces.
+datetime/parse_yacc.states.txt whitespace=-trailing-space

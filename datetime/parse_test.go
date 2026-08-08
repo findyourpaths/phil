@@ -1300,6 +1300,98 @@ func TestParseDefaultYear(t *testing.T) {
 	}
 }
 
+// TestParseEtcGMTOffset pins the IANA "Etc/GMT+N"/"Etc/GMT-N" fixed-offset
+// zone form, e.g. "Etc/GMT+10" — captured live from an Elfsight API event
+// payload (paths' elfsightSchedule composes "<start> - <end> <tz>" from
+// split date/time/timezone fields; a single-instant schedule collapses to
+// "<start> <tz>" when start equals end). IANA's Etc area intentionally
+// inverts the everyday sign convention: "Etc/GMT+10" names the zone 10 hours
+// WEST of Greenwich (UTC-10), not UTC+10. The token must resolve as the
+// named IANA location via time.LoadLocation, never as a same-signed numeric
+// civil offset, or the derived instant lands 20 hours away from correct.
+func TestParseEtcGMTOffset(t *testing.T) {
+	tests := []struct {
+		name                 string
+		zone                 string
+		sameSignOffsetSecond int
+	}{
+		{name: "positive_suffix_is_west", zone: "Etc/GMT+10", sameSignOffsetSecond: 10 * 60 * 60},
+		{name: "negative_suffix_is_east", zone: "Etc/GMT-10", sameSignOffsetSecond: -10 * 60 * 60},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			testParseEtcGMTOffset(t, tc.zone, tc.sameSignOffsetSecond)
+		})
+	}
+}
+
+func testParseEtcGMTOffset(t *testing.T, zone string, sameSignOffsetSecond int) {
+	wantLoc, err := time.LoadLocation(zone)
+	if err != nil {
+		t.Fatalf("time.LoadLocation(%q): %v", zone, err)
+	}
+
+	t.Run("single_datetime", func(t *testing.T) {
+		got, err := Parse("2025-12-06 12:01 "+zone, ParseOptions{})
+		if err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		assertStartDate(t, got, 2025, time.December, 6)
+		assertStartTime(t, got, 12, 1)
+		assertStartTZ(t, got, zone, "", "")
+
+		gotInstant := got.Items[0].Start.ToTime().UTC()
+		wantInstant := time.Date(2025, 12, 6, 12, 1, 0, 0, wantLoc).UTC()
+		if !gotInstant.Equal(wantInstant) {
+			t.Fatalf("instant = %s, want %s", gotInstant, wantInstant)
+		}
+		wrongLoc := time.FixedZone("naive-same-sign", sameSignOffsetSecond)
+		wrongInstant := time.Date(2025, 12, 6, 12, 1, 0, 0, wrongLoc).UTC()
+		if gotInstant.Equal(wrongInstant) {
+			t.Fatalf("instant = %s matches naive same-sign interpretation; want POSIX-inverted instant %s", gotInstant, wantInstant)
+		}
+	})
+
+	t.Run("start_end_range", func(t *testing.T) {
+		// The real fetcher-emitted shape (internal/repository/fetcher_api_elfsight.go
+		// elfsightSchedule) when start and end differ: "<start> - <end> <tz>".
+		input := "2025-12-04 12:01 - 2025-12-05 12:01 " + zone
+		got, err := Parse(input, ParseOptions{})
+		if err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		assertStartDate(t, got, 2025, time.December, 4)
+		assertStartTime(t, got, 12, 1)
+		assertStartTZ(t, got, zone, "", "")
+
+		if len(got.Items) != 1 || got.Items[0].End == nil || got.Items[0].End.Date == nil || got.Items[0].End.Time == nil {
+			t.Fatalf("missing end datetime in %#v", got)
+		}
+		end := got.Items[0].End
+		if end.Date.Year != 2025 || end.Date.Month != time.December || end.Date.Day != 5 {
+			t.Fatalf("end date = %04d-%02d-%02d, want 2025-12-05", end.Date.Year, end.Date.Month, end.Date.Day)
+		}
+		if end.Time.Hour != 12 || end.Time.Minute != 1 {
+			t.Fatalf("end time = %02d:%02d, want 12:01", end.Time.Hour, end.Time.Minute)
+		}
+		if end.TimeZone == nil || end.TimeZone.Name != zone {
+			t.Fatalf("end timezone = %#v, want named location %q", end.TimeZone, zone)
+		}
+
+		gotStart := got.Items[0].Start.ToTime().UTC()
+		gotEnd := end.ToTime().UTC()
+		wantStart := time.Date(2025, 12, 4, 12, 1, 0, 0, wantLoc).UTC()
+		wantEnd := time.Date(2025, 12, 5, 12, 1, 0, 0, wantLoc).UTC()
+		if !gotStart.Equal(wantStart) {
+			t.Fatalf("start instant = %s, want %s", gotStart, wantStart)
+		}
+		if !gotEnd.Equal(wantEnd) {
+			t.Fatalf("end instant = %s, want %s", gotEnd, wantEnd)
+		}
+	})
+}
+
 func assertStartDate(t *testing.T, rngs *DateTimeRanges, year int, month time.Month, day int) {
 	t.Helper()
 	if rngs == nil || len(rngs.Items) == 0 || rngs.Items[0].Start == nil || rngs.Items[0].Start.Date == nil {
