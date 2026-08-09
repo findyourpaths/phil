@@ -89,6 +89,7 @@ Key design decisions:
 - **Debug a parse**: `DEBUG=true go test -v -run 'TestParse/192' ./phil/datetime/` — prints full GLR trace (token shifts, reductions, parser forks, result ranking)
 - **`skip` field in test cases**: if non-empty, test runs parse but skips on failure; fatals with "REMOVE SKIP" if it unexpectedly passes
 - **Global state**: `minimumDateTime` and `parseDateMode` are protected by `parseMutex` — Parse() is goroutine-safe but serialized
+- **Backwards ranges fail parsing**: when one range has complete start/end dates and its end date precedes its start date, `Parse` returns a semantic error. Separate items may be mentioned out of order, and an overnight time ending earlier on a later date remains valid; callers own ordinary parse-failure recovery rather than repairing dates here.
 
 ## Debugging a Parse Failure
 

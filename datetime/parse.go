@@ -257,11 +257,55 @@ func finalizeParseResult(rs *DateTimeRanges, recurrence *Recurrence, opts ParseO
 		return nil, err
 	}
 
+	// A result containing a backwards range is a failed parse, never a
+	// returned value: a schedule is not printed with its end date before its
+	// start date, so such a reading is invalid. (Item ORDER across separate
+	// items is deliberately not checked: prose legitimately mentions dates
+	// out of order — "kicks off March 2nd, applications through February
+	// 1st".) Recovery belongs to the caller's general parse-failure handling
+	// (e.g. re-presenting the full text through ParseBlock), never to repair
+	// here.
+	for _, item := range rs.Items {
+		if rangeEndsBeforeStart(item) {
+			return nil, fmt.Errorf("semantic error: range end %s precedes range start %s", item.End, item.Start)
+		}
+	}
+
 	debugf("rs: %#v\n", rs)
 	cacheMutex.Lock()
 	cache[key] = rs.Clone()
 	cacheMutex.Unlock()
 	return rs, nil
+}
+
+// rangeEndsBeforeStart reports whether rng carries complete start and end
+// dates with the end date strictly before the start date. Comparison is
+// date-level only: an end time earlier than the start time on the same or a
+// later date remains valid (overnight ranges).
+func rangeEndsBeforeStart(rng *DateTimeRange) bool {
+	if rng == nil || rng.Start == nil || rng.End == nil {
+		return false
+	}
+	return dateStrictlyBefore(rng.End.Date, rng.Start.Date)
+}
+
+// dateStrictlyBefore reports whether a is strictly before b, comparing only
+// when both dates are complete (year, month, and day all set).
+func dateStrictlyBefore(a, b *Date) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	if a.Year == 0 || a.Month == 0 || a.Day == 0 ||
+		b.Year == 0 || b.Month == 0 || b.Day == 0 {
+		return false
+	}
+	if a.Year != b.Year {
+		return a.Year < b.Year
+	}
+	if a.Month != b.Month {
+		return a.Month < b.Month
+	}
+	return a.Day < b.Day
 }
 
 func validateDateMode(mode string) error {
