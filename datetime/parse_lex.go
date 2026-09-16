@@ -46,10 +46,11 @@ var dayNumberRE = regexp.MustCompile(`(?i)\bday\s+\d\b`)
 // title text with tokens like "and", ":", "+" that interfere with date parsing.
 var markdownBoldRE = regexp.MustCompile(`\*\*[^*]+\*\*`)
 
-// weekdayCountRE matches a leading digit count before a weekday name (e.g. "2 Wednesdays",
+// weekdayCountRE matches a count before plural weekdays (e.g. "2 Wednesdays",
 // "5 Tuesdays"). The count gets misinterpreted as a Time (hour) by the parser.
-// Stripping it preserves the weekday while removing the ambiguous number.
-var weekdayCountRE = regexp.MustCompile(`(?i)\b\d+\s+((?:mon|tue|wed|thu|fri|sat|sun)\w*)`)
+// Singular weekdays can follow a previous date's year ("2027 Sunday"); that
+// year belongs to the date and must not be stripped as a count.
+var weekdayCountRE = regexp.MustCompile(`(?i)\b\d+\s+((?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)s)\b`)
 
 // weekdayPluralPrefixRE matches a leading PLURAL weekday name followed by a separator
 // (comma, dash, colon), "at", or just whitespace (for "Tuesdays 7 to 9 pm" where no
