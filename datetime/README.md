@@ -90,6 +90,11 @@ Key design decisions:
 - **`skip` field in test cases**: if non-empty, test runs parse but skips on failure; fatals with "REMOVE SKIP" if it unexpectedly passes
 - **Global state**: `minimumDateTime` and `parseDateMode` are protected by `parseMutex` — Parse() is goroutine-safe but serialized
 - **Backwards ranges fail parsing**: when one range has complete start/end dates and its end date precedes its start date, `Parse` returns a semantic error. Separate items may be mentioned out of order, and an overnight time ending earlier on a later date remains valid; callers own ordinary parse-failure recovery rather than repairing dates here.
+- **Authored range years precede defaults**: propagate raw date endpoints before constructing resolved date/time endpoints; explicit-year adjacent range lists consume each range's trailing year locally.
+- **Multi-month comma day lists remain dates**: the existing comma normalizer admits a second comma-separated list of at most 31 days and presents the shared-year conjunction to the existing grammar. The real Professional Pairs input preserves four explicit 2026 date-only items even under a different default year, without inventing clocks or extending Paths' block fallback.
+- **Block windows preserve conjoined shared-year days**: before treating the next month as a new expression or accepting a default-complete first day, pass the bounded existing `Month Day and Month Day Year` shape intact to the grammar. Unrelated entries retain ordinary next-anchor boundaries; no year is propagated across arbitrary prose.
+- **Date-labelled clock rows remain complete**: for `Month Day: clock-clock [zone]`, preserve the bounded explicit clock-range expression before accepting its shorter date-only prefix. Reuse the existing clock-range recognizer and grammar; empty labels, missing end clocks and trailing prose do not extend the window. The ordinary block-year label supplies an advertised shared year without relying on the capture year.
+- **Bounded weekly prose separates duration from series bounds**: an explicit plural weekday after date bounds and clock hours supplies recurrence; the first occurrence uses the start date and clock duration, while `Recurrence.Until` keeps the inclusive stop. Treat `Time` and `Times` labels alike; do not infer a weekly series from a singular weekday.
 
 ## Debugging a Parse Failure
 
@@ -108,6 +113,7 @@ Common root causes:
 
 ## Design Docs
 
+- [design_migration-072.md](design_migration-072.md) — authored years, labelled date/time composition and bounded weekly parsing contracts.
 - [ISSUES.md](ISSUES.md) — known parser issues
 - [../glr/](../glr/) — GLR parser implementation (`glr_parse.go`)
 - [../AGENTS.md](../AGENTS.md) — Phil project context

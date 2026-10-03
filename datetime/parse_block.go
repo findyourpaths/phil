@@ -26,7 +26,11 @@ import (
 // window rightward one whitespace-delimited word at a time until Parse
 // returns a result with no incomplete date fields (see parseBlockWindow for
 // why growing, rather than starting wide and trimming, is what keeps
-// trailing labels and noise from leaking into the result). This reuses the
+// trailing labels and noise from leaking into the result). One bounded
+// exception preserves the existing six-word named-month conjunction under
+// its trailing year before splitting at the second month; another preserves
+// an immediately advertised date-labelled clock range before its date-only
+// prefix can be accepted. These reuse the
 // existing grammar and its noise tolerance (labels, parentheticals,
 // bilingual prose) rather than adding new grammar productions.
 //
@@ -256,8 +260,12 @@ const maxBlockWindowWords = 30
 
 // parseBlockWindow grows a window from words[start:start+1] up to
 // words[start:upper] one word at a time, calling Parse on the joined
-// parseText of each candidate. It stops at the first length whose result is
-// fully complete (see allItemsComplete) — EXCEPT that when the word
+// parseText of each candidate. First it tries the bounded shared-year day
+// conjunction as one existing grammar expression, even across the ordinary
+// next-month boundary. Otherwise it stops at the first length whose result is
+// fully complete (see allItemsComplete). A bounded date-labelled clock range
+// is first presented intact so its real hours cannot be lost to a shorter
+// date-only prefix. Otherwise, when the word
 // immediately after a complete result is itself a bare year (isYearWord),
 // it tries absorbing that word too before stopping: a date phrase that
 // became "complete" using a defaulted year (from opts.DefaultYear /
@@ -283,6 +291,17 @@ const maxBlockWindowWords = 30
 // never returns a non-nil error; the return keeps the signature symmetric
 // with Parse's.
 func parseBlockWindow(words []blockWord, start, upper int, opts ParseOptions) (*DateTimeRanges, int, error) {
+	// A date-labelled clock row is one existing grammar expression. Taking
+	// its shorter default-complete date would silently discard actual hours.
+	if rs := parseBlockDatedClockRange(words[start:upper], opts); rs != nil {
+		return rs, upper, nil
+	}
+	// A conjunction can join two named-month days under one trailing year.
+	// Keep that existing grammar expression intact before the ordinary
+	// next-month boundary or a default-complete first day can split it.
+	if rs, end := parseBlockSharedYearDays(words, start, opts); rs != nil {
+		return rs, end, nil
+	}
 	var lastGood *DateTimeRanges
 	lastGoodK := 0
 	for k := start + 1; k <= upper; k++ {
@@ -303,6 +322,65 @@ func parseBlockWindow(words []blockWord, start, upper int, opts ParseOptions) (*
 		return nil, 0, nil
 	}
 	return lastGood, lastGoodK, nil
+}
+
+// parseBlockDatedClockRange preserves "Month Day: clock-clock [zone]" as one
+// bounded window. The existing clock-range recognizer rejects empty labels
+// and trailing prose; the grammar remains the date/time syntax authority.
+func parseBlockDatedClockRange(words []blockWord, opts ParseOptions) *DateTimeRanges {
+	if len(words) < 3 || !strings.HasSuffix(words[1].raw, ":") {
+		return nil
+	}
+	if _, ok := monthsByNames[strings.ToLower(trimWordPunct(words[0].parseText))]; !ok {
+		return nil
+	}
+	day, err := strconv.Atoi(strings.TrimSuffix(words[1].raw, ":"))
+	if err != nil || day < 1 || day > 31 {
+		return nil
+	}
+	clock := simpleTimeRangeRE.FindStringSubmatch(joinParseText(words[2:]))
+	if clock == nil {
+		return nil
+	}
+	if clock[7] != "" {
+		zone := recurrenceTimeZone(clock[7])
+		if zone == nil || zone.IANAName() == "" {
+			return nil // a trailing prose word is not zone evidence
+		}
+	}
+	rs, err := Parse(joinParseText(words), opts)
+	if err != nil || !allItemsComplete(rs) || len(rs.Items) != 1 {
+		return nil
+	}
+	r := rs.Items[0]
+	if r.Start.Time == nil || r.End == nil || r.End.Time == nil {
+		return nil
+	}
+	return rs
+}
+
+// parseBlockSharedYearDays admits only the existing six-word grammar shape
+// "March 20 and April 23, 2027". It neither carries a year across unrelated
+// entries nor extends a window into labels, clocks or arbitrary prose.
+func parseBlockSharedYearDays(words []blockWord, start int, opts ParseOptions) (*DateTimeRanges, int) {
+	end := start + 6
+	if end > len(words) || !strings.EqualFold(words[start+2].parseText, "and") || !isYearWord(words[end-1].parseText) {
+		return nil, 0
+	}
+	for _, offset := range []int{0, 3} {
+		if _, ok := monthsByNames[strings.ToLower(trimWordPunct(words[start+offset].parseText))]; !ok {
+			return nil, 0
+		}
+		day, err := strconv.Atoi(trimWordPunct(words[start+offset+1].parseText))
+		if err != nil || day < 1 || day > 31 {
+			return nil, 0
+		}
+	}
+	rs, err := Parse(joinParseText(words[start:end]), opts)
+	if err != nil || !allItemsComplete(rs) || len(rs.Items) != 2 {
+		return nil, 0
+	}
+	return rs, end
 }
 
 // joinParseText joins the words' parse-view text with single spaces — the
@@ -481,10 +559,10 @@ func isAnchorWord(w string) bool {
 
 // isMonthOrRelativeDayWord reports whether w is a recognized month name or a
 // relative-day word ("today"/"tomorrow"/"yesterday"). Unlike isYearWord,
-// this excludes bare years: an expression has at most one month name (after
-// bilingual pairs collapse to one word), so the next occurrence of one
-// always marks the start of a new expression, whereas a year is usually the
-// trailing year of the expression already in progress.
+// this excludes bare years: the next month ordinarily starts a new block
+// expression, whereas a year usually completes the expression in progress.
+// parseBlockSharedYearDays preserves the bounded conjoined two-month shape
+// as the explicit exception to that ordinary block-window boundary.
 func isMonthOrRelativeDayWord(w string) bool {
 	trimmed := strings.ToLower(trimWordPunct(w))
 	if trimmed == "" {

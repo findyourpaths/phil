@@ -142,8 +142,9 @@ func withRec(rs *DateTimeRanges, rec *Recurrence) *DateTimeRanges {
 }
 
 type parseTest struct {
-	dateMode string
-	minDT    *DateTime
+	dateMode    string
+	minDT       *DateTime
+	defaultYear int
 
 	in   string
 	want *DateTimeRanges
@@ -163,7 +164,6 @@ func mustLoadLocation(name string) *time.Location {
 func parseTestOptions(t *testing.T, tc parseTest) ParseOptions {
 	t.Helper()
 	loc := parseTestDefaultLocation
-	defaultYear := 0
 	if tc.minDT != nil {
 		if tc.minDT.TimeZone != nil {
 			if name := tc.minDT.TimeZone.IANAName(); name != "" {
@@ -182,7 +182,7 @@ func parseTestOptions(t *testing.T, tc parseTest) ParseOptions {
 		MinDateTime:     tc.minDT,
 		DateMode:        tc.dateMode,
 		DefaultLocation: loc,
-		DefaultYear:     defaultYear,
+		DefaultYear:     tc.defaultYear,
 	}
 }
 
@@ -1062,6 +1062,31 @@ func TestParse(t *testing.T) {
 		// I3: Both years explicit, large gap
 		{in: "18 Nov 2010 to 14th Feb 2016", want: NewRangesWithStartEndDates(
 			NewRawDateFromYMD(2010, 11, 18), NewRawDateFromYMD(2016, 2, 14))},
+
+		{in: "Wednesdays, February 3-March 10, 2027", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2027, 2, 3), NewRawDateFromYMD(2027, 3, 10)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil)},
+		{in: "February 3-March 10, 2027", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2027, 2, 3), NewRawDateFromYMD(2027, 3, 10)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil)},
+		{in: "February 3-March 10, 2027", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2027, 2, 3), NewRawDateFromYMD(2027, 3, 10)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil), defaultYear: 2025},
+		{in: "February 3, 2026-March 10, 2027", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2026, 2, 3), NewRawDateFromYMD(2027, 3, 10)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil)},
+		{in: "February 3, 2027-March 10", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2027, 2, 3), NewRawDateFromYMD(2027, 3, 10)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil)},
+		{in: "December 25-January 2, 2027", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2026, 12, 25), NewRawDateFromYMD(2027, 1, 2)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil)},
+		{in: "February 3-March 10", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2026, 2, 3), NewRawDateFromYMD(2026, 3, 10)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil)},
+		{in: "February 3-March 10", want: NewRangesWithStartEndDates(
+			NewRawDateFromYMD(2025, 2, 3), NewRawDateFromYMD(2025, 3, 10)),
+			minDT: dt(NewRawDateFromYMD(2026, 7, 22), nil, nil), defaultYear: 2025},
 	}
 
 	failed := 0

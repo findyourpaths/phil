@@ -155,7 +155,9 @@ var commaBeforeAndRE = regexp.MustCompile(`(?i),\s+and\b`)
 // the comma between Month and Day-Month with " and". Without "and", the grammar has no
 // rule to bind both months to a shared trailing Year, so the first month's items get year=0.
 // Matches DM order only: "Day(s) Month, Day(s) Month" where Month is a full or abbreviated name.
-var multiMonthCommaRE = regexp.MustCompile(`(?i)(` + monthNamesRE + `)\s*,\s*(\d{1,2}\s+` + monthNamesRE + `)`)
+// The second group may contain up to 31 comma-separated day tokens; the
+// existing shared-year day-list grammar, not clock productions, owns them.
+var multiMonthCommaRE = regexp.MustCompile(`(?i)(` + monthNamesRE + `)\s*,\s*(\d{1,2}(?:\s*,\s*\d{1,2}){0,30}\s+` + monthNamesRE + `)`)
 
 // monthNamesRE matches English and Portuguese month names (full and common abbreviations).
 const monthNamesRE = `(?:jan(?:uary|eiro)?|feb(?:ruary)?|fev(?:ereiro)?|mar(?:ch|[çc]o)?|apr(?:il)?|abr(?:il)?|may|maio|jun(?:e|ho)?|jul(?:y|ho)?|aug(?:ust)?|ago(?:sto)?|sep(?:t?(?:ember)?|tembro)?|set(?:embro)?|oct(?:ober)?|out(?:ubro)?|nov(?:ember|embro)?|dec(?:ember)?|dez(?:embro)?)`
@@ -713,7 +715,7 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return TILL
 			case "this":
 				return THIS
-			case "time":
+			case "time", "times":
 				return TIME
 			case "to":
 				return TO

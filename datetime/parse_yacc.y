@@ -65,8 +65,10 @@ package datetime
  /* Type of each nonterminal. */
 %type <DateTimeRanges> root
 %type <DateTimeRanges> DateTimeRanges
+%type <DateTimeRanges> ExplicitYearDateRanges
 
 %type <DateTimeRange> DateTimeRange
+%type <DateTimeRange> ExplicitYearDateRange
 
 %type <DateTime> DateTime
 %type <DateTime> RFC3339DateTime
@@ -222,6 +224,25 @@ DateTimeRanges:
 | DateTime COMMA INT COLON INT Pm {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewPMTime($3, $5, nil, nil), $1.TimeZone)))}
 | DateTime COMMA INT Am {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewAMTime($3, nil, nil, nil), $1.TimeZone)))}
 | DateTime COMMA INT Pm {$$ = NewRanges(NewRangeWithStart($1), NewRangeWithStart(NewDateTime($1.Date, NewPMTime($3, nil, nil, nil), $1.TimeZone)))}
+| ExplicitYearDateRanges {$$ = $1}
+  // A bounded weekday series advertises date bounds and session hours, then
+  // the plural weekday cadence (the saved Roxannemanning Thursday class).
+| Date RangeSepPlus Date Time RangeSepPlus Time TimeZoneOpt WeekdayName {$$ = newBoundedWeeklyRanges($1, $3, $4, $6, $7, $8)}
+;
+
+
+// Whitespace-only concatenation is accepted only for a sequence of at least
+// two independently year-complete date ranges, not after an arbitrary partial
+// date/time expression. This keeps a clock prefix from becoming its own item.
+ExplicitYearDateRanges:
+  ExplicitYearDateRange ExplicitYearDateRange {$$ = NewRanges($1, $2)}
+| ExplicitYearDateRanges ExplicitYearDateRange {$$ = AppendDateTimeRanges($1, $2)}
+;
+
+
+ExplicitYearDateRange:
+  Month Day RangeSepPlus Day Year {$$ = NewRangeWithStartEndDates(NewRawDateFromMDY($1, $2, $5), NewRawDateFromMDY($1, $4, $5))}
+| Day RangeSepPlus Day Month Year {$$ = NewRangeWithStartEndDates(NewRawDateFromDMY($1, $4, $5), NewRawDateFromDMY($3, $4, $5))}
 ;
 
 
@@ -300,6 +321,15 @@ DateTimeRange:
 | DateTime RangeSepPlus Time {$$ = NewRange($1, NewDateTime($1.Date, $3, $1.TimeZone))}
 | DateTime RangeSepPlus Time TimeZone {$$ = NewRange(NewDateTime($1.Date, $1.Time, $4), NewDateTime($1.Date, $3, $4))}
 | Time RangeSepPlus DateTime {$$ = NewRange(NewDateTime($3.Date, $1, $3.TimeZone), $3)}
+
+  // "February 3 - March 10, 2027"
+  // Keep pure date endpoints raw until NewRange propagates an authored endpoint
+  // year; DateTime would apply contextual defaults before range composition.
+| Date RangeSepPlus Date {$$ = NewRangeWithStartEndDates($1, $3)}
+
+  // Separate Dates/Time labels can contribute one date range and one clock
+  // range. Propagate authored years before DateTime applies context defaults.
+| Date RangeSepPlus Date Time RangeSepPlus Time TimeZoneOpt {$$ = newRangeWithDatesAndTimes($1, $3, $4, $6, $7)}
 
   // "Feb 3, 2023 - Feb 4, 2023"
 | DateTime RangeSepPlus DateTime {$$ = NewRange($1, $3)}
