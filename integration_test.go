@@ -13,7 +13,6 @@ import (
 
 	"github.com/findyourpaths/phil/datetime"
 	"github.com/findyourpaths/phil/ical"
-
 	"github.com/google/go-cmp/cmp"
 )
 

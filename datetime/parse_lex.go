@@ -2,14 +2,13 @@ package datetime
 
 import (
 	"errors"
+	"go/scanner"
+	"go/token"
 	"html"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"go/scanner"
-	"go/token"
 
 	"github.com/findyourpaths/phil/glr"
 	"github.com/microcosm-cc/bluemonday"
@@ -672,6 +671,12 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return DATES
 			case "from":
 				return FROM
+			case "for":
+				return FOR
+			case "hour", "hours":
+				return HOUR
+			case "one":
+				return ONE
 			case "google":
 				return GOOGLE
 			case "ics":
@@ -778,6 +783,8 @@ func (l *datetimeLexer) Lex(lval *yySymType) int {
 				return YEAR
 			}
 			return INT
+		case token.FOR:
+			return FOR
 
 		case token.ADD:
 			return ADD

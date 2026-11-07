@@ -19,6 +19,9 @@ package datetime
 %token DATES
 %token DEC
 %token FROM
+%token FOR
+%token HOUR
+%token ONE
 %token GOOGLE
 %token ICS
 %token IN
@@ -284,6 +287,8 @@ DayPlus1:
 
 DateTimeRange:
   DateTime {$$ = NewRangeWithStart($1)}
+| DateTime FOR ONE HOUR {$$ = newRangeWithHourDuration($1, "1")}
+| DateTime FOR INT HOUR {$$ = newRangeWithHourDuration($1, $3)}
 
 | DatePrefixPlus DateTimeRange {$$ = $2}
 | STARTS ColonOpt DateTime ENDS ColonOpt DateTime {$$ = NewRange($3, $6)}
@@ -417,6 +422,7 @@ DateTimeSepPlus:
 ;
 DateTimeSep:
   COLON
+| FOR
 | COMMA
 | BULLET
 | DEC

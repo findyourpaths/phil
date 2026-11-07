@@ -2,7 +2,6 @@ package glr
 
 import (
 	"errors"
-
 	"go/scanner"
 	"go/token"
 )

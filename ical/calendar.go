@@ -5,9 +5,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/findyourpaths/phil/datetime"
-
 	ics "github.com/arran4/golang-ical"
+	"github.com/findyourpaths/phil/datetime"
 	"github.com/segmentio/ksuid"
 )
 

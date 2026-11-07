@@ -4,7 +4,7 @@ Natural language date/time parser using a GLR parser with a yacc-generated gramm
 
 ## Key Types/Functions
 
-- `Parse(minDateTime, dateMode, input) (*DateTimeRanges, error)` — main entry point; parses a string into structured date/time ranges
+- `Parse(input, ParseOptions) (*DateTimeRanges, error)` — main entry point; parses a string into structured date/time ranges
 - `DateTimeRanges` — top-level result: a list of `DateTimeRange` items with optional `Recurrence`
 - `DateTimeRange` — a start/end `DateTime` pair
 - `DateTime` — a `Date` + `Time` + `TimeZone`
@@ -95,6 +95,7 @@ Key design decisions:
 - **Block windows preserve conjoined shared-year days**: before treating the next month as a new expression or accepting a default-complete first day, pass the bounded existing `Month Day and Month Day Year` shape intact to the grammar. Unrelated entries retain ordinary next-anchor boundaries; no year is propagated across arbitrary prose.
 - **Date-labelled clock rows remain complete**: for `Month Day: clock-clock [zone]`, preserve the bounded explicit clock-range expression before accepting its shorter date-only prefix. Reuse the existing clock-range recognizer and grammar; empty labels, missing end clocks and trailing prose do not extend the window. The ordinary block-year label supplies an advertised shared year without relying on the capture year.
 - **Bounded weekly prose separates duration from series bounds**: an explicit plural weekday after date bounds and clock hours supplies recurrence; the first occurrence uses the start date and clock duration, while `Recurrence.Until` keeps the inclusive stop. Treat `Time` and `Times` labels alike; do not infer a weekly series from a singular weekday.
+- **Explicit hour duration follows a complete dated clock**: the grammar accepts `for one hour` and positive integer hour counts. Compute the end as elapsed time in the stated zone, retaining civil output when no zone was advertised; do not invent a clock for a date-only input.
 
 ## Debugging a Parse Failure
 

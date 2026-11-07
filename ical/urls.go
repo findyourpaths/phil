@@ -10,7 +10,7 @@ import (
 
 // Time format layouts for calendar URL providers.
 const (
-	layoutCompact = "20060102T150405"   // Google, Yahoo
+	layoutCompact = "20060102T150405"     // Google, Yahoo
 	layoutISO     = "2006-01-02T15:04:05" // Outlook
 )
 
